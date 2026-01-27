@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React from 'react';
 import { useFormContext } from 'react-hook-form';
-import { Box, TextField, MenuItem, FormControlLabel, Checkbox } from "@mui/material";
+import { Box, TextField, MenuItem } from "@mui/material";
 import { maskRegexCPF, maskRegexCNPJ, maskRegexRG } from '../../../../../../types/regex';
 import { type NovoClienteFormData } from '../../schemas/clienteSchema';
 
@@ -51,9 +51,9 @@ export const DadosPrincipais: React.FC = () => {
           <div className="md:col-span-6">
             <TextField fullWidth label="Nome Fantasia" {...register("nome")} error={!!errors.nome} />
           </div>
-          <div className="md:col-span-3">
+          {/* <div className="md:col-span-3">
             <FormControlLabel control={<Checkbox {...register("isento")} />} label="Isento IE" />
-          </div>
+          </div> */}
         </>
       )}
 
@@ -83,7 +83,7 @@ export const DadosPrincipais: React.FC = () => {
       )}
       
       {/* Campos Comuns */}
-      <div className="md:col-span-4">
+      {/* <div className="md:col-span-4">
         <TextField fullWidth label="E-mail Principal" {...register("email")} error={!!errors.email} helperText={errors.email?.message} />
       </div>
       <div className="md:col-span-4">
@@ -91,7 +91,7 @@ export const DadosPrincipais: React.FC = () => {
       </div>
       <div className="md:col-span-4">
         <TextField fullWidth label="Celular/WhatsApp" {...register("telefone_celular")} />
-      </div>
+      </div> */}
     </Box>
   );
 };
