@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Contrato de Prestação de Serviços</title>
+
+  <style>
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 12px;
+      line-height: 1.6;
+      color: #000;
+      margin: 40px;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 18px;
+      margin-bottom: 30px;
+      text-transform: uppercase;
+    }
+
+    h2 {
+      font-size: 14px;
+      margin-top: 25px;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+    }
+
+    p {
+      margin: 8px 0;
+      text-align: justify;
+    }
+
+    .section {
+      margin-bottom: 20px;
+    }
+
+    .assinaturas {
+      margin-top: 60px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .assinatura {
+      width: 45%;
+      text-align: center;
+    }
+
+    .linha {
+      border-top: 1px solid #000;
+      margin-top: 60px;
+    }
+
+    .rodape {
+      margin-top: 40px;
+      font-size: 10px;
+      text-align: center;
+      color: #555;
+    }
+  </style>
+</head>
+
+<body>
+
+  <h1>Contrato de Prestação de Serviços</h1>
+
+  <p><strong>Contrato nº:</strong> {{contrato_id}}</p>
+
+  <div class="section">
+    <h2>Contratante</h2>
+
+    <p>
+      <strong>Nome / Razão Social:</strong> {{nome}}<br />
+      <strong>Tipo de Cliente:</strong> {{tipo_cliente}}<br />
+      <strong>Documento:</strong> {{documento_principal}}<br />
+      <strong>E-mail:</strong> {{email}}<br />
+      <strong>Telefone Comercial:</strong> {{telefone_comercial}}<br />
+      <strong>Telefone Celular:</strong> {{telefone_celular}}
+    </p>
+
+    <p>
+      <strong>Endereço:</strong><br />
+      {{logradouro}}, nº {{numero}} {{complemento}}<br />
+      Bairro {{bairro}} – {{cidade}} / {{estado}} – CEP {{cep}}
+    </p>
+
+    <p>
+      <strong>Representante / Responsável:</strong> {{responsavel_cliente}}
+    </p>
+  </div>
+
+  <div class="section">
+    <h2>Contratada</h2>
+
+    <p>
+      <strong>Razão Social:</strong> Faço a Conta Tecnologia Ltda<br />
+      <strong>CNPJ:</strong> 12.345.678/0001-99<br />
+      <strong>Endereço:</strong> Rua Exemplo Empresarial, nº 1000 – Centro – São Paulo/SP<br />
+      <strong>E-mail:</strong> contato@facoaconta.com.br<br />
+      <strong>Telefone:</strong> (11) 99999-9999
+    </p>
+
+    <p>
+      Representada neste ato por <strong>João da Silva</strong>, Diretor Executivo.
+    </p>
+  </div>
+
+  <div class="section">
+    <h2>Cláusula 1ª – Do Objeto</h2>
+
+    <p>
+      O presente contrato tem como objeto a prestação de serviços de
+      <strong>{{servico_nome}}</strong>, conforme descrição abaixo:
+    </p>
+
+    <p>
+      {{servico_descricao}}
+    </p>
+  </div>
+
+  <div class="section">
+    <h2>Cláusula 2ª – Do Prazo</h2>
+
+    <p>
+      O presente contrato entra em vigor na data de <strong>{{data_inicio}}</strong>,
+      com vigência até <strong>{{data_fim}}</strong>, podendo ser renovado mediante
+      acordo entre as partes.
+    </p>
+  </div>
+
+  <div class="section">
+    <h2>Cláusula 3ª – Do Valor e Condições de Pagamento</h2>
+
+    <p>
+      Pelos serviços contratados, o CONTRATANTE pagará à CONTRATADA o valor total de
+      <strong>R$ {{valor_total}}</strong>.
+    </p>
+
+    <p>
+      A forma de pagamento acordada é <strong>{{forma_pagamento_tipo}}</strong>,
+      em <strong>{{parcelas}}</strong> parcela(s), com vencimento todo dia
+      <strong>{{dia_vencimento}}</strong>.
+    </p>
+
+    <p>
+      Em caso de atraso, incidirá multa de <strong>{{multa_percentual}}%</strong>,
+      além de juros de <strong>{{juros_percentual}}% ao mês</strong>.
+    </p>
+  </div>
+
+  <div class="section">
+    <h2>Cláusula 4ª – Das Obrigações da Contratada</h2>
+
+    <p>
+      Executar os serviços com qualidade, zelo e conforme as especificações acordadas.
+    </p>
+
+    <p>
+      Manter sigilo absoluto sobre quaisquer dados, informações ou documentos do
+      CONTRATANTE.
+    </p>
+  </div>
+
+  <div class="section">
+    <h2>Cláusula 5ª – Das Obrigações do Contratante</h2>
+
+    <p>
+      Fornecer todas as informações necessárias para a correta execução dos serviços.
+    </p>
+
+    <p>
+      Efetuar os pagamentos nas condições e prazos estabelecidos neste contrato.
+    </p>
+  </div>
+
+  <div class="section">
+    <h2>Cláusula 6ª – Da Rescisão</h2>
+
+    <p>
+      O contrato poderá ser rescindido por qualquer das partes mediante aviso prévio
+      de <strong>{{prazo_aviso_previo}}</strong> dias.
+    </p>
+
+    <p>
+      O descumprimento de quaisquer cláusulas implicará rescisão imediata.
+    </p>
+  </div>
+
+  <div class="section">
+    <h2>Cláusula 7ª – Do Foro</h2>
+
+    <p>
+      Para dirimir quaisquer controvérsias oriundas deste contrato, as partes elegem o
+      foro da comarca de <strong>{{foro_cidade}}/{{foro_estado}}</strong>, renunciando
+      a qualquer outro, por mais privilegiado que seja.
+    </p>
+  </div>
+
+  <p>
+    E, por estarem justas e contratadas, firmam o presente instrumento.
+  </p>
+
+  <p>
+    {{cidade_assinatura}}, {{data_assinatura}}
+  </p>
+
+  <div class="assinaturas">
+    <div class="assinatura">
+      <div class="linha"></div>
+      <p>
+        Faço a Conta Tecnologia Ltda<br />
+        João da Silva – Diretor Executivo
+      </p>
+    </div>
+
+    <div class="assinatura">
+      <div class="linha"></div>
+      <p>
+        {{nome}}<br />
+        {{responsavel_cliente}}
+      </p>
+    </div>
+  </div>
+
+  <div class="rodape">
+    Documento gerado automaticamente pelo sistema.
+  </div>
+
+</body>
+</html>
