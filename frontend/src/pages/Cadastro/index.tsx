@@ -64,7 +64,7 @@ const Cadastro = () => {
   const navigate = useNavigate();
   const [openModal, setOpenModal] = useState(false);
   const [showsenha, setShowsenha] = useState(false);
-  const { company, loading, getCompanyGov } = useConsultaCnpj();
+  const { loading, getConsultaCNPJ, consultaCNPJ } = useConsultaCnpj();
   const { cadastro, isLoading } = useCadastro();
   const {
     control,
@@ -117,12 +117,12 @@ const Cadastro = () => {
   }
 
   useEffect(() => {
-    if(company) {
-      setValue("nome_empresa", company?.nomeEmpresarial || "")
-      setValue("cidade", company?.endereco?.municipio?.descricao || "")
-      setValue("estado", company?.endereco?.uf || "")
+    if(consultaCNPJ) {
+      setValue("nome_empresa", consultaCNPJ.alias ? consultaCNPJ.alias.toUpperCase() : consultaCNPJ.company.name.toUpperCase())
+      setValue("cidade", consultaCNPJ.address.city.toUpperCase() || "")
+      setValue("estado", consultaCNPJ.address.state.toUpperCase() || "")
     }
-  }, [company])
+  }, [consultaCNPJ])
 
   return (
     <>
@@ -216,7 +216,7 @@ const Cadastro = () => {
                             // marginTop: -4
                           }}
                           onClick={() => {
-                            getCompanyGov(getValues().cnpj)
+                            getConsultaCNPJ(getValues().cnpj)
                           }}
                         >
                           <Search />

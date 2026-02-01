@@ -10,7 +10,7 @@ import subscriptionsRoutes from './routes/subscription.routes';
 import produtoRoutes from './routes/produto.routes';
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3333;
 
 // Middlewares
 // app.use(express.json({ 

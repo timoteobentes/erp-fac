@@ -25,11 +25,11 @@ export const TabDadosCadastrais: React.FC<TabDadosCadastraisProps> = ({ dados })
           Identificação
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <InfoField label="Tipo de Cliente" value={dados.tipo_cliente === 'PF' ? 'PESSOA FÍSCIA' : dados.tipo_cliente === 'estrangeiro' ? 'ESTRANGEIRO' : 'PESSOA JURÍDICA'} />
+          <InfoField label="Tipo de Cliente" value={dados.tipo_cliente === 'PF' ? 'PESSOA FÍSICA' : dados.tipo_cliente === 'estrangeiro' ? 'ESTRANGEIRO' : 'PESSOA JURÍDICA'} />
           <InfoField label="Situação" value={dados.situacao === 'ativo' ? 'ATIVO' : dados.situacao === 'bloqueado' ? 'BLOQUEADO' : 'INATIVO'} />
           <InfoField label="Vendedor Responsável" value={dados.vendedor_responsavel.toUpperCase()} />
-          <InfoField label={isPF ? "Nome Completo" : "Razão Social"} value={dados.nome.toUpperCase()} fullWidth={!dados.nome_fantasia.toUpperCase()} />
-          {!isPF && <InfoField label="Nome Fantasia" value={dados.nome_fantasia.toUpperCase()} />}
+          <InfoField label={isPF ? "Nome Completo" : "Razão Social"} value={dados.nome.toUpperCase()} fullWidth={!dados.nome.toUpperCase()} />
+          {!isPF && <InfoField label="Nome Fantasia" value={dados.nome_fantasia?.toUpperCase()} />}
           
           {isPF ? (
             <>

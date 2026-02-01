@@ -22,11 +22,9 @@ const NovoCliente = lazy(() => import('../pages/Cadastros/Clientes/Novo'));
 const VisualizarCliente = lazy(() => import('../pages/Cadastros/Clientes/Visualizar'));
 const EditarCliente = lazy(() => import('../pages/Cadastros/Clientes/Editar'));
 
-// Módulo: Fornecedores
-const Fornecedores = lazy(() => import('../pages/Cadastros/Fornecedores'));
-
 // Módulo: Produtos
-const ProdutoNovo = lazy(() => import('../modules/Cadastros/Produtos/Novo'));
+const Produtos = lazy(() => import('../pages/Cadastros/Produtos'));
+const NovoProduto = lazy(() => import('../pages/Cadastros/Produtos/Novo'));
 
 // Componente de Loading Centralizado
 const Loading = () => (
@@ -81,11 +79,9 @@ const AppRoutes = () => {
             <Route path="editar/:id" element={<EditarCliente />} />
           </Route>
 
-          {/* Módulo: Cadastros -> Fornecedores */}
-          <Route path="/cadastros/fornecedores" element={<Fornecedores />} />
-
           {/* Módulo: Cadastros -> Produtos */}
-          <Route path="/cadastros/produtos/novo" element={<ProdutoNovo />} />
+          <Route path="/cadastros/produtos" element={<Produtos />} />
+          <Route path="/cadastros/produtos/novo" element={<NovoProduto />} />
         </Route>
 
         {/* Rota 404 (Opcional, mas recomendada) */}

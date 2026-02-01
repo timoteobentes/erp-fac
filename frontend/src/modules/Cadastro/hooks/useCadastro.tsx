@@ -13,7 +13,8 @@ export const useCadastro = () => {
   const cadastro = async (data: CadastroData) => {
     try {
       setIsLoading(true);
-      await cadastroService(data);
+      const sendData = { ...data, grupo_acesso_id: 1, usuario: { ...data } };
+      await cadastroService(sendData);
       toast.success("Cadastro realizado com sucesso! Por favor, faça o login.");
       return navigate("/login");
     } catch (err: any) {

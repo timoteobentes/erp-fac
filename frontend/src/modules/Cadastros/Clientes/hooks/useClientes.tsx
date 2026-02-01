@@ -14,8 +14,10 @@ import {
   type ResultadoClientes,
   type PaginacaoCliente
 } from "../services/clienteService";
+import { useNavigate } from "react-router";
 
 export const useClientes = () => {
+  const navigate = useNavigate();
   const [clientes, setClientes] = useState<any[]>([]);
   const [cliente, setCliente] = useState<any>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -119,7 +121,7 @@ export const useClientes = () => {
     setIsLoading(true);
     try {
       const response = await atualizarClienteService(id, clienteData);
-      await fetchClientes(paginacao.pagina, paginacao.limite);
+      navigate("/cadastros/clientes");
       return response;
     } catch (error) {
       console.error("Error updating cliente:", error);

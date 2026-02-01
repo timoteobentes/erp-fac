@@ -85,11 +85,11 @@ export const DadosPrincipais: React.FC = () => {
       {/* Campos Comuns */}
       {/* <div className="md:col-span-4">
         <TextField fullWidth label="E-mail Principal" {...register("email")} error={!!errors.email} helperText={errors.email?.message} />
-      </div>
-      <div className="md:col-span-4">
+      </div> */}
+      {/* <div className="md:col-span-4">
         <TextField fullWidth label="Telefone Comercial" {...register("telefone_comercial")} />
-      </div>
-      <div className="md:col-span-4">
+      </div> */}
+      {/* <div className="md:col-span-4">
         <TextField fullWidth label="Celular/WhatsApp" {...register("telefone_celular")} />
       </div> */}
     </Box>

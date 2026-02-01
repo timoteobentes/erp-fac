@@ -7,13 +7,15 @@ import { loggerMiddleware } from '../middleware/logger';
 const produtoRoutes = Router();
 const produtoController = new ProdutoController();
 
-// Aplica middlewares globais para produtos (Segurança e Log)
 produtoRoutes.use(authMiddleware);
 produtoRoutes.use(isolamentoMiddleware);
 produtoRoutes.use(loggerMiddleware);
 
-// Definição das Rotas
-produtoRoutes.post('/produtos', produtoController.criarProduto.bind(produtoController));
-produtoRoutes.get('/produtos', produtoController.listarProdutos.bind(produtoController));
+produtoRoutes.get('/produtos/auxiliares', produtoController.obterDadosAuxiliares);
+produtoRoutes.get('/produtos', produtoController.listar);
+produtoRoutes.post('/produtos', produtoController.criar);
+produtoRoutes.get('/produtos/:id', produtoController.buscarPorId);
+produtoRoutes.put('/produtos/:id', produtoController.atualizar);
+produtoRoutes.delete('/produtos/:id', produtoController.excluir);
 
 export default produtoRoutes;

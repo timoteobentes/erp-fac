@@ -12,9 +12,13 @@ export const loggerMiddleware = async (req: Request, res: Response, next: NextFu
     return originalSend.call(this, body);
   };
 
+
   res.on('finish', async () => {
     const duration = Date.now() - start;
     const usuario = (req as any).usuario;
+
+    console.log("usuario logger >> ", usuario);
+    console.log("req logger >> ", req);
 
     try {
       // Especificar os tipos explicitamente na query
@@ -27,8 +31,8 @@ export const loggerMiddleware = async (req: Request, res: Response, next: NextFu
         )`,
         [
           usuario?.id || null,
-          usuario?.email || null,
-          usuario?.nome_empresa || null,
+          req?.body?.email || usuario?.email || null,
+          req?.body?.nome_empresa || usuario?.nome_empresa || null,
           getActionType(req.method, res.statusCode),
           getModule(req.path),
           `${req.method} ${req.path} - ${res.statusCode}`,

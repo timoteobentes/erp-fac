@@ -4,6 +4,7 @@ import * as fs from 'fs';
 export interface EmailAttachment {
   content: string; // Base64 encoded
   name: string;
+  contentId?: string;
 }
 
 export interface EmailOptions {
@@ -187,29 +188,83 @@ export class EmailService {
 
   // Método para enviar email de boas-vindas
   async sendWelcomeEmail(email: string, nomeUsuario: string): Promise<void> {
-    const subject = 'Bem-vindo ao Analisa!';
+    const subject = 'Bem-vindo a Faço a Conta!';
+    const loginUrl = "https://app.facoaconta.com.br/login";
+    const logoCid = 'logo_facoaconta_header';
+    let logoAttachment: EmailAttachment | undefined;
+
+    try {
+      const logoPath = '../assets/FAC_logo_roxo.svg'; 
+      if (fs.existsSync(logoPath)) {
+        const logoContent = fs.readFileSync(logoPath, { encoding: 'base64' });
+        logoAttachment = {
+          name: 'FAC_logo_roxo.svg',
+          content: logoContent,
+          contentId: logoCid // O segredo está aqui!
+        };
+      }
+    } catch (error) {
+      console.warn('Logo não encontrada para anexo, enviando sem imagem inline.');
+    }
+
     const htmlContent = `
       <!DOCTYPE html>
-      <html>
+      <html lang="pt-BR">
         <head>
           <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
           <title>Bem-vindo</title>
         </head>
-        <body>
-          <h1>Bem-vindo ao Analisa, ${nomeUsuario}!</h1>
-          <p>Sua conta foi criada com sucesso.</p>
-          <p>Comece agora mesmo a usar todas as funcionalidades da nossa plataforma.</p>
-          <p>Se tiver dúvidas, entre em contato com nosso suporte.</p>
-          <br>
-          <p>Atenciosamente,<br>Equipe Analisa</p>
+        <body style="margin: 0; padding: 0; background-color: #e3e6ed; font-family: Arial, Helvetica, sans-serif; color: #320b54;">
+          
+          <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
+            
+            <div style="text-align: center; margin-bottom: 40px;">
+              ${logoAttachment 
+                ? `<img src="cid:${logoCid}" alt="Faço a Conta" style="width: 180px; height: auto; display: block; margin: 0 auto; filter:drop-shadow(0 0 1rem #FFF)">` 
+                : `<h1 style="color: #6200ea; font-size: 36px; margin: 0;">FAÇO A CONTA</h1>`
+              }
+            </div>
+
+            <h2 style="font-size: 24px; font-weight: normal; margin-bottom: 20px;">Olá, ${nomeUsuario}.</h2>
+
+            <p style="font-size: 16px; line-height: 1.6; margin-bottom: 15px;">
+              Estamos muito felizes em ter você por aqui! Seu cadastro foi confirmado com sucesso.
+            </p>
+            
+            <p style="font-size: 16px; line-height: 1.6; margin-bottom: 25px;">
+              Agora, falta muito pouco. Para liberar seu acesso e começar a aproveitar todas as funcionalidades, <strong>o próximo passo é escolher o plano ideal para você.</strong>
+            </p>
+
+            <div style="text-align: center; margin-bottom: 30px;">
+              <a href="${loginUrl}" style="background-color: #6200ea; color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 16px; display: inline-block;">
+                Escolher meu Plano
+              </a>
+            </div>
+            
+            <p style="font-size: 16px; line-height: 1.6; margin-bottom: 30px;">
+              Assim que o pagamento for confirmado, sua conta será ativada automaticamente. Se tiver qualquer dúvida, é só responder a este e-mail.
+            </p>
+
+            <div style="margin-top: 40px; border-top: 1px solid #cdd1d9; padding-top: 20px;">
+              <p style="font-size: 16px; line-height: 1.6; color: #320b54;">
+                Um abraço,<br>
+                <strong>Equipe Faço a Conta.</strong>
+              </p>
+            </div>
+
+          </div>
         </body>
       </html>
     `;
 
+    const attachments = logoAttachment ? [logoAttachment] : undefined;
+
     await this.sendEmail({
       to: email,
       subject,
-      htmlContent
+      htmlContent,
+      attachments
     });
   }
 

@@ -1,17 +1,32 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { ConfigProvider, Layout as AntLayout, Menu, Avatar, theme as antTheme } from 'antd';
-import { Button, IconButton } from '@mui/material';
+import {
+  ConfigProvider,
+  Layout as AntLayout,
+  Menu,
+  Avatar,
+  theme as antTheme,
+  List,
+  Badge,
+  Divider
+} from 'antd';
+import { Button, IconButton, Popover } from '@mui/material';
 import {
   KeyboardDoubleArrowLeft,
   KeyboardDoubleArrowRight,
   BalanceOutlined,
   PersonalVideoOutlined,
-  NotificationsOutlined,
+  NotificationsOutlined
 } from '@mui/icons-material';
 import { useLogin } from '../modules/Login/hooks/useLogin';
 import fac_logo_branco from '../assets/FAC_logo_branco.svg';
 import { useNavigate, useLocation } from 'react-router';
 import { getStaticMenuItems } from '../components/menuConfig';
+import dayjs from 'dayjs';
+import relativeTime from "dayjs/plugin/relativeTime";
+
+dayjs.extend(relativeTime);
+const agora = dayjs();
 
 const { Header, Sider, Content } = AntLayout;
 
@@ -23,10 +38,18 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, adm, logout } = useLogin();
-  
+  const [anchorEl, setAnchorEl] = React.useState<HTMLButtonElement | null>(null);
   const [collapsed, setCollapsed] = useState(false);
   const [currentNav, setCurrentNav] = useState('inicio');
   const [openKeys, setOpenKeys] = useState<string[]>([]);
+  const [notifications, ] = useState<any[]>([
+    {
+      id: 1, titulo: 'Bem-vindo', mensagem: 'Obrigado por usar nosso sistema!', criado_em: new Date(), lido_em: null
+    },
+    {
+      id: 2, titulo: 'Atualização', mensagem: 'O sistema foi atualizado para a versão 2.0.', criado_em: new Date(), lido_em: new Date()
+    }
+  ]);
 
   const {
     token: { colorBgContainer, borderRadiusLG },
@@ -125,6 +148,17 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     setOpenKeys(keys);
   }, []);
 
+  const handleNotificacaoClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleNotificacaoClose = () => {
+    setAnchorEl(null);
+  };
+
+  const open = Boolean(anchorEl);
+  const id = open ? 'simple-popover' : undefined;
+
   return (
     <ConfigProvider theme={layoutTheme}>
       <AntLayout className='h-screen'>
@@ -182,9 +216,63 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             </div>
 
             {hasPermission && (
-              <IconButton sx={{ color: '#6B00A1' }}>
-                <NotificationsOutlined />
-              </IconButton>
+              <>
+                <IconButton sx={{ color: '#6B00A1' }} aria-describedby={id} onClick={handleNotificacaoClick}>
+                  <NotificationsOutlined />
+                </IconButton>
+                <Popover
+                  id={id}
+                  open={open}
+                  anchorEl={anchorEl}
+                  onClose={handleNotificacaoClose}
+                  anchorOrigin={{
+                    vertical: 'bottom',
+                    horizontal: 'left'
+                  }}
+                  sx={{ ".css-2k8egf-MuiPaper-root-MuiPopover-paper": { borderRadius: "4px" } }}
+                >
+                  <div className="w-[350px] py-4">
+                    <div className="px-2 py-4 font-bold text-xl">
+                      Notificações
+                    </div>
+                    {/* <Divider style={{ margin: "10px 0" }} /> */}
+                    <List
+                      itemLayout="horizontal"
+                      dataSource={notifications.slice(0, 5)}
+                      renderItem={item => (
+                        <List.Item 
+                          // onClick={() => marcarComoLida(item.id)}
+                          className={`
+                            cursor-pointer
+                            px-4 py-2
+                            ${!item.lido_em ? "bg-purple-50" : ""}
+                            hover:bg-purple-100
+                          `}
+                        >
+                          <List.Item.Meta
+                            title={
+                              <div className="flex justify-between px-2">
+                                <span className="font-semibold">{item.titulo.toUpperCase()}</span>
+                                {!item.lido_em && <Badge dot style={{ background: "#6b00a1" }} />}
+                              </div>
+                            }
+                            description={
+                              <>
+                                <div className="px-2">{item.mensagem.length > 100 ? `${item.mensagem.substring(0, 100)}...` : item.mensagem}</div>
+                                <div className="text-xs text-gray-500 mt-1 px-2 italic">{item.criado_em ? dayjs(item.criado_em).from(agora) : null}</div>
+                              </>
+                            }
+                          />
+                        </List.Item>
+                      )}
+                    />
+                    <Divider style={{ margin: "10px 0" }} />
+                    <div className="text-center">
+                      <Button type="link" href="/simples/notificacoes" className="text-purple-600">Ver todas as notificações</Button>
+                    </div>
+                  </div>
+                </Popover>
+              </>
             )}
           </Header>
           

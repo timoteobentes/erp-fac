@@ -1,59 +1,68 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useNavigate } from 'react-router-dom'; // Ajuste conforme sua versão do router
-import { novoProdutoSchema, type NovoProdutoForm } from '../schemas/novoProdutoSchema';
-// import api from '../../../../../services/api'; // Importe seu axios aqui
+import { useState, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
+import { criarProdutoService } from "../services/novoProdutoService";
+import {
+  obterDadosAuxiliaresService,
+  type DadosAuxiliares 
+} from "../../services/produtoService";
 
 export const useNovoProduto = () => {
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
-  const [tabIndex, setTabIndex] = useState(0); // Controle das Abas
-
-  const form = useForm<any>({
-    resolver: zodResolver(novoProdutoSchema),
-    defaultValues: {
-      tipo_item: 'produto',
-      ativo: true,
-      movimenta_estoque: true,
-      origem_mercadoria: 0,
-      unidade_id: 1, // Default UN (conforme seu SQL)
-      preco_venda: 0,
-      estoque_atual: 0
-    }
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  
+  // Estado para armazenar as listas dos Selects (Categorias, Marcas, Unidades)
+  const [auxiliares, setAuxiliares] = useState<DadosAuxiliares>({
+    categorias: [],
+    marcas: [],
+    unidades: []
   });
 
-  const handleChangeTab = (_event: React.SyntheticEvent, newValue: number) => {
-    setTabIndex(newValue);
-  };
-
-  const onSubmit = async (data: NovoProdutoForm) => {
+  /**
+   * Função para carregar os dados dos Selects (chamada no useEffect do form)
+   */
+  const carregarAuxiliares = useCallback(async () => {
     try {
-      setLoading(true);
-      console.log("Enviando payload:", data);
+      const dados = await obterDadosAuxiliaresService();
+      setAuxiliares(dados);
+    } catch (error) {
+      console.error("Erro ao carregar auxiliares:", error);
+      toast.warning("Não foi possível carregar as listas de categorias/marcas.");
+    }
+  }, []);
+
+  /**
+   * Função de Envio do Formulário
+   */
+  const handleCadastrarProduto = async (data: any) => {
+    setIsLoading(true);
+    try {
+      // O service e o Zod já garantem a tipagem, enviamos direto
+      const response = await criarProdutoService(data);
       
-      // await api.post('/produtos', data);
+      toast.success("Produto cadastrado com sucesso!");
+      navigate("/cadastros/produtos");
       
-      // Simulação de sucesso
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      alert("Produto cadastrado com sucesso!"); // Substituir pelo seu Snackbar
-      navigate('/cadastros/produtos');
-      
+      return response;
     } catch (error: any) {
-      console.error(error);
-      alert("Erro ao cadastrar produto");
+      console.error("Erro ao cadastrar produto:", error);
+      
+      // Tratamento de erro vindo do backend (Ex: "Nome já existe")
+      const msg = error.response?.data?.message || error.message || "Erro ao salvar produto.";
+      toast.error(msg);
+      
+      // Repassa o erro para o Form (opcional, caso queira setar erro no campo)
+      throw error;
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
   return {
-    form,
-    loading,
-    tabIndex,
-    handleChangeTab,
-    onSubmit
+    isLoading,
+    auxiliares,     // Dados para popular os <Select>
+    carregarAuxiliares, // Função para iniciar o carregamento
+    handleCadastrarProduto // Função de submit
   };
 };

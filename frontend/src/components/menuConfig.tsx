@@ -34,14 +34,13 @@ export const getStaticMenuItems = (navigate: any, user: any, adm: boolean) => {
       disabled,
       children: [
         { key: 'cadastros-clientes', label: 'Clientes', onClick: () => navigate('/cadastros/clientes') },
-        { key: 'cadastros-fornecedores', label: 'Fornecedores', onClick: () => navigate('/cadastros/fornecedores') },
         {
           key: 'cadastros-produtos',
           label: 'Produtos',
           children: [
-            { key: 'cadastros-produtos-gerenciar', label: 'Gerenciar produtos' },
-            { key: 'cadastros-produtos-valores', label: 'Valores de produtos' },
-            { key: 'cadastros-produtos-etiquetas', label: 'Etiquetas' },
+            { key: 'cadastros-produtos-gerenciar', label: 'Gerenciar produtos', onClick: () => navigate('/cadastros/produtos') },
+            // { key: 'cadastros-produtos-valores', label: 'Valores de produtos' },
+            // { key: 'cadastros-produtos-etiquetas', label: 'Etiquetas' },
           ]
         },
       ],

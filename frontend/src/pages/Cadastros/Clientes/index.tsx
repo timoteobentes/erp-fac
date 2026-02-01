@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect, useCallback } from "react";
-import { Card, CardContent, Collapse, Snackbar, Alert } from "@mui/material"; // Mantenha imports corretos
-import { ConfigProvider } from "antd"; // ConfigProvider do Antd
+import { Card, CardContent, Collapse, Snackbar, Alert } from "@mui/material";
+import { ConfigProvider } from "antd";
 import Layout from "../../../template/Layout";
 import { useNavigate } from "react-router";
 import { useClientes } from "../../../modules/Cadastros/Clientes/hooks/useClientes";
@@ -109,7 +109,7 @@ const Clientes: React.FC = () => {
         <Card sx={{ boxShadow: "none !important", borderRadius: "4px", border: "1px solid #E9DEF6" }}>
           <CardContent>
             {/* Componente de Ações (Botões) */}
-            <ClientesActions 
+            <ClientesActions
               onAdd={() => navigate("/cadastros/clientes/novo")}
               onRefresh={fetchClientes}
               onExport={handleExport}

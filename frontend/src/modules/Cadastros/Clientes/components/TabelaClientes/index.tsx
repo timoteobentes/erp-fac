@@ -14,7 +14,7 @@ import {
 } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import { useClientes } from "../../hooks/useClientes";
-import { StatusConfirmationModal } from "../StatusConfirmationModal";
+import { StatusConfirmationModal } from "../../../../../components/StatusConfirmationModal";
 
 // Interface atualizada com os campos novos
 export interface Cliente {
@@ -70,7 +70,7 @@ export const TabelaClientes: React.FC<TabelaClientesProps> = ({
   const [modalVisible, setModalVisible] = useState(false);
   const [modalType, setModalType] = useState<'ativar' | 'desativar' | null>(null);
   const [clienteAlvo, setClienteAlvo] = useState<Cliente | null>(null);
-  const [actionLoading, setActionLoading] = useState(false);
+  const [, setActionLoading] = useState(false);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
 
   // Handlers
@@ -247,23 +247,23 @@ export const TabelaClientes: React.FC<TabelaClientesProps> = ({
         dataSource={rows}
         loading={isLoading}
         onChange={onChange}
-        pagination={{
-          ...pagination,
-          // showSizeChanger: true,
-          // pageSizeOptions: ['10', '20', '50', '100'],
-          // showTotal: (total) => `Total: ${total} registros`
-        }}
+        pagination={{ ...pagination }}
         rowSelection={rowSelection}
-        scroll={{ x: 1300 }} // Aumentei um pouco o scroll horizontal por causa das novas colunas
+        scroll={{ x: 1300 }}
       />
 
-      <StatusConfirmationModal 
-        visible={modalVisible}
-        type={modalType}
-        clienteName={clienteAlvo?.nome || ''}
+      <StatusConfirmationModal
+        open={modalVisible}
+        onClose={() => setModalVisible(false)}
         onConfirm={confirmarMudancaStatus}
-        onCancel={() => setModalVisible(false)}
-        isLoading={actionLoading}
+        title={modalType === 'ativar' ? "Ativar Cliente" : "Inativar Cliente"}
+        description={
+          <span>
+            Deseja alterar o status de <strong>{clienteAlvo?.nome}</strong> para {modalType}?
+          </span>
+        }
+        confirmText="Confirmar Alteração"
+        confirmColor={modalType === 'ativar' ? 'success' : 'danger'}
       />
     </>
   );
