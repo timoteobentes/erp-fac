@@ -14,7 +14,7 @@ import {
 } from '@mui/icons-material';
 
 // Helper para verificar permissão
-const hasAccess = (user: any, adm: boolean) => Boolean(user?.pago || adm);
+const hasAccess = (user: any, adm: boolean) => Boolean(user?.status == "ativo" && adm);
 
 export const getStaticMenuItems = (navigate: any, user: any, adm: boolean) => {
   const access = hasAccess(user, adm);

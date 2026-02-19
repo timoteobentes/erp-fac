@@ -1,318 +1,138 @@
-import {
-  Box,
-  Stepper,
-  Step,
-  StepLabel,
-  Button,
-  Typography,
-  TextField,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Grid,
-  Card,
-  CardContent
-} from '@mui/material';
-import { CreditCard, QrCode, Password } from '@mui/icons-material';
+/* eslint-disable @typescript-eslint/no-unused-vars */
+import React from 'react';
+import { Box, Stepper, Step, StepLabel, Button, CircularProgress } from '@mui/material';
+import { ArrowBack, ArrowForward, Lock } from '@mui/icons-material';
 import { usePaymentForm } from '../../hooks/usePaymentForm';
+
+// Importação dos Componentes Menores
+import { StepPlans } from '../steps/StepPlans';
+import { StepPayment } from '../steps/StepPayment';
+import { StepSummary } from '../steps/StepSummary';
+import { StepSuccess } from '../steps/StepSuccess';
 
 interface PaymentFormStepsProps {
   onClose: () => void;
 }
 
-export const PaymentFormSteps = ({ onClose }: PaymentFormStepsProps) => {
+export const PaymentFormSteps: React.FC<PaymentFormStepsProps> = () => {
   const {
-    step,
+    activeStep,
+    selectedPlan,
     paymentData,
-    handleSelectMethod,
-    handleUpdateCartaoData,
-    handleBack,
+    responseData,
+    isLoading,
+    isSuccess,
+    handleSelectPlan,
+    handleUpdatePaymentData,
+    handleMethodChange,
     handleNext,
-    handleSubmit,
-    handleReset,
+    handleBack,
+    handleSubmit
   } = usePaymentForm();
 
-  const steps = ['Selecionar Pagamento', 'Informações', 'Confirmação'];
+  const steps = ['Planos', 'Pagamento', 'Confirmação', 'Conclusão'];
 
-  const renderStepContent = () => {
+  // Função simplificada de renderização
+  const renderStepContent = (step: number) => {
     switch (step) {
-      case 0:
-        return (
-          <Box sx={{ mt: 4 }}>
-            <Typography variant="h6" gutterBottom>
-              Selecione a forma de pagamento:
-            </Typography>
-            <Grid container spacing={3}>
-              <Grid>
-                <Card
-                  sx={{
-                    cursor: 'pointer',
-                    border: paymentData.method === 'cartao' ? '2px solid #3C0473' : '1px solid #e0e0e0',
-                    '&:hover': { borderColor: '#3C0473' }
-                  }}
-                  onClick={() => handleSelectMethod('cartao')}
-                >
-                  <CardContent sx={{ textAlign: 'center', minWidth: 150 }}>
-                    <CreditCard sx={{ fontSize: 48, color: '#3C0473', mb: 2 }} />
-                    <Typography variant="h6">Cartão</Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Crédito
-                    </Typography>
-                  </CardContent>
-                </Card>
-              </Grid>
-              
-              <Grid>
-                <Card
-                  sx={{
-                    cursor: 'pointer',
-                    border: paymentData.method === 'pix' ? '2px solid #3C0473' : '1px solid #e0e0e0',
-                    '&:hover': { borderColor: '#3C0473' }
-                  }}
-                  onClick={() => handleSelectMethod('pix')}
-                >
-                  <CardContent sx={{ textAlign: 'center', minWidth: 150 }}>
-                    <QrCode sx={{ fontSize: 48, color: '#3C0473', mb: 2 }} />
-                    <Typography variant="h6">PIX</Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Pagamento instantâneo
-                    </Typography>
-                  </CardContent>
-                </Card>
-              </Grid>
-              
-              <Grid>
-                <Card
-                  sx={{
-                    cursor: 'pointer',
-                    border: paymentData.method === 'boleto' ? '2px solid #3C0473' : '1px solid #e0e0e0',
-                    '&:hover': { borderColor: '#3C0473' }
-                  }}
-                  onClick={() => handleSelectMethod('boleto')}
-                >
-                  <CardContent sx={{ textAlign: 'center', minWidth: 150 }}>
-                    <Password sx={{ fontSize: 48, color: '#3C0473', mb: 2 }} />
-                    <Typography variant="h6">Boleto</Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Pagamento em até 3 dias
-                    </Typography>
-                  </CardContent>
-                </Card>
-              </Grid>
-            </Grid>
-          </Box>
-        );
-
-      case 1:
-        if (paymentData.method === 'cartao') {
-          return (
-            <Box sx={{ mt: 4 }}>
-              <Typography variant="h6" gutterBottom>
-                Informações do Cartão
-              </Typography>
-              
-              <Grid container spacing={3}>
-                <Grid>
-                  <TextField
-                    fullWidth
-                    label="Nome como está no cartão"
-                    value={paymentData.cartao.nomeCartao}
-                    onChange={(e) => handleUpdateCartaoData({ nomeCartao: e.target.value })}
-                  />
-                </Grid>
-                
-                <Grid>
-                  <TextField
-                    fullWidth
-                    label="Número do cartão"
-                    value={paymentData.cartao.numeroCartao}
-                    onChange={(e) => handleUpdateCartaoData({ numeroCartao: e.target.value })}
-                    inputProps={{ maxLength: 19 }}
-                  />
-                </Grid>
-                
-                <Grid>
-                  <TextField
-                    fullWidth
-                    label="Validade (MM/AA)"
-                    value={paymentData.cartao.validade}
-                    onChange={(e) => handleUpdateCartaoData({ validade: e.target.value })}
-                    placeholder="MM/AA"
-                  />
-                </Grid>
-                
-                <Grid>
-                  <TextField
-                    fullWidth
-                    label="CVV"
-                    value={paymentData.cartao.cvv}
-                    onChange={(e) => handleUpdateCartaoData({ cvv: e.target.value })}
-                    inputProps={{ maxLength: 4 }}
-                  />
-                </Grid>
-                
-                <Grid>
-                  <TextField
-                    fullWidth
-                    label="Email para receber o comprovante"
-                    type="email"
-                    value={paymentData.cartao.email}
-                    onChange={(e) => handleUpdateCartaoData({ email: e.target.value })}
-                  />
-                </Grid>
-                
-                <Grid>
-                  <FormControl fullWidth>
-                    <InputLabel>Parcelas</InputLabel>
-                    <Select
-                      value={paymentData.cartao.parcelas}
-                      label="Parcelas"
-                      onChange={(e) => handleUpdateCartaoData({ parcelas: Number(e.target.value) })}
-                    >
-                      {Array.from({ length: 12 }, (_, i) => i + 1).map((num) => (
-                        <MenuItem key={num} value={num}>
-                          {num}x {num === 1 ? '(à vista)' : ''}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </Grid>
-              </Grid>
-            </Box>
-          );
-        }
-        
-        // Para PIX e Boleto, apenas mostrar informações
-        return (
-          <Box sx={{ mt: 4, textAlign: 'center' }}>
-            <Typography variant="h6" gutterBottom>
-              Confirme os dados para {paymentData.method === 'pix' ? 'PIX' : 'Boleto'}
-            </Typography>
-            <Typography variant="body1">
-              Clique em "Continuar" para gerar o {paymentData.method === 'pix' ? 'QR Code PIX' : 'código de barras do boleto'}
-            </Typography>
-          </Box>
-        );
-
-      case 2:
-        return (
-          <Box sx={{ mt: 4 }}>
-            <Typography variant="h6" gutterBottom>
-              {paymentData.method === 'cartao' ? 'Confirmar Pagamento com Cartão' : 
-                paymentData.method === 'pix' ? 'Pagamento via PIX' : 'Boleto Bancário'}
-            </Typography>
-            
-            {paymentData.method === 'cartao' && (
-              <Grid container spacing={2}>
-                <Grid>
-                  <Typography><strong>Nome:</strong> {paymentData.cartao.nomeCartao}</Typography>
-                </Grid>
-                <Grid>
-                  <Typography><strong>Cartão:</strong> **** **** **** {paymentData.cartao.numeroCartao.slice(-4)}</Typography>
-                </Grid>
-                <Grid>
-                  <Typography><strong>Parcelas:</strong> {paymentData.cartao.parcelas}x</Typography>
-                </Grid>
-                <Grid>
-                  <Typography><strong>Email:</strong> {paymentData.cartao.email}</Typography>
-                </Grid>
-              </Grid>
-            )}
-            
-            {paymentData.method === 'pix' && (
-              <Box sx={{ textAlign: 'center', py: 4 }}>
-                <Typography variant="body1" gutterBottom>
-                  Escaneie o QR Code abaixo para realizar o pagamento:
-                </Typography>
-                <img 
-                  src={paymentData.pix.qrCode} 
-                  alt="QR Code PIX" 
-                  style={{ width: 200, height: 200, margin: '20px auto', display: 'block' }}
-                />
-                <Typography variant="body2" color="text.secondary">
-                  Ou acesse: <a href={paymentData.pix.linkPix}>{paymentData.pix.linkPix}</a>
-                </Typography>
-              </Box>
-            )}
-            
-            {paymentData.method === 'boleto' && (
-              <Box sx={{ py: 4 }}>
-                <Typography variant="body1" gutterBottom>
-                  Código de barras para pagamento:
-                </Typography>
-                <Box sx={{ 
-                  p: 3, 
-                  bgcolor: '#f5f5f5', 
-                  borderRadius: 1,
-                  fontFamily: 'monospace',
-                  letterSpacing: '2px'
-                }}>
-                  {paymentData.boleto.codigoBarras}
-                </Box>
-                <Typography variant="body2" sx={{ mt: 2 }}>
-                  <strong>Linha digitável:</strong> {paymentData.boleto.linhaDigitavel}
-                </Typography>
-              </Box>
-            )}
-          </Box>
-        );
-
-      default:
+      case 0: 
+        return <StepPlans selectedPlan={selectedPlan} onSelect={handleSelectPlan} />;
+      case 1: 
+        return <StepPayment 
+                  paymentData={paymentData} 
+                  onMethodChange={handleMethodChange} 
+                  onUpdateData={handleUpdatePaymentData} 
+                />;
+      case 2: 
+        return <StepSummary selectedPlan={selectedPlan} paymentData={paymentData} />;
+      case 3: 
+        return <StepSuccess selectedPlan={selectedPlan} paymentData={paymentData} responseData={responseData} />;
+      default: 
         return null;
     }
   };
 
   return (
-    <Box>
-      <Stepper activeStep={step} sx={{ mb: 4 }}>
-        {steps.map((label) => (
-          <Step key={label}>
-            <StepLabel>{label}</StepLabel>
-          </Step>
-        ))}
-      </Stepper>
+    <Box className="w-full">
+      {/* STEPPER (Escondido no sucesso) */}
+      {!isSuccess && (
+        <Stepper activeStep={activeStep} alternativeLabel sx={{ mb: 4 }}>
+          {steps.slice(0, 3).map((label) => (
+            <Step key={label} sx={{ 
+              '& .MuiStepLabel-root .Mui-active': { color: '#6B00A1' },
+              '& .MuiStepLabel-root .Mui-completed': { color: '#3C0473' },
+            }}>
+              <StepLabel>{label}</StepLabel>
+            </Step>
+          ))}
+        </Stepper>
+      )}
 
-      {renderStepContent()}
+      {/* CONTEÚDO */}
+      <Box sx={{ minHeight: '350px' }}>
+        {renderStepContent(activeStep)}
+      </Box>
 
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 4, pt: 2, borderTop: 1, borderColor: 'divider' }}>
-        <Button
-          onClick={step === 0 ? onClose : handleBack}
-          variant="outlined"
-        >
-          {step === 0 ? 'Cancelar' : 'Voltar'}
-        </Button>
-        
-        <Box>
-          {step === steps.length - 1 ? (
-            <>
-              <Button
-                onClick={handleReset}
-                variant="outlined"
-                sx={{ mr: 2 }}
-              >
-                Novo Pagamento
-              </Button>
+      {/* NAVEGAÇÃO */}
+      {!isSuccess && (
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 4, pt: 3, borderTop: '1px solid #f0f0f0' }}>
+          <Button
+            disabled={activeStep === 0 || isLoading}
+            onClick={handleBack}
+            startIcon={<ArrowBack />}
+            sx={{ color: 'gray' }}
+          >
+            Voltar
+          </Button>
+          
+          <Box>
+            {activeStep === 2 ? (
               <Button
                 onClick={handleSubmit}
                 variant="contained"
-                sx={{ bgcolor: '#3C0473' }}
+                size="large"
+                disabled={isLoading}
+                startIcon={isLoading ? <CircularProgress size={20} color="inherit" /> : <Lock />}
+                sx={{ 
+                  bgcolor: '#3C0473', 
+                  '&:hover': { bgcolor: '#2a0252' },
+                  px: 4,
+                  fontWeight: 'bold'
+                }}
               >
-                Confirmar Pagamento
+                {
+                  isLoading ? 'Processando...' :
+                  selectedPlan?.price_with_off && paymentData.method == "pix" ?
+                  `Pagar ${selectedPlan?.price_with_off.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}` :
+                  `Pagar ${selectedPlan?.price.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}`
+                }
               </Button>
-            </>
-          ) : (
-            <Button
-              onClick={handleNext}
-              variant="contained"
-              disabled={step === 0 && !paymentData.method}
-              sx={{ bgcolor: '#3C0473' }}
-            >
-              Continuar
-            </Button>
-          )}
+            ) : (
+              <Button
+                onClick={() => {
+                  const price_with_off = selectedPlan.price - (selectedPlan.price * 0.05);
+                  selectedPlan.price_with_off = price_with_off
+                  handleNext()
+                }}
+                variant="contained"
+                // Regras de validação para habilitar o botão
+                disabled={
+                  (activeStep === 0 && !selectedPlan) || 
+                  (activeStep === 1 && paymentData.method === 'cartao' && paymentData.cartao.numero.length < 16)
+                }
+                endIcon={<ArrowForward />}
+                sx={{ 
+                  bgcolor: '#6B00A1', 
+                  '&:hover': { bgcolor: '#3C0473' },
+                  px: 4
+                }}
+              >
+                Continuar
+              </Button>
+            )}
+          </Box>
         </Box>
-      </Box>
+      )}
     </Box>
   );
 };

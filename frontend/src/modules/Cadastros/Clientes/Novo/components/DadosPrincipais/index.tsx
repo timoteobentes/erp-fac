@@ -51,9 +51,6 @@ export const DadosPrincipais: React.FC = () => {
           <div className="md:col-span-6">
             <TextField fullWidth label="Nome Fantasia" {...register("nome")} error={!!errors.nome} />
           </div>
-          {/* <div className="md:col-span-3">
-            <FormControlLabel control={<Checkbox {...register("isento")} />} label="Isento IE" />
-          </div> */}
         </>
       )}
 
@@ -81,17 +78,6 @@ export const DadosPrincipais: React.FC = () => {
           </div>
         </>
       )}
-      
-      {/* Campos Comuns */}
-      {/* <div className="md:col-span-4">
-        <TextField fullWidth label="E-mail Principal" {...register("email")} error={!!errors.email} helperText={errors.email?.message} />
-      </div> */}
-      {/* <div className="md:col-span-4">
-        <TextField fullWidth label="Telefone Comercial" {...register("telefone_comercial")} />
-      </div> */}
-      {/* <div className="md:col-span-4">
-        <TextField fullWidth label="Celular/WhatsApp" {...register("telefone_celular")} />
-      </div> */}
     </Box>
   );
 };

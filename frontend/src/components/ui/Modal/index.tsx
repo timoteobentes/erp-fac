@@ -30,7 +30,7 @@ export const ModalCustom = ({
           top: '50%',
           left: '50%',
           transform: 'translate(-50%, -50%)',
-          width: { xs: '90%', sm: 600, md: 700 },
+          width: { xs: '90%', sm: 600, md: 800 },
           maxWidth: '90vw',
           maxHeight: '80vh'
         }}

@@ -110,7 +110,7 @@ const Produtos: React.FC = () => {
     <Layout>
       <div className={`transition-opacity duration-500 ${mounted ? 'opacity-100' : 'opacity-0'}`}>
         <div className="w-full text-start mb-6">
-          <span className="text-[#9842F6] font-bold text-2xl">Clientes</span>
+          <span className="text-[#9842F6] font-bold text-2xl">Gerenciar Produtos</span>
         </div>
 
         <Card sx={{ boxShadow: "none !important", borderRadius: "4px", border: "1px solid #E9DEF6" }}>

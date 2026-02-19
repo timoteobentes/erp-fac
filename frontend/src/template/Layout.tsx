@@ -78,7 +78,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   // 2. Lógica do Usuário
   const usuarioNome = user?.nome_usuario;
   const userInitial = useMemo(() => usuarioNome ? usuarioNome.charAt(0).toUpperCase() : 'U', [usuarioNome]);
-  const hasPermission = Boolean(user?.pago || adm);
+  const hasPermission = Boolean(user?.status == "ativo" && adm);
 
   // 3. OTIMIZAÇÃO: Menu Items Memoizado
   const menuItems = useMemo(() => {

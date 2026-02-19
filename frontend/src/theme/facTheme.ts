@@ -154,16 +154,7 @@ const facTheme = createTheme({
   },
 
   // Sombras customizadas
-  // shadows: [
-  //   'none',
-  //   '0px 1px 3px rgba(0, 0, 0, 0.12), 0px 1px 2px rgba(0, 0, 0, 0.24)',
-  //   '0px 3px 6px rgba(0, 0, 0, 0.16), 0px 3px 6px rgba(0, 0, 0, 0.23)',
-  //   '0px 10px 20px rgba(0, 0, 0, 0.19), 0px 6px 6px rgba(0, 0, 0, 0.23)',
-  //   '0px 4px 4px rgba(0, 0, 0, 0.25)', // Shadow padrão dos botões
-  //   '0px 6px 8px rgba(0, 0, 0, 0.3)', // Shadow hover dos botões
-  //   '0px 2px 2px rgba(0, 0, 0, 0.2)', // Shadow active dos botões
-  //   ...Array(18).fill('0px 4px 4px rgba(0, 0, 0, 0.25)'), // Preenche o resto do array
-  // ],
+  
 
   // Componentes customizados
   components: {

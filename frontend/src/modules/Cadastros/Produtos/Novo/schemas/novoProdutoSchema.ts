@@ -1,16 +1,18 @@
 import { z } from 'zod';
 
-// --- Sub-Schemas (Para os Arrays) ---
-
+// --- Sub-Schemas ---
 const imagemSchema = z.object({
-  url_imagem: z.string().url("URL da imagem inválida"),
+  url_imagem: z.string().optional(), // Deixei opcional para evitar erro se vier vazio na edição
   principal: z.boolean().default(false),
   ordem: z.number().default(0)
 });
 
 const composicaoSchema = z.object({
   produto_filho_id: z.coerce.number().min(1, "Selecione um produto"),
-  quantidade: z.coerce.number().min(0.001, "Quantidade deve ser maior que zero")
+  quantidade: z.coerce.number().min(0.001, "Quantidade inválida"),
+  // Campos virtuais para exibição (não salvos no banco, mas úteis no form)
+  custo_unitario: z.number().optional(), 
+  unidade_nome: z.string().optional()
 });
 
 const conversaoSchema = z.object({
@@ -20,63 +22,71 @@ const conversaoSchema = z.object({
 });
 
 // --- Schema Principal ---
-
 export const novoProdutoSchema = z.object({
   // 1. Identificação
-  nome: z.string().min(3, "Nome deve ter no mínimo 3 caracteres").nonempty("Nome é obrigatório"),
+  nome: z.string().min(3, "Mínimo 3 caracteres").nonempty("Nome é obrigatório"),
   codigo_interno: z.string().optional(),
-  codigo_barras: z.string().optional(), // EAN
+  codigo_barras: z.string().optional(),
   tipo_item: z.enum(['produto', 'servico', 'kit']),
   situacao: z.enum(['ativo', 'inativo']).default('ativo'),
 
-  // 2. Classificação (Selects)
-  // coerce.number() transforma string "1" em number 1. Se vier vazio, transforma em 0 (tratamos no transform)
+  // 2. Classificação
   categoria_id: z.coerce.number().optional(),
   marca_id: z.coerce.number().optional(),
-  fornecedor_padrao_id: z.coerce.number().optional(),
+  
+  // 3. Unidade (Obrigatória)
+  unidade_id: z.coerce.number({ error: "Obrigatório" }).min(1, "Selecione uma unidade"),
 
-  // 3. Valores
-  preco_custo: z.coerce.number().min(0, "Custo não pode ser negativo").default(0),
-  margem_lucro: z.coerce.number().optional().default(0),
-  preco_venda: z.coerce.number().min(0.01, "Preço de venda é obrigatório"),
+  // [cite_start]// 4. Detalhes (Novos Campos) [cite: 54, 134]
+  peso: z.coerce.number().optional().default(0),
+  largura: z.coerce.number().optional().default(0),
+  altura: z.coerce.number().optional().default(0),
+  comprimento: z.coerce.number().optional().default(0),
+  
+  vendido_separadamente: z.boolean().optional().default(true),
+  comercializavel_pdv: z.boolean().optional().default(true),
+  produto_ativo: z.boolean().optional().default(true), // Redundante com 'situacao', mas pedido no layout
+  comissao: z.coerce.number().optional().default(0),
+
+  // [cite_start]// 5. Valores (Novos Campos de Custo Detalhado) [cite: 122, 146]
+  preco_custo: z.coerce.number().min(0).default(0),
+  despesas_acessorias: z.coerce.number().default(0),
+  outras_despesas: z.coerce.number().default(0),
+  // custo_final é calculado, não necessariamente salvo, mas pode ir no payload
+  
+  margem_lucro: z.coerce.number().default(0), // Lucro Utilizado
+  lucro_sugerido: z.coerce.number().optional(), // Apenas visual/calculo
+  
+  preco_venda: z.coerce.number().min(0.01, "Preço de venda obrigatório"),
   preco_promocional: z.coerce.number().optional().nullable(),
 
-  // 4. Estoque
+  // 6. Estoque
   movimenta_estoque: z.boolean().default(true),
   estoque_atual: z.coerce.number().default(0),
   estoque_minimo: z.coerce.number().default(0),
   estoque_maximo: z.coerce.number().optional().nullable(),
-  
-  // Unidade é OBRIGATÓRIA
-  unidade_id: z.coerce.number({ error: "Unidade é obrigatória" }).min(1, "Selecione uma unidade"),
 
-  // 5. Fiscal (Opcionais no cadastro simples, mas recomendados)
-  ncm: z.string().optional(), // Backend valida se obrigatório dependendo da regra
+  // 7. Relacionamentos
+  fornecedor_padrao_id: z.coerce.number().optional(), // Aba Fornecedores
+  
+  // 8. Fiscal
+  ncm: z.string().optional(),
   cest: z.string().optional(),
   origem_mercadoria: z.coerce.number().optional(),
   situacao_tributaria: z.string().optional(),
 
-  // 6. Arrays e Listas
+  // Arrays
   imagens: z.array(imagemSchema).optional().default([]),
   composicao: z.array(composicaoSchema).optional().default([]),
   conversoes: z.array(conversaoSchema).optional().default([]),
 })
-// --- Validações Cruzadas (Refine) ---
 .superRefine((data, ctx) => {
-  
-  // Regra: Se for KIT, precisa ter composição
   if (data.tipo_item === 'kit' && data.composicao.length === 0) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
-      message: "Um Kit deve conter pelo menos um item na composição.",
-      path: ["composicao"] // Aponta o erro para o campo composição
+      message: "Um Kit deve conter itens na composição.",
+      path: ["composicao"]
     });
-  }
-
-  // Regra: Se movimenta estoque, NCM é fortemente recomendado (warning ou erro dependendo do rigor)
-  if (data.movimenta_estoque && (!data.ncm || data.ncm.length < 2)) {
-    // Aqui deixei opcional, mas se quiser bloquear:
-    // ctx.addIssue({ code: z.ZodIssueCode.custom, message: "NCM é obrigatório para produtos estocáveis", path: ["ncm"] });
   }
 });
 

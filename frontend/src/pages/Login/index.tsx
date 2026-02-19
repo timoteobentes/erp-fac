@@ -138,7 +138,10 @@ const Login = () => {
                       }}
                       error={!!errors.usuarioLogin}
                       helperText={errors.usuarioLogin?.message}
-                      {...field}
+                      value={field.value}
+                      onChange={(e) => {
+                        field.onChange(e.target.value.toUpperCase());
+                      }}
                     />
                   )}
                 />

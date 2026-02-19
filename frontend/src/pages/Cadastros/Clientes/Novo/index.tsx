@@ -269,7 +269,6 @@ const NovoCliente: React.FC = () => {
                         control={control}
                         render={({ field }) => (
                           <TextField
-                            {...field}
                             value={field.value}
                             fullWidth
                             required
@@ -277,6 +276,9 @@ const NovoCliente: React.FC = () => {
                             error={!!(errors as any).razao_social}
                             helperText={(errors as any).razao_social?.message}
                             disabled={loadingConsultaCNPJ}
+                            onChange={(e) => {
+                              field.onChange(e.target.value.toUpperCase());
+                            }}
                             InputProps={{
                               endAdornment: loadingConsultaCNPJ ? (
                                 <InputAdornment position="end">
@@ -295,12 +297,15 @@ const NovoCliente: React.FC = () => {
                         control={control}
                         render={({ field }) => (
                           <TextField
-                            {...field}
                             fullWidth
                             required
                             label="Nome Fantasia"
                             error={!!(errors as any).nome_fantasia}
                             disabled={loadingConsultaCNPJ}
+                            value={field.value}
+                            onChange={(e) => {
+                              field.onChange(e.target.value.toUpperCase());
+                            }}
                             InputProps={{
                               endAdornment: loadingConsultaCNPJ ? (
                                 <InputAdornment position="end">
@@ -370,7 +375,9 @@ const NovoCliente: React.FC = () => {
                         name="nome"
                         control={control}
                         render={({ field }) => (
-                          <TextField {...field} fullWidth required label="Nome Completo" error={!!(errors as any).nome} helperText={(errors as any).nome?.message} />
+                          <TextField value={field.value} onChange={(e) => {
+                              field.onChange(e.target.value.toUpperCase());
+                            }} fullWidth required label="Nome Completo" error={!!(errors as any).nome} helperText={(errors as any).nome?.message} />
                         )}
                       />
                     </div>
@@ -395,12 +402,16 @@ const NovoCliente: React.FC = () => {
                     <Controller
                       name="nome"
                       control={control}
-                      render={({ field }) => <TextField {...field} fullWidth required label="Nome Completo" error={!!(errors as any).nome} />}
+                      render={({ field }) => <TextField value={field.value} onChange={(e) => {
+                              field.onChange(e.target.value.toUpperCase());
+                            }} fullWidth required label="Nome Completo" error={!!(errors as any).nome} />}
                     />
                     <Controller
                       name="pais_origem"
                       control={control}
-                      render={({ field }) => <TextField {...field} fullWidth required label="País de Origem" />}
+                      render={({ field }) => <TextField value={field.value} onChange={(e) => {
+                              field.onChange(e.target.value.toUpperCase());
+                            }} fullWidth required label="País de Origem" />}
                     />
                   </>
                 )}
@@ -468,7 +479,7 @@ const NovoCliente: React.FC = () => {
                       <Controller
                         name={`enderecos.${index}.logradouro`}
                         control={control}
-                        render={({ field }) => <TextField {...field} fullWidth required label="Logradouro" size="small" />}
+                        render={({ field }) => <TextField value={field.value} onChange={(e) => field.onChange(e.target.value.toUpperCase())} fullWidth required label="Logradouro" size="small" />}
                       />
                     </div>
                     <div className="md:col-span-2">
@@ -482,28 +493,28 @@ const NovoCliente: React.FC = () => {
                       <Controller
                         name={`enderecos.${index}.bairro`}
                         control={control}
-                        render={({ field }) => <TextField {...field} fullWidth required label="Bairro" size="small" />}
+                        render={({ field }) => <TextField value={field.value} onChange={(e) => field.onChange(e.target.value.toUpperCase())} fullWidth required label="Bairro" size="small" />}
                       />
                     </div>
                     <div className="md:col-span-4">
                       <Controller
                         name={`enderecos.${index}.cidade`}
                         control={control}
-                        render={({ field }) => <TextField {...field} fullWidth required label="Cidade" size="small" />}
+                        render={({ field }) => <TextField value={field.value} onChange={(e) => field.onChange(e.target.value.toUpperCase())} fullWidth required label="Cidade" size="small" />}
                       />
                     </div>
                     <div className="md:col-span-2">
                       <Controller
                         name={`enderecos.${index}.uf`}
                         control={control}
-                        render={({ field }) => <TextField {...field} fullWidth required label="UF" size="small" />}
+                        render={({ field }) => <TextField value={field.value} onChange={(e) => field.onChange(e.target.value.toUpperCase())} fullWidth required label="UF" size="small" />}
                       />
                     </div>
                     <div className="md:col-span-3">
                       <Controller
                         name={`enderecos.${index}.complemento`}
                         control={control}
-                        render={({ field }) => <TextField {...field} fullWidth label="Complemento" size="small" />}
+                        render={({ field }) => <TextField value={field.value} onChange={(e) => field.onChange(e.target.value.toUpperCase())} fullWidth label="Complemento" size="small" />}
                       />
                     </div>
                     <Controller
@@ -556,17 +567,17 @@ const NovoCliente: React.FC = () => {
                     <Controller
                       name={`contatos.${index}.nome`}
                       control={control}
-                      render={({ field }) => <TextField {...field} fullWidth required label="Nome do Contato" size="small" />}
+                      render={({ field }) => <TextField value={field.value} onChange={(e) => field.onChange(e.target.value.toUpperCase())} fullWidth required label="Nome do Contato" size="small" />}
                     />
                     <Controller
                       name={`contatos.${index}.valor`}
                       control={control}
-                      render={({ field }) => <TextField {...field} fullWidth required label="Contato (Email/Tel)" size="small" />}
+                      render={({ field }) => <TextField value={field.value} onChange={(e) => field.onChange(e.target.value.toUpperCase())} fullWidth required label="Contato (Email/Tel)" size="small" />}
                     />
                     <Controller
                       name={`contatos.${index}.cargo`}
                       control={control}
-                      render={({ field }) => <TextField {...field} fullWidth required label="Cargo/Depto" size="small" />}
+                      render={({ field }) => <TextField value={field.value} onChange={(e) => field.onChange(e.target.value.toUpperCase())} fullWidth required label="Cargo/Depto" size="small" />}
                     />
                     <Controller
                       name={`contatos.${index}.principal`}
@@ -693,7 +704,9 @@ const NovoCliente: React.FC = () => {
                   name="observacoes"
                   control={control}
                   render={({ field }) => (
-                    <TextField {...field} fullWidth multiline rows={4} label="Observações Gerais" />
+                    <TextField value={field.value} onChange={(e) => {
+                              field.onChange(e.target.value.toUpperCase());
+                            }} fullWidth multiline rows={4} label="Observações Gerais" />
                   )}
                 />
               </div>

@@ -244,7 +244,7 @@ const Cadastro = () => {
                         disabled={loading ? true : false}
                         value={field.value}
                         onChange={(e) => {
-                          setValue("nome_empresa", e.target.value);
+                          setValue("nome_empresa", e.target.value.toUpperCase());
                         }}
                       />
                     )}
@@ -291,7 +291,7 @@ const Cadastro = () => {
                         disabled={loading ? true : false}
                         value={field.value}
                         onChange={(e) => {
-                          setValue("cidade", e.target.value);
+                          setValue("cidade", e.target.value.toUpperCase());
                         }}
                       />
                     )}
@@ -311,7 +311,7 @@ const Cadastro = () => {
                         disabled={loading ? true : false}
                         value={field.value}
                         onChange={(e) => {
-                          setValue("estado", e.target.value);
+                          setValue("estado", e.target.value.toUpperCase());
                         }}
                       />
                     )}
@@ -334,7 +334,7 @@ const Cadastro = () => {
                       helperText={errors.email?.message}
                       value={field.value}
                       onChange={(e) => {
-                        setValue("email", e.target.value);
+                        setValue("email", e.target.value.toUpperCase());
                       }}
                     />
                   )}
@@ -356,7 +356,7 @@ const Cadastro = () => {
                       helperText={errors.nome_usuario?.message}
                       value={field.value}
                       onChange={(e) => {
-                        setValue("nome_usuario", e.target.value);
+                        setValue("nome_usuario", e.target.value.toUpperCase());
                       }}
                     />
                   )}

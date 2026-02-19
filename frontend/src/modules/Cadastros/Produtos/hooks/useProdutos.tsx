@@ -2,7 +2,6 @@
 import { useState, useCallback } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "react-toastify";
-import { criarProdutoService } from "../Novo/services/novoProdutoService";
 import {
   listarProdutosService,
   buscarProdutoPorIdService,
@@ -13,6 +12,7 @@ import {
   type PaginacaoProduto,
   type DadosAuxiliares
 } from "../services/produtoService";
+import { criarProdutoService } from "../Novo/services/novoProdutoService";
 
 export const useProdutos = () => {
   const navigate = useNavigate();

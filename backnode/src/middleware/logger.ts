@@ -17,9 +17,6 @@ export const loggerMiddleware = async (req: Request, res: Response, next: NextFu
     const duration = Date.now() - start;
     const usuario = (req as any).usuario;
 
-    console.log("usuario logger >> ", usuario);
-    console.log("req logger >> ", req);
-
     try {
       // Especificar os tipos explicitamente na query
       await query(
