@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect } from 'react';
 import { TextField, Button, IconButton, Select, MenuItem, Dialog, DialogContent, DialogActions } from '@mui/material';
 import { Close, Settings } from '@mui/icons-material';
 import { usePDV } from '../../modules/PDV/hooks/usePDV';
-import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 import logo_fac from "../../assets/FAC_logo_roxo.svg"
 
@@ -300,7 +299,7 @@ const PDV: React.FC = () => {
              </IconButton>
         </div>
         <DialogContent sx={{ p: 4, pt: 2, background: 'white' }}>
-            {[1, 2, 3].map((linha, index) => (
+            {[1, 2, 3].map((linha, _index) => (
                 <div key={linha} className="mb-6">
                    <h4 className="text-[#352541] font-bold text-sm mb-2">Linha de pagamento {linha}</h4>
                    <div className="grid grid-cols-4 gap-4">

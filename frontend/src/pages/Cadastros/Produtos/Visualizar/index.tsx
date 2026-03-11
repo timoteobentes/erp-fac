@@ -376,7 +376,7 @@ const VisualizarProduto: React.FC = () => {
                                             { 
                                                 title: 'Produto', 
                                                 dataIndex: 'produto', 
-                                                render: (_: any, record: any, index: number) => (
+                                                render: (_: any, _record: any, index: number) => (
                                                     <Controller name={`composicao.${index}.produto_filho_id` as any} control={control} render={({ field }) => (
                                                         <TextField {...field} select fullWidth size="small" InputProps={{ readOnly: true }}>
                                                             <MenuItem value={0}>Selecione...</MenuItem>
@@ -388,7 +388,7 @@ const VisualizarProduto: React.FC = () => {
                                             { 
                                                 title: 'Quantidade', 
                                                 width: 150,
-                                                render: (_: any, record: any, index: number) => (
+                                                render: (_: any, _record: any, index: number) => (
                                                     <Controller name={`composicao.${index}.quantidade` as any} control={control} render={({ field }) => (
                                                         <TextField {...field} type="number" size="small" InputProps={{ readOnly: true }} />
                                                     )} />

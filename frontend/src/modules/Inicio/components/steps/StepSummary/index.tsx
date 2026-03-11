@@ -42,7 +42,7 @@ export const StepSummary: React.FC<StepSummaryProps> = ({ selectedPlan, paymentD
           <div className="flex justify-between items-center">
             <span className="text-lg font-bold text-[#3C0473]">Total a Pagar:</span>
             <span className="text-2xl font-extrabold text-[#3C0473]">
-              {paymentData.method == "pix" ? selectedPlan?.price_with_off.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : selectedPlan.price.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) }
+              {paymentData.method == "pix" ? selectedPlan?.price_with_off?.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : selectedPlan.price.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) }
             </span>
           </div>
         </CardContent>
