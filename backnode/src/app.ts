@@ -8,6 +8,12 @@ import emailRoutes from './controllers/email.controller';
 import paymentRoutes from './routes/payment.routes';
 import subscriptionsRoutes from './routes/subscription.routes';
 import produtoRoutes from './routes/produto.routes';
+import estoqueRoutes from './routes/estoque.routes';
+import financeiroRoutes from './routes/financeiro.routes';
+import vendaRoutes from './routes/venda.routes';
+import perfilRoutes from './routes/perfil.routes';
+import dashboardRoutes from './routes/dashboard.routes';
+import { loggerMiddleware } from './middleware/logger';
 
 const app = express();
 const PORT = process.env.PORT || 3333;
@@ -28,6 +34,7 @@ const PORT = process.env.PORT || 3333;
 
 app.use(cors());
 app.use(express.json());
+app.use(loggerMiddleware);
 
 // Routes
 app.use('/api', subscriptionsRoutes);
@@ -36,6 +43,11 @@ app.use('/api/auth', authRoutes);
 app.use('/api', clienteRoutes);
 app.use('/api', fornecedorRoutes);
 app.use('/api', produtoRoutes);
+app.use('/api', estoqueRoutes);
+app.use('/api', financeiroRoutes);
+app.use('/api', vendaRoutes);
+app.use('/api', perfilRoutes);
+app.use('/api', dashboardRoutes);
 app.use('/api/email', emailRoutes);
 
 // Health check

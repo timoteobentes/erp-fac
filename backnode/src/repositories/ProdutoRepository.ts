@@ -34,12 +34,16 @@ export class ProdutoRepository extends BaseRepository {
           usuario_id, nome, descricao, codigo_interno, codigo_barras, tipo_item,
           situacao, categoria_id, marca_id, unidade_id, fornecedor_padrao_id,
           preco_custo, margem_lucro, preco_venda, preco_promocional,
-          movimenta_estoque, estoque_atual, estoque_minimo, estoque_maximo
+          movimenta_estoque, estoque_atual, estoque_minimo, estoque_maximo,
+          peso, largura, altura, comprimento, vendido_separadamente, comercializavel_pdv,
+          comissao, despesas_acessorias, outras_despesas, ncm, cest, origem_mercadoria, cfop_padrao
         ) VALUES (
           $1, $2, $3, $4, $5, $6,
           $7, $8, $9, $10, $11,
           $12, $13, $14, $15,
-          $16, $17, $18, $19
+          $16, $17, $18, $19,
+          $20, $21, $22, $23, $24, $25,
+          $26, $27, $28, $29, $30, $31, $32
         ) RETURNING id
       `;
 
@@ -62,7 +66,20 @@ export class ProdutoRepository extends BaseRepository {
         dados.movimenta_estoque || false,
         dados.estoque_atual || 0,
         dados.estoque_minimo || 0,
-        dados.estoque_maximo || null
+        dados.estoque_maximo || null,
+        dados.peso || 0,
+        dados.largura || 0,
+        dados.altura || 0,
+        dados.comprimento || 0,
+        dados.vendido_separadamente ?? true,
+        dados.comercializavel_pdv ?? true,
+        dados.comissao || 0,
+        dados.despesas_acessorias || 0,
+        dados.outras_despesas || 0,
+        dados.ncm || null,
+        dados.cest || null,
+        dados.origem_mercadoria || 0,
+        dados.cfop_padrao || null
       ];
 
       const res = await client.query(queryProduto, valuesProduto);
@@ -99,8 +116,12 @@ export class ProdutoRepository extends BaseRepository {
           situacao = $6, categoria_id = $7, marca_id = $8, unidade_id = $9, fornecedor_padrao_id = $10,
           preco_custo = $11, margem_lucro = $12, preco_venda = $13, preco_promocional = $14,
           movimenta_estoque = $15, estoque_atual = $16, estoque_minimo = $17, estoque_maximo = $18,
+          peso = $19, largura = $20, altura = $21, comprimento = $22,
+          vendido_separadamente = $23, comercializavel_pdv = $24, comissao = $25,
+          despesas_acessorias = $26, outras_despesas = $27, ncm = $28, cest = $29,
+          origem_mercadoria = $30, cfop_padrao = $31,
           atualizado_em = NOW()
-        WHERE id = $19 AND usuario_id = $20
+        WHERE id = $32 AND usuario_id = $33
       `;
 
       const valuesUpdate = [
@@ -108,6 +129,10 @@ export class ProdutoRepository extends BaseRepository {
         dados.situacao, dados.categoria_id || null, dados.marca_id || null, dados.unidade_id, dados.fornecedor_padrao_id || null,
         dados.preco_custo, dados.margem_lucro, dados.preco_venda, dados.preco_promocional || null,
         dados.movimenta_estoque, dados.estoque_atual, dados.estoque_minimo, dados.estoque_maximo || null,
+        dados.peso || 0, dados.largura || 0, dados.altura || 0, dados.comprimento || 0,
+        dados.vendido_separadamente ?? true, dados.comercializavel_pdv ?? true, dados.comissao || 0,
+        dados.despesas_acessorias || 0, dados.outras_despesas || 0, dados.ncm || null, dados.cest || null,
+        dados.origem_mercadoria || 0, dados.cfop_padrao || null,
         id, usuarioId
       ];
 
@@ -217,6 +242,14 @@ export class ProdutoRepository extends BaseRepository {
       preco_custo: Number(produto.preco_custo),
       preco_venda: Number(produto.preco_venda),
       estoque_atual: Number(produto.estoque_atual),
+      peso: Number(produto.peso),
+      largura: Number(produto.largura),
+      altura: Number(produto.altura),
+      comprimento: Number(produto.comprimento),
+      comissao: Number(produto.comissao),
+      despesas_acessorias: Number(produto.despesas_acessorias),
+      outras_despesas: Number(produto.outras_despesas),
+      origem_mercadoria: Number(produto.origem_mercadoria),
       imagens: resImg.rows,
       conversoes: resConv.rows,
       composicao: resComp.rows

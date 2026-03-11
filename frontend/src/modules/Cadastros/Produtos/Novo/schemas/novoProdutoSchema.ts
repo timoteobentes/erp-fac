@@ -73,6 +73,7 @@ export const novoProdutoSchema = z.object({
   ncm: z.string().optional(),
   cest: z.string().optional(),
   origem_mercadoria: z.coerce.number().optional(),
+  cfop_padrao: z.string().optional(),
   situacao_tributaria: z.string().optional(),
 
   // Arrays

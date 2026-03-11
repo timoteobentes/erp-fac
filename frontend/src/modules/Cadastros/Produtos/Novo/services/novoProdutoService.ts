@@ -4,7 +4,7 @@ import api from "../../../../../api/api";
 
 export const criarProdutoService = async (dados: any) => {
   try {
-    const response = await api.post("/produtos", dados);
+    const response = await api.post("/api/produtos", dados);
     return response.data;
   } catch (error) {
     throw error;

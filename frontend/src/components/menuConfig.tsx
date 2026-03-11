@@ -93,8 +93,8 @@ export const getStaticMenuItems = (navigate: any, user: any, adm: boolean) => {
       label: 'Financeiro',
       disabled,
       children: [
-        { key: 'financeiro-sub1', label: 'Pedidos' },
-        { key: 'financeiro-sub2', label: 'Orçamentos' },
+        { key: 'financeiro-pagar', label: 'Contas a Pagar', onClick: () => navigate('/financeiro/pagar') },
+        { key: 'financeiro-receber', label: 'Contas a Receber' },
       ],
     },
     {

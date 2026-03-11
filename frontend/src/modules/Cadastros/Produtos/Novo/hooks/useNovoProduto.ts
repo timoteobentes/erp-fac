@@ -5,6 +5,8 @@ import { toast } from "react-toastify";
 import { criarProdutoService } from "../services/novoProdutoService";
 import {
   obterDadosAuxiliaresService,
+  listarProdutosComposicaoService,
+  listarFornecedoresService,
   type DadosAuxiliares 
 } from "../../services/produtoService";
 
@@ -19,6 +21,9 @@ export const useNovoProduto = () => {
     unidades: []
   });
 
+  const [produtosComposicao, setProdutosComposicao] = useState<any[]>([]);
+  const [fornecedores, setFornecedores] = useState<any[]>([]);
+
   /**
    * Função para carregar os dados dos Selects (chamada no useEffect do form)
    */
@@ -29,6 +34,26 @@ export const useNovoProduto = () => {
     } catch (error) {
       console.error("Erro ao carregar auxiliares:", error);
       toast.warning("Não foi possível carregar as listas de categorias/marcas.");
+    }
+  }, []);
+
+  const carregarProdutosComposicao = useCallback(async () => {
+    try {
+      const dados = await listarProdutosComposicaoService();
+      setProdutosComposicao(dados);
+    } catch (error) {
+      console.error("Erro ao carregar produtos para composição:", error);
+      toast.warning("Não foi possível carregar a lista de produtos para composição.");
+    }
+  }, []);
+
+  const carregarFornecedores = useCallback(async () => {
+    try {
+      const dados = await listarFornecedoresService();
+      setFornecedores(dados);
+    } catch (error) {
+      console.error("Erro ao carregar fornecedores:", error);
+      toast.warning("Não foi possível carregar a lista de fornecedores.");
     }
   }, []);
 
@@ -63,6 +88,10 @@ export const useNovoProduto = () => {
     isLoading,
     auxiliares,     // Dados para popular os <Select>
     carregarAuxiliares, // Função para iniciar o carregamento
-    handleCadastrarProduto // Função de submit
+    handleCadastrarProduto, // Função de submit
+    produtosComposicao,
+    fornecedores,
+    carregarProdutosComposicao,
+    carregarFornecedores
   };
 };

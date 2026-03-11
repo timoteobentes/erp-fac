@@ -205,12 +205,7 @@ export const TabelaProdutos: React.FC<TabelaProdutosProps> = ({
         dataSource={produtos}
         loading={isLoading}
         onChange={onChange}
-        pagination={{ 
-          ...pagination, 
-          showSizeChanger: true, 
-          pageSizeOptions: ['10', '20', '50'],
-          showTotal: (total) => `Total de ${total} produtos`
-        }}
+        pagination={{ ...pagination }}
         rowSelection={rowSelection}
         scroll={{ x: 1000 }}
         size="middle"

@@ -103,7 +103,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         </div>
       ),
       children: [
-        { key: 'perfil-perfil', label: 'Meu Perfil' },
+        { key: 'perfil-perfil', label: 'Meu Perfil', onClick: () => navigate('/perfil') },
         { key: 'perfil-sair', label: 'Sair', onClick: () => logout() }
       ]
     };
@@ -208,6 +208,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                     variant='contained'
                     color='info'
                     startIcon={<PersonalVideoOutlined />}
+                    onClick={() => navigate('/pdv')}
                   >
                     Frente de caixa
                   </Button>

@@ -113,6 +113,55 @@ CREATE TABLE public.clientes_pj (
   responsavel character varying,
   CONSTRAINT clientes_pj_pkey PRIMARY KEY (id)
 );
+CREATE TABLE public.configuracoes_fiscais (
+  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
+  usuario_id bigint NOT NULL UNIQUE,
+  inscricao_estadual character varying,
+  regime_tributario character varying DEFAULT 'simples_nacional'::character varying CHECK (regime_tributario::text = ANY (ARRAY['simples_nacional'::character varying::text, 'regime_normal'::character varying::text])),
+  csc_id character varying,
+  csc_alfanumerico character varying,
+  certificado_nome_arquivo character varying,
+  certificado_base64 text,
+  certificado_senha character varying,
+  ambiente_sefaz character varying DEFAULT 'homologacao'::character varying CHECK (ambiente_sefaz::text = ANY (ARRAY['homologacao'::character varying::text, 'producao'::character varying::text])),
+  atualizado_em timestamp with time zone DEFAULT now(),
+  CONSTRAINT configuracoes_fiscais_pkey PRIMARY KEY (id),
+  CONSTRAINT fk_config_usuario FOREIGN KEY (usuario_id) REFERENCES public.usuarios(id)
+);
+CREATE TABLE public.contas_pagar (
+  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
+  usuario_id bigint NOT NULL,
+  fornecedor_id bigint,
+  descricao character varying NOT NULL,
+  valor_total numeric NOT NULL DEFAULT 0.00,
+  data_vencimento date NOT NULL,
+  data_pagamento date,
+  status character varying DEFAULT 'pendente'::character varying CHECK (status::text = ANY (ARRAY['pendente'::character varying::text, 'pago'::character varying::text, 'atrasado'::character varying::text, 'cancelado'::character varying::text])),
+  categoria_despesa character varying,
+  observacao text,
+  criado_em timestamp with time zone DEFAULT now(),
+  atualizado_em timestamp with time zone DEFAULT now(),
+  CONSTRAINT contas_pagar_pkey PRIMARY KEY (id),
+  CONSTRAINT fk_cp_usuario FOREIGN KEY (usuario_id) REFERENCES public.usuarios(id)
+);
+CREATE TABLE public.contas_receber (
+  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
+  usuario_id bigint NOT NULL,
+  cliente_id bigint,
+  venda_id bigint,
+  descricao character varying NOT NULL,
+  valor_total numeric NOT NULL DEFAULT 0.00,
+  data_vencimento date NOT NULL,
+  data_recebimento date,
+  status character varying DEFAULT 'pendente'::character varying CHECK (status::text = ANY (ARRAY['pendente'::character varying::text, 'recebido'::character varying::text, 'atrasado'::character varying::text, 'cancelado'::character varying::text])),
+  forma_pagamento character varying,
+  observacao text,
+  criado_em timestamp with time zone DEFAULT now(),
+  atualizado_em timestamp with time zone DEFAULT now(),
+  CONSTRAINT contas_receber_pkey PRIMARY KEY (id),
+  CONSTRAINT fk_cr_usuario FOREIGN KEY (usuario_id) REFERENCES public.usuarios(id),
+  CONSTRAINT fk_cr_cliente FOREIGN KEY (cliente_id) REFERENCES public.clientes(id)
+);
 CREATE TABLE public.contatos (
   id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
   cliente_id bigint NOT NULL,
@@ -219,6 +268,17 @@ CREATE TABLE public.grupo_acesso (
   atualizado_em timestamp with time zone DEFAULT now(),
   CONSTRAINT grupo_acesso_pkey PRIMARY KEY (id)
 );
+CREATE TABLE public.itens_venda (
+  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
+  venda_id bigint NOT NULL,
+  produto_id bigint NOT NULL,
+  quantidade numeric NOT NULL,
+  valor_unitario numeric NOT NULL,
+  valor_total numeric NOT NULL,
+  CONSTRAINT itens_venda_pkey PRIMARY KEY (id),
+  CONSTRAINT fk_itens_venda FOREIGN KEY (venda_id) REFERENCES public.vendas(id),
+  CONSTRAINT fk_itens_produto FOREIGN KEY (produto_id) REFERENCES public.produtos(id)
+);
 CREATE TABLE public.logs_sistema (
   id bigint NOT NULL DEFAULT nextval('logs_sistema_id_seq'::regclass),
   usuario_id bigint,
@@ -257,6 +317,20 @@ CREATE TABLE public.modulos (
   ordem integer DEFAULT 0,
   ativo boolean DEFAULT true,
   CONSTRAINT modulos_pkey PRIMARY KEY (id)
+);
+CREATE TABLE public.movimentacoes_estoque (
+  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
+  usuario_id bigint NOT NULL,
+  produto_id bigint NOT NULL,
+  tipo character varying NOT NULL CHECK (tipo::text = ANY (ARRAY['entrada'::character varying::text, 'saida'::character varying::text, 'ajuste'::character varying::text])),
+  quantidade numeric NOT NULL,
+  saldo_apos numeric NOT NULL,
+  origem character varying NOT NULL,
+  observacao text,
+  criado_em timestamp with time zone DEFAULT now(),
+  CONSTRAINT movimentacoes_estoque_pkey PRIMARY KEY (id),
+  CONSTRAINT fk_mov_estoque_usuario FOREIGN KEY (usuario_id) REFERENCES public.usuarios(id),
+  CONSTRAINT fk_mov_estoque_produto FOREIGN KEY (produto_id) REFERENCES public.produtos(id)
 );
 CREATE TABLE public.pagamentos (
   id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
@@ -339,6 +413,19 @@ CREATE TABLE public.produtos (
   estoque_maximo numeric,
   criado_em timestamp with time zone DEFAULT now(),
   atualizado_em timestamp with time zone DEFAULT now(),
+  peso numeric DEFAULT 0.000,
+  largura numeric DEFAULT 0.00,
+  altura numeric DEFAULT 0.00,
+  comprimento numeric DEFAULT 0.00,
+  vendido_separadamente boolean DEFAULT true,
+  comercializavel_pdv boolean DEFAULT true,
+  comissao numeric DEFAULT 0.00,
+  despesas_acessorias numeric DEFAULT 0.00,
+  outras_despesas numeric DEFAULT 0.00,
+  ncm character varying,
+  cest character varying,
+  origem_mercadoria integer DEFAULT 0,
+  cfop_padrao character varying,
   CONSTRAINT produtos_pkey PRIMARY KEY (id),
   CONSTRAINT fk_produtos_usuario FOREIGN KEY (usuario_id) REFERENCES public.usuarios(id),
   CONSTRAINT fk_produtos_categoria FOREIGN KEY (categoria_id) REFERENCES public.categorias(id),
@@ -399,6 +486,29 @@ CREATE TABLE public.usuarios (
   mp_customer_id character varying,
   status_assinatura character varying DEFAULT 'pendente'::character varying,
   validade_assinatura timestamp with time zone,
+  nome_completo character varying,
+  cpf character varying,
   CONSTRAINT usuarios_pkey PRIMARY KEY (id),
   CONSTRAINT usuarios_grupo_acesso_id_fkey FOREIGN KEY (grupo_acesso_id) REFERENCES public.grupo_acesso(id)
+);
+CREATE TABLE public.vendas (
+  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
+  usuario_id bigint NOT NULL,
+  cliente_id bigint,
+  valor_bruto numeric NOT NULL DEFAULT 0.00,
+  desconto numeric DEFAULT 0.00,
+  valor_total numeric NOT NULL DEFAULT 0.00,
+  forma_pagamento character varying NOT NULL,
+  status character varying DEFAULT 'concluida'::character varying,
+  criado_em timestamp with time zone DEFAULT now(),
+  chave_acesso character varying,
+  numero_nfe bigint,
+  serie_nfe integer DEFAULT 1,
+  protocolo character varying,
+  xml_autorizado text,
+  status_sefaz character varying DEFAULT 'pendente'::character varying CHECK (status_sefaz::text = ANY (ARRAY['pendente'::character varying::text, 'autorizado'::character varying::text, 'rejeitado'::character varying::text, 'cancelado'::character varying::text])),
+  atualizado_em timestamp with time zone DEFAULT now(),
+  CONSTRAINT vendas_pkey PRIMARY KEY (id),
+  CONSTRAINT fk_vendas_usuario FOREIGN KEY (usuario_id) REFERENCES public.usuarios(id),
+  CONSTRAINT fk_vendas_cliente FOREIGN KEY (cliente_id) REFERENCES public.clientes(id)
 );

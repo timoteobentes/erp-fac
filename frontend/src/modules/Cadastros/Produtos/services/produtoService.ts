@@ -51,7 +51,7 @@ export const listarProdutosService = async (
       (params[key] === undefined || params[key] === '') && delete params[key]
     );
 
-    const response = await api.get("/produtos", { params });
+    const response = await api.get("/api/produtos", { params });
     
     // O backend retorna { success: true, data: [...], meta: { ... } }
     return {
@@ -68,7 +68,32 @@ export const listarProdutosService = async (
  */
 export const obterDadosAuxiliaresService = async (): Promise<DadosAuxiliares> => {
   try {
-    const response = await api.get("/produtos/auxiliares");
+    const response = await api.get("/api/produtos/auxiliares");
+    return response.data.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+/**
+ * Lista produtos para composição (sem paginação, apenas dados básicos)
+ */
+export const listarProdutosComposicaoService = async (): Promise<any[]> => {
+  try {
+    // Busca todos os produtos ativos
+    const response = await api.get("/api/produtos", { params: { situacao: 'ativo', limit: 99999 } });
+    return response.data.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+/**
+ * Lista fornecedores para o select
+ */
+export const listarFornecedoresService = async (): Promise<any[]> => {
+  try {
+    const response = await api.get("/api/clientes", { params: { tipo: 'fornecedor', limit: 99999 } });
     return response.data.data;
   } catch (error) {
     throw error;
@@ -80,7 +105,7 @@ export const obterDadosAuxiliaresService = async (): Promise<DadosAuxiliares> =>
  */
 export const buscarProdutoPorIdService = async (id: number | string) => {
   try {
-    const response = await api.get(`/produtos/${id}`);
+    const response = await api.get(`/api/produtos/${id}`);
     return response.data.data;
   } catch (error) {
     throw error;
@@ -92,7 +117,7 @@ export const buscarProdutoPorIdService = async (id: number | string) => {
  */
 export const atualizarProdutoService = async (id: number | string, dados: any) => {
   try {
-    const response = await api.put(`/produtos/${id}`, dados);
+    const response = await api.put(`/api/produtos/${id}`, dados);
     return response.data;
   } catch (error) {
     throw error;
@@ -104,7 +129,7 @@ export const atualizarProdutoService = async (id: number | string, dados: any) =
  */
 export const excluirProdutoService = async (id: number | string) => {
   try {
-    const response = await api.delete(`/produtos/${id}`);
+    const response = await api.delete(`/api/produtos/${id}`);
     return response.data;
   } catch (error) {
     throw error;

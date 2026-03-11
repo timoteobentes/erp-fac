@@ -77,6 +77,25 @@ export interface Produto {
   estoque_minimo: number;
   estoque_maximo?: number | null;
   
+  // Dimensões e Peso
+  peso?: number | null;
+  largura?: number | null;
+  altura?: number | null;
+  comprimento?: number | null;
+  
+  // PDV e Custos Adicionais
+  vendido_separadamente?: boolean;
+  comercializavel_pdv?: boolean;
+  comissao?: number | null;
+  despesas_acessorias?: number | null;
+  outras_despesas?: number | null;
+
+  // Fiscal
+  ncm?: string | null;
+  cest?: string | null;
+  origem_mercadoria?: number | null;
+  cfop_padrao?: string | null;
+  
   // Arrays (Opcionais na listagem, obrigatórios no form completo)
   imagens?: ProdutoImagem[];
   composicao?: ProdutoComposicao[]; // Só usado se tipo_item === 'kit'

@@ -14,7 +14,7 @@ interface PaymentFormStepsProps {
   onClose: () => void;
 }
 
-export const PaymentFormSteps: React.FC<PaymentFormStepsProps> = () => {
+export const PaymentFormSteps: React.FC<PaymentFormStepsProps> = ({ onClose }) => {
   const {
     activeStep,
     selectedPlan,

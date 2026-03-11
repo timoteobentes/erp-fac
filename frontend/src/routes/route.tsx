@@ -25,6 +25,18 @@ const EditarCliente = lazy(() => import('../pages/Cadastros/Clientes/Editar'));
 // Módulo: Produtos
 const Produtos = lazy(() => import('../pages/Cadastros/Produtos'));
 const NovoProduto = lazy(() => import('../pages/Cadastros/Produtos/Novo'));
+const EditarProduto = lazy(() => import('../pages/Cadastros/Produtos/Editar'));
+const VisualizarProduto = lazy(() => import('../pages/Cadastros/Produtos/Visualizar'));
+
+// Módulo: Financeiro
+const ContasPagar = lazy(() => import('../pages/Financeiro/ContasPagar'));
+const NovoPagamento = lazy(() => import('../pages/Financeiro/ContasPagar/Novo'));
+
+// Módulo: PDV
+const PDV = lazy(() => import('../pages/PDV'));
+
+// Módulo: Perfil
+const Perfil = lazy(() => import('../pages/Perfil'));
 
 // Componente de Loading Centralizado
 const Loading = () => (
@@ -80,8 +92,22 @@ const AppRoutes = () => {
           </Route>
 
           {/* Módulo: Cadastros -> Produtos */}
-          <Route path="/cadastros/produtos" element={<Produtos />} />
-          <Route path="/cadastros/produtos/novo" element={<NovoProduto />} />
+          <Route path="/cadastros/produtos">
+             <Route index element={<Produtos />} />
+             <Route path="novo" element={<NovoProduto />} />
+             <Route path="editar/:id" element={<EditarProduto />} />
+             <Route path="visualizar/:id" element={<VisualizarProduto />} />
+          </Route>
+
+          {/* Módulo: Financeiro */}
+          <Route path="/financeiro/pagar" element={<ContasPagar />} />
+          <Route path="/financeiro/pagar/novo" element={<NovoPagamento />} />
+
+          {/* Módulo: PDV Frente de Caixa */}
+          <Route path="/pdv" element={<PDV />} />
+
+          {/* Módulo: Perfil e Configurações */}
+          <Route path="/perfil" element={<Perfil />} />
         </Route>
 
         {/* Rota 404 (Opcional, mas recomendada) */}

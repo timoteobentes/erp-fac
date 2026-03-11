@@ -11,10 +11,11 @@ import { Check, Close, Delete, Add, Search } from "@mui/icons-material";
 import Layout from "../../../../template/Layout";
 import { useNavigate } from "react-router";
 import { novoProdutoSchema, type NovoProdutoFormData } from "../../../../modules/Cadastros/Produtos/Novo/schemas/novoProdutoSchema";
-import api from "../../../../api/api";
+import { useNovoProduto } from "../../../../modules/Cadastros/Produtos/Novo/hooks/useNovoProduto";
 
 const NovoProduto: React.FC = () => {
   const navigate = useNavigate();
+  const { handleCadastrarProduto, carregarAuxiliares, carregarProdutosComposicao, carregarFornecedores } = useNovoProduto();
   const [loadingSave, setLoadingSave] = useState(false);
   const [loadingDados, setLoadingDados] = useState(true);
 
@@ -64,10 +65,10 @@ const NovoProduto: React.FC = () => {
     const fetchData = async () => {
       try {
         // Supondo endpoints existentes ou simulando
-        const [resAux, resProds, resForn] = await Promise.all([
-          api.get('/produtos/auxiliares'), // Categorias, Marcas, Unidades
-          api.get('/produtos?limit=100'),  // Lista simples para composição
-          api.get('/clientes?tipo=fornecedor') // Lista de fornecedores (adaptar rota)
+        const [resAux, resProds, resForn]: any = await Promise.all([
+          carregarAuxiliares(), // Categorias, Marcas, Unidades
+          carregarProdutosComposicao(),  // Lista simples para composição
+          carregarFornecedores() // Lista de fornecedores (adaptar rota)
         ]);
 
         if (resAux.data.success) {
@@ -129,8 +130,7 @@ const NovoProduto: React.FC = () => {
         situacao: data.produto_ativo ? 'ativo' : 'inativo'
       };
       
-      console.log("Enviando Payload:", payload);
-      await api.post('/produtos', payload);
+      await handleCadastrarProduto(payload);
       message.success("Produto cadastrado com sucesso!");
       navigate("/cadastros/produtos");
     } catch (error: any) {
@@ -400,7 +400,7 @@ const NovoProduto: React.FC = () => {
                                             { 
                                                 title: 'Produto', 
                                                 dataIndex: 'produto', 
-                                                render: (_: any, _record: any, index: number) => (
+                                                render: (_: any, record: any, index: number) => (
                                                     <Controller name={`composicao.${index}.produto_filho_id` as any} control={control} render={({ field }) => (
                                                         <TextField {...field} select fullWidth size="small">
                                                             <MenuItem value={0}>Selecione...</MenuItem>
@@ -412,7 +412,7 @@ const NovoProduto: React.FC = () => {
                                             { 
                                                 title: 'Quantidade', 
                                                 width: 150,
-                                                render: (_: any, _record: any, index: number) => (
+                                                render: (_: any, record: any, index: number) => (
                                                     <Controller name={`composicao.${index}.quantidade` as any} control={control} render={({ field }) => (
                                                         <TextField {...field} type="number" size="small" />
                                                     )} />
@@ -455,9 +455,36 @@ const NovoProduto: React.FC = () => {
                           </div>
                         )
                     },
-                    // Placeholders para abas não solicitadas detalhadamente
-                    { key: '5', label: 'Fotos', children: <div className="p-4 bg-white border">Em breve: Upload de imagens</div> },
-                    { key: '6', label: 'Fiscal', children: <div className="p-4 bg-white border">Em breve: Campos NCM, CEST, Origem.</div> },
+                    { 
+                      key: '5', 
+                      label: 'Fiscal', 
+                      children: (
+                        <div className="border border-gray-200 border-t-none -mt-4 p-6 bg-white rounded-b-lg">
+                            <h3 className="text-lg font-bold text-purple-900 mb-4">Tributação (NFe/NFCe)</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                <Controller name="ncm" control={control} render={({ field }) => (
+                                    <TextField {...field} fullWidth label="NCM" placeholder="Ex: 61051000" />
+                                )} />
+                                <Controller name="cest" control={control} render={({ field }) => (
+                                    <TextField {...field} fullWidth label="CEST" placeholder="Ex: 0100100" />
+                                )} />
+                                <Controller name="cfop_padrao" control={control} render={({ field }) => (
+                                    <TextField {...field} fullWidth label="CFOP Padrão" placeholder="Ex: 5102" />
+                                )} />
+                                <Controller name="origem_mercadoria" control={control} render={({ field }) => (
+                                    <TextField {...field} select fullWidth label="Origem da Mercadoria">
+                                        <MenuItem value={0}>0 - Nacional</MenuItem>
+                                        <MenuItem value={1}>1 - Estrangeira (Imp. Direta)</MenuItem>
+                                        <MenuItem value={2}>2 - Estrangeira (Adq. Mercado Interno)</MenuItem>
+                                    </TextField>
+                                )} />
+                            </div>
+                            <div className="mt-4 p-4 bg-orange-50 rounded text-sm text-orange-800 border border-orange-200">
+                                <strong>Atenção:</strong> O preenchimento incorreto do NCM ou origem pode causar rejeição na emissão de notas fiscais.
+                            </div>
+                        </div>
+                      )
+                    },
                   ]}
                 />
               </ConfigProvider>

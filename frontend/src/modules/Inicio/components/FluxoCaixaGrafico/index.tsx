@@ -15,35 +15,54 @@ export const FluxoCaixaGrafico: React.FC<FluxoCaixaGraficoProps> = ({
     if (chartRef.current) {
       const myChart = echarts.init(chartRef.current);
 
+      // Se não tiver dados, coloca um mockup ou array vazio
+      const safeData = Array.isArray(dados) && dados.length > 0 ? dados : [
+          { data: '01/01', valor: 0 }, { data: '02/01', valor: 0 }
+      ];
+
+      const xLabels = safeData.map(d => d.data);
+      const yValues = safeData.map(d => d.valor);
+
       const option: echarts.EChartsOption = {
         tooltip: {
-          trigger: 'axis'
+          trigger: 'axis',
+        },
+        grid: {
+            left: '3%',
+            right: '4%',
+            bottom: '3%',
+            top: '10%',
+            containLabel: true
         },
         xAxis: {
           type: 'category',
-          data: ['Ago 2023', 'Set 2023', 'Out 2023', 'Nov 2023', 'Dec 2023', 'Jan 2024']
+          data: xLabels,
+          axisLine: { lineStyle: { color: '#ddd' } },
+          axisLabel: { color: '#666' }
         },
         yAxis: {
           type: 'value',
           axisLabel: {
-              formatter: 'RS {value}'
-          }
+              formatter: 'R$ {value}',
+              color: '#666'
+          },
+          splitLine: { lineStyle: { color: '#f5f5f5' } }
         },
         series: [{
-            data: [35000, 10000, 0, -500, -1000, -1000], // Valores em Reais
+            data: yValues,
             type: 'line',
             smooth: true,
             lineStyle: {
-                color: '#5470C6',
+                color: '#6B00A1',
                 width: 3
             },
             itemStyle: {
-                color: '#5470C6'
+                color: '#6B00A1'
             },
             areaStyle: {
                 color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-                    { offset: 0, color: 'rgba(84, 112, 198, 0.5)' },
-                    { offset: 1, color: 'rgba(84, 112, 198, 0.1)' }
+                    { offset: 0, color: 'rgba(107, 0, 161, 0.4)' },
+                    { offset: 1, color: 'rgba(107, 0, 161, 0.0)' }
                 ])
             }
         }]

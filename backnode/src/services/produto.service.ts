@@ -140,6 +140,20 @@ export class ProdutoService {
       estoque_minimo: Number(dados.estoque_minimo) || 0,
       estoque_maximo: dados.estoque_maximo ? Number(dados.estoque_maximo) : null,
 
+      peso: dados.peso ? Number(dados.peso) : null,
+      largura: dados.largura ? Number(dados.largura) : null,
+      altura: dados.altura ? Number(dados.altura) : null,
+      comprimento: dados.comprimento ? Number(dados.comprimento) : null,
+      vendido_separadamente: dados.vendido_separadamente !== undefined ? Boolean(dados.vendido_separadamente) : true,
+      comercializavel_pdv: dados.comercializavel_pdv !== undefined ? Boolean(dados.comercializavel_pdv) : true,
+      comissao: dados.comissao ? Number(dados.comissao) : null,
+      despesas_acessorias: dados.despesas_acessorias ? Number(dados.despesas_acessorias) : null,
+      outras_despesas: dados.outras_despesas ? Number(dados.outras_despesas) : null,
+      ncm: dados.ncm ? String(dados.ncm).replace(/\D/g, '').substring(0, 8) : null,
+      cest: dados.cest ? String(dados.cest).replace(/\D/g, '').substring(0, 7) : null,
+      origem_mercadoria: dados.origem_mercadoria !== undefined && dados.origem_mercadoria !== null ? Number(dados.origem_mercadoria) : null,
+      cfop_padrao: dados.cfop_padrao ? String(dados.cfop_padrao).replace(/\D/g, '').substring(0, 4) : null,
+
       // Arrays garantidos
       imagens: dados.imagens || [],
       conversoes: dados.conversoes || [],
