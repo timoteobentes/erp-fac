@@ -204,4 +204,48 @@ export class ProdutoController {
       res.status(500).json({ success: false, message: 'Erro ao carregar listas de apoio.' });
     }
   }
+
+  // =========================================================================
+  // 7. EXPORTAÇÃO DE PRODUTOS
+  // =========================================================================
+  exportar = async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const usuarioId = req.usuario?.id;
+      if (!usuarioId) {
+        res.status(401).json({ message: 'Acesso negado.' });
+        return;
+      }
+
+      const formato = (req.query.formato as 'csv' | 'xlsx' | 'pdf') || 'csv';
+      const filtros: ProdutoFiltros = {
+        termo: req.query.termo as string,
+        situacao: req.query.situacao as string,
+        tipo_item: req.query.tipo_item as string,
+        categoria_id: req.query.categoria_id ? parseInt(req.query.categoria_id as string) : undefined,
+        marca_id: req.query.marca_id ? parseInt(req.query.marca_id as string) : undefined,
+      };
+
+      const bufferOrString = await this.produtoService.exportarProdutos(usuarioId, { formato, filtros });
+      const dataHoje = new Date().toISOString().split('T')[0];
+      const filename = `relatorio_produtos_${dataHoje}`;
+
+      if (formato === 'csv') {
+        res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+        res.setHeader('Content-Disposition', `attachment; filename=${filename}.csv`);
+        res.send(bufferOrString);
+      } else if (formato === 'xlsx') {
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', `attachment; filename=${filename}.xlsx`);
+        res.send(bufferOrString);
+      } else if (formato === 'pdf') {
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename=${filename}.pdf`);
+        res.send(bufferOrString);
+      }
+
+    } catch (error: any) {
+      console.error('Erro na exportação de produtos:', error);
+      res.status(500).json({ success: false, message: 'Erro ao gerar arquivo de exportação.' });
+    }
+  }
 }

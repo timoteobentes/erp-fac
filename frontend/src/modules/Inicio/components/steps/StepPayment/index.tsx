@@ -71,7 +71,7 @@ export const StepPayment: React.FC<StepPaymentProps> = ({ paymentData, onMethodC
                     label="Nome do Titular" 
                     fullWidth size="small"
                     value={paymentData.cartao.nome}
-                    onChange={(e) => onUpdateData('nome', e.target.value.toUpperCase(), "cartao")}
+                    onChange={(e) => onUpdateData('nome', e.target.value, "cartao")}
                   />
                 </Grid>
                 <Grid>
@@ -109,7 +109,7 @@ export const StepPayment: React.FC<StepPaymentProps> = ({ paymentData, onMethodC
                     label="Nome Completo do Pagador" 
                     fullWidth size="small"
                     value={paymentData.boleto.nome}
-                    onChange={(e) => onUpdateData('nome', e.target.value.toUpperCase(), "boleto")}
+                    onChange={(e) => onUpdateData('nome', e.target.value, "boleto")}
                   />
                 </Grid>
                 <Grid>

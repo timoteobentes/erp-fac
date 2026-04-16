@@ -135,3 +135,29 @@ export const excluirProdutoService = async (id: number | string) => {
     throw error;
   }
 };
+
+/**
+ * Exporta produtos em CSV, Excel ou PDF
+ */
+export const exportarProdutosService = async (formato: 'csv' | 'xlsx' | 'pdf', filtros?: FiltrosProduto) => {
+  try {
+    const params: any = {
+      formato,
+      ...filtros
+    };
+
+    // Remove chaves vazias/undefined
+    Object.keys(params).forEach(key => 
+      (params[key] === undefined || params[key] === '') && delete params[key]
+    );
+
+    const response = await api.get('/api/produtos/exportar', { 
+      params,
+      responseType: 'blob' 
+    });
+    
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};

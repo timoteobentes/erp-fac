@@ -149,7 +149,7 @@ export const TabelaProdutos: React.FC<TabelaProdutosProps> = ({
       align: 'center',
       render: (situacao: string) => {
         const color = situacao === 'ativo' ? 'success' : 'error';
-        return <Tag color={color}>{situacao.toUpperCase()}</Tag>;
+        return <Tag color={color}>{situacao}</Tag>;
       }
     },
     {
@@ -173,7 +173,7 @@ export const TabelaProdutos: React.FC<TabelaProdutosProps> = ({
           </Tooltip>
           
           <Tooltip title="Editar">
-            <IconButton size="small" onClick={() => handleEdit(record.id)} color="primary">
+            <IconButton size="small" onClick={() => handleEdit(record.id)} color="warning">
               <EditOutlined fontSize="small" />
             </IconButton>
           </Tooltip>

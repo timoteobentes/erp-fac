@@ -61,49 +61,34 @@ export class VendaRepository {
           item.valor_total
         ]);
 
-        // 3. Validação Concorrente e Baixa de Estoque
-        const lockEstoqueQuery = `
-          SELECT id, estoque_atual 
-          FROM produtos 
-          WHERE id = $1 
-          FOR UPDATE;
-        `;
-        const resultLock = await client.query(lockEstoqueQuery, [item.produto_id]);
-        
-        if (resultLock.rows.length === 0) {
-           throw new Error(`Produto ID ${item.produto_id} não encontrado durante o bloqueio de estoque.`);
+        // 3. Atualizar Estoque (Transacional)
+        const checkEstoque = await client.query(
+          `SELECT estoque_atual, movimenta_estoque FROM produtos WHERE id = $1 FOR UPDATE`,
+          [item.produto_id]
+        );
+
+        if (checkEstoque.rows.length > 0 && checkEstoque.rows[0].movimenta_estoque) {
+          const estoqueAtual = Number(checkEstoque.rows[0].estoque_atual);
+          const novoEstoque = estoqueAtual - Number(item.quantidade);
+
+          await client.query(
+            `UPDATE produtos SET estoque_atual = $1 WHERE id = $2`,
+            [novoEstoque, item.produto_id]
+          );
+
+          // 4. Registrar Movimentação de Estoque
+          await client.query(
+            `INSERT INTO movimentacoes_estoque (usuario_id, produto_id, tipo, quantidade, saldo_apos, origem, observacao) 
+             VALUES ($1, $2, 'saida', $3, $4, 'pdv', $5)`,
+            [
+              venda.usuario_id, 
+              item.produto_id, 
+              item.quantidade, 
+              novoEstoque, 
+              `Venda PDV #${novaVenda.id}`
+            ]
+          );
         }
-
-        const estoqueAtual = resultLock.rows[0].estoque_atual;
-        if (estoqueAtual < item.quantidade) {
-           throw new Error(`Estoque insuficiente para o produto ID ${item.produto_id}. Saldo atual: ${estoqueAtual}, Requisitado: ${item.quantidade}.`);
-        }
-
-        const updateEstoqueQuery = `
-          UPDATE produtos
-          SET estoque_atual = estoque_atual - $1,
-              atualizado_em = CURRENT_TIMESTAMP
-          WHERE id = $2
-          RETURNING estoque_atual;
-        `;
-        const resultEstoque = await client.query(updateEstoqueQuery, [item.quantidade, item.produto_id]);
-        const novoSaldo = resultEstoque.rows[0].estoque_atual;
-
-        // 4. Registra na tabela movimentacoes_estoque
-        const moveQuery = `
-          INSERT INTO movimentacoes_estoque (
-            produto_id, usuario_id, tipo, quantidade, saldo_apos, origem, observacao
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7)
-        `;
-        await client.query(moveQuery, [
-          item.produto_id,
-          venda.usuario_id,
-          'saida',
-          item.quantidade,
-          novoSaldo,
-          'pdv',
-          `Venda #${novaVenda.id}`
-        ]);
       }
 
       // 5. Alimentar o Financeiro (Contas a Receber)
@@ -111,7 +96,7 @@ export class VendaRepository {
         INSERT INTO contas_receber (
           usuario_id, cliente_id, venda_id, descricao, valor_total,
           data_vencimento, data_recebimento, status, forma_pagamento
-        ) VALUES ($1, $2, $3, $4, $5, CURRENT_DATE, CURRENT_DATE, $6, $7)
+        ) VALUES ($1, $2, $3, $4, $5, CURRENT_DATE, $6, $7, $8)
       `;
       
       const descFinanceiro = `Venda PDV Cód. ${novaVenda.id} - Pgto ${venda.forma_pagamento}`;
@@ -121,7 +106,8 @@ export class VendaRepository {
         novaVenda.id,
         descFinanceiro,
         venda.valor_total,
-        'recebido', // Já pago
+        (venda as any).data_recebimento || null,
+        (venda as any).status_financeiro || 'recebido',
         venda.forma_pagamento
       ]);
 
@@ -166,7 +152,7 @@ export class VendaRepository {
       SELECT iv.*, p.nome as produto_nome, p.codigo_barras, p.ncm, p.cest, p.cfop_padrao, p.origem_mercadoria, u.sigla as unidade_sigla
       FROM itens_venda iv
       JOIN produtos p ON iv.produto_id = p.id
-      LEFT JOIN unidades_medida u ON p.unidade_id = u.id
+      LEFT JOIN unidades_medida u ON p.unidade_id = u.id OR u.usuario_id IS NULL
       WHERE iv.venda_id = $1
     `;
     const resultItens = await pool.query(itensQuery, [vendaId]);
@@ -198,7 +184,7 @@ export class VendaRepository {
   }
 
   // Lista simples das vendas do dia/período
-  async listar(filtros: { data_inicio?: string, data_fim?: string } = {}): Promise<Venda[]> {
+  async listar(filtros: { data_inicio?: string, data_fim?: string } = {}, paginacao?: { limit: number, offset: number }) {
     let query = 'SELECT * FROM vendas WHERE 1=1';
     const values: any[] = [];
     let count = 1;
@@ -216,9 +202,26 @@ export class VendaRepository {
         count++;
     }
 
-    query += ' ORDER BY data_venda DESC;';
+    let finalQuery = query + ' ORDER BY data_venda DESC';
 
-    const result = await pool.query(query, values);
-    return result.rows;
+    if (paginacao) {
+      const safeLimit = Math.min(Number(paginacao.limit) || 500, 500);
+      const safeOffset = Math.max(Number(paginacao.offset) || 0, 0);
+      finalQuery += ` LIMIT $${count} OFFSET $${count + 1}`;
+      values.push(safeLimit, safeOffset);
+    }
+
+    const countQuery = `SELECT COUNT(*) as total FROM (${query}) as sub`;
+    const countValues = values.slice(0, values.length - (paginacao ? 2 : 0));
+
+    const [result, countRes] = await Promise.all([
+      pool.query(finalQuery, values),
+      pool.query(countQuery, countValues)
+    ]);
+
+    return {
+      dados: result.rows,
+      total: parseInt(countRes.rows[0].total)
+    };
   }
 }

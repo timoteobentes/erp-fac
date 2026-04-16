@@ -14,6 +14,8 @@ export interface FiltrosCliente {
   estado?: string;
   data_inicio?: string;
   data_fim?: string;
+  page?: number | string;
+  limit?: number | string;
 }
 
 export class ClienteRepository extends BaseRepository {
@@ -176,22 +178,23 @@ export class ClienteRepository extends BaseRepository {
     // Adicionar ordenação
     const queryCompleta = `${query} ORDER BY criado_em DESC`;
     
-    // Paginação
+    // Paginação com Hard Limit Defensivo (Blindagem OOM)
     let finalQuery = queryCompleta;
     if (paginacao) {
+      // Regra de Ouro: Nunca confie no frontend. Máximo 500 itens por página!
+      const safeLimit = Math.min(Number(paginacao.limit) || 500, 500);
+      const safeOffset = Math.max(Number(paginacao.offset) || 0, 0);
+
       finalQuery += ` LIMIT $${values.length + 1} OFFSET $${values.length + 2}`;
-      values.push(paginacao.limit, paginacao.offset);
+      values.push(safeLimit, safeOffset);
     }
 
     // Executar Query de Dados
     const result = await pool.query(finalQuery, values);
 
     // Executar Query de Contagem (para paginação no front)
-    // Remove o ORDER BY e LIMIT/OFFSET para contar
     const countQuery = `SELECT COUNT(*) as total FROM (${query}) as sub`;
-    // Reutiliza os values dos filtros (sem limit/offset)
     const countValues = values.slice(0, values.length - (paginacao ? 2 : 0));
-    
     const countRes = await pool.query(countQuery, countValues);
 
     return {

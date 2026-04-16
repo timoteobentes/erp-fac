@@ -12,6 +12,7 @@ produtoRoutes.use(isolamentoMiddleware);
 produtoRoutes.use(loggerMiddleware);
 
 produtoRoutes.get('/produtos/auxiliares', produtoController.obterDadosAuxiliares);
+produtoRoutes.get('/produtos/exportar', produtoController.exportar);
 produtoRoutes.get('/produtos', produtoController.listar);
 produtoRoutes.post('/produtos', produtoController.criar);
 produtoRoutes.get('/produtos/:id', produtoController.buscarPorId);

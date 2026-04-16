@@ -31,6 +31,7 @@ export const useNovoProduto = () => {
     try {
       const dados = await obterDadosAuxiliaresService();
       setAuxiliares(dados);
+      return dados;
     } catch (error) {
       console.error("Erro ao carregar auxiliares:", error);
       toast.warning("Não foi possível carregar as listas de categorias/marcas.");

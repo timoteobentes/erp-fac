@@ -308,8 +308,8 @@ export class FornecedorRepository extends BaseRepository {
   async listarFornecedoresComFiltros(
     usuarioId: number, 
     filtros: any,
-    paginacao: any,
-    ordenacao: any
+    paginacao?: { limit: number, offset: number },
+    ordenacao?: any
   ): Promise<any> {
     let query = `
       SELECT 
@@ -341,76 +341,86 @@ export class FornecedorRepository extends BaseRepository {
     let paramCount = 1;
 
     // Aplicar filtros
-    if (filtros.nome) {
-      paramCount++;
-      query += ` AND f.nome ILIKE $${paramCount}`;
-      countQuery += ` AND f.nome ILIKE $${paramCount}`;
-      values.push(`%${filtros.nome}%`);
-    }
+    if (filtros) {
+        if (filtros.nome) {
+          paramCount++;
+          query += ` AND f.nome ILIKE $${paramCount}`;
+          countQuery += ` AND f.nome ILIKE $${paramCount}`;
+          values.push(`%${filtros.nome}%`);
+        }
 
-    if (filtros.tipo_fornecedor) {
-      paramCount++;
-      query += ` AND f.tipo_fornecedor = $${paramCount}`;
-      countQuery += ` AND f.tipo_fornecedor = $${paramCount}`;
-      values.push(filtros.tipo_fornecedor);
-    }
+        if (filtros.tipo_fornecedor) {
+          paramCount++;
+          query += ` AND f.tipo_fornecedor = $${paramCount}`;
+          countQuery += ` AND f.tipo_fornecedor = $${paramCount}`;
+          values.push(filtros.tipo_fornecedor);
+        }
 
-    if (filtros.situacao) {
-      paramCount++;
-      query += ` AND f.situacao = $${paramCount}`;
-      countQuery += ` AND f.situacao = $${paramCount}`;
-      values.push(filtros.situacao);
-    }
+        if (filtros.situacao) {
+          paramCount++;
+          query += ` AND f.situacao = $${paramCount}`;
+          countQuery += ` AND f.situacao = $${paramCount}`;
+          values.push(filtros.situacao);
+        }
 
-    if (filtros.cpf_cnpj) {
-      paramCount++;
-      query += ` AND (fp.cpf = $${paramCount} OR fj.cnpj = $${paramCount} OR fe.documento = $${paramCount})`;
-      countQuery += ` AND (fp.cpf = $${paramCount} OR fj.cnpj = $${paramCount} OR fe.documento = $${paramCount})`;
-      values.push(filtros.cpf_cnpj);
-    }
+        if (filtros.cpf_cnpj) {
+          paramCount++;
+          query += ` AND (fp.cpf = $${paramCount} OR fj.cnpj = $${paramCount} OR fe.documento = $${paramCount})`;
+          countQuery += ` AND (fp.cpf = $${paramCount} OR fj.cnpj = $${paramCount} OR fe.documento = $${paramCount})`;
+          values.push(filtros.cpf_cnpj);
+        }
 
-    if (filtros.ramo_atividade) {
-      paramCount++;
-      query += ` AND fj.ramo_atividade ILIKE $${paramCount}`;
-      countQuery += ` AND fj.ramo_atividade ILIKE $${paramCount}`;
-      values.push(`%${filtros.ramo_atividade}%`);
-    }
+        if (filtros.ramo_atividade) {
+          paramCount++;
+          query += ` AND fj.ramo_atividade ILIKE $${paramCount}`;
+          countQuery += ` AND fj.ramo_atividade ILIKE $${paramCount}`;
+          values.push(`%${filtros.ramo_atividade}%`);
+        }
 
-    if (filtros.responsavel_compras) {
-      paramCount++;
-      query += ` AND f.responsavel_compras ILIKE $${paramCount}`;
-      countQuery += ` AND f.responsavel_compras ILIKE $${paramCount}`;
-      values.push(`%${filtros.responsavel_compras}%`);
-    }
+        if (filtros.responsavel_compras) {
+          paramCount++;
+          query += ` AND f.responsavel_compras ILIKE $${paramCount}`;
+          countQuery += ` AND f.responsavel_compras ILIKE $${paramCount}`;
+          values.push(`%${filtros.responsavel_compras}%`);
+        }
 
-    if (filtros.data_inicio && filtros.data_fim) {
-      paramCount++;
-      query += ` AND f.criado_em BETWEEN $${paramCount} AND $${paramCount + 1}`;
-      countQuery += ` AND f.criado_em BETWEEN $${paramCount} AND $${paramCount + 1}`;
-      values.push(filtros.data_inicio, filtros.data_fim);
-      paramCount++;
+        if (filtros.data_inicio && filtros.data_fim) {
+          paramCount++;
+          query += ` AND f.criado_em BETWEEN $${paramCount} AND $${paramCount + 1}`;
+          countQuery += ` AND f.criado_em BETWEEN $${paramCount} AND $${paramCount + 1}`;
+          values.push(filtros.data_inicio, filtros.data_fim);
+          paramCount++;
+        }
     }
 
     // Group by para produtos
     query += ` GROUP BY f.id, fp.cpf, fj.cnpj, fe.documento`;
 
     // Ordenação
-    const ordemValida = ordenacao.ordem === 'ASC' ? 'ASC' : 'DESC';
-    const ordenarPorValido = this.validarCampoOrdenacao(ordenacao.ordenarPor);
-    query += ` ORDER BY ${ordenarPorValido} ${ordemValida}`;
+    if (ordenacao) {
+        const ordemValida = ordenacao.ordem === 'ASC' ? 'ASC' : 'DESC';
+        const ordenarPorValido = this.validarCampoOrdenacao(ordenacao.ordenarPor);
+        query += ` ORDER BY ${ordenarPorValido} ${ordemValida}`;
+    }
 
-    // Paginação
-    query += ` LIMIT $${paramCount + 1} OFFSET $${paramCount + 2}`;
-    values.push(paginacao.limite, paginacao.offset);
+    let finalQuery = query;
+
+    if (paginacao) {
+      const count = paramCount;
+      const safeLimit = Math.min(Number(paginacao.limit) || 500, 500);
+      const safeOffset = Math.max(Number(paginacao.offset) || 0, 0);
+      finalQuery += ` LIMIT $${count + 1} OFFSET $${count + 2}`;
+      values.push(safeLimit, safeOffset);
+    }
 
     // Executar queries
     const [fornecedoresResult, countResult] = await Promise.all([
-      pool.query(query, values),
-      pool.query(countQuery, values.slice(0, -2))
+      pool.query(finalQuery, values),
+      pool.query(countQuery, values.slice(0, values.length - (paginacao ? 2 : 0)))
     ]);
 
     return {
-      fornecedores: fornecedoresResult.rows,
+      dados: fornecedoresResult.rows,
       total: parseInt(countResult.rows[0].total)
     };
   }

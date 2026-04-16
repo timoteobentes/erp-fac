@@ -1,30 +1,33 @@
 import React, { useState, useEffect } from "react";
-import { Card, CardContent, Collapse, Button, TextField, MenuItem, IconButton, Tooltip } from "@mui/material";
-import { ConfigProvider, Table, Tag } from "antd";
+import { Box, Collapse, Typography } from "@mui/material";
+import { ConfigProvider } from "antd";
+import { 
+  WarningAmberOutlined, 
+  ErrorOutline, 
+  CheckCircleOutline, 
+  AccountBalanceWalletOutlined, 
+  DateRangeOutlined 
+} from "@mui/icons-material";
 import Layout from "../../../template/Layout";
 import { useNavigate } from "react-router-dom";
 import { useContasPagar } from "../../../modules/Financeiro/ContasPagar/hooks/useContasPagar";
 import type { FiltrosContaPagar } from "../../../modules/Financeiro/ContasPagar/services/contasPagarService";
-import { FilterList, Add, Payments, Visibility, Delete } from "@mui/icons-material";
+import { ContasPagarActions } from "../../../modules/Financeiro/ContasPagar/components/ContasPagarActions";
+import { ContasPagarFilters } from "../../../modules/Financeiro/ContasPagar/components/ContasPagarFilters";
+import { TabelaContasPagar } from "../../../modules/Financeiro/ContasPagar/components/TabelaContasPagar";
 
 const formatCurrency = (value: number) => {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
 };
 
-const formatDate = (dateString: string) => {
-  if (!dateString) return '-';
-  const date = new Date(dateString);
-  // workaround fuso horário simples
-  date.setMinutes(date.getMinutes() + date.getTimezoneOffset());
-  return date.toLocaleDateString('pt-BR');
-};
-
 const ContasPagar: React.FC = () => {
   const navigate = useNavigate();
-  const { contas, isLoading, resumo, fetchContas, darBaixa, excluirConta } = useContasPagar();
+  const { contas, isLoading, resumo, fetchContas, darBaixa, excluirConta, exportarContas } = useContasPagar();
+  
   const [mounted, setMounted] = useState(false);
   const [openFilters, setOpenFilters] = useState(false);
   const [filtros, setFiltros] = useState<FiltrosContaPagar>({});
+  const [pagination] = useState({ pageSize: 12 });
 
   useEffect(() => {
     fetchContas();
@@ -41,232 +44,159 @@ const ContasPagar: React.FC = () => {
     fetchContas({});
   };
 
-  const confirmarBaixa = (id: number) => {
-    if (window.confirm('Deseja realmente dar baixa nesta conta com a data de hoje?')) {
-      darBaixa(id);
-    }
+  const handleSearchSimple = (term: string) => {
+    setFiltros(prev => ({ ...prev, termo: term }));
+    fetchContas({ ...filtros, termo: term });
   };
 
-  const confirmarExclusao = (id: number) => {
-    if (window.confirm('Esta ação não pode ser desfeita! Tem certeza que deseja excluir esta conta?')) {
-      excluirConta(id);
-    }
-  };
-
-  const columns = [
-    {
-      title: 'Código',
-      dataIndex: 'id',
-      key: 'id',
-      width: 80,
-    },
-    {
-      title: 'Descrição',
-      dataIndex: 'descricao',
-      key: 'descricao',
-    },
-    {
-      title: 'Entidade / Fornecedor',
-      dataIndex: 'fornecedor_nome',
-      key: 'fornecedor_nome',
-      render: (text: string) => text || 'Avulso'
-    },
-    {
-      title: 'Data Venc.',
-      dataIndex: 'data_vencimento',
-      key: 'data_vencimento',
-      render: (text: string) => formatDate(text)
-    },
-    {
-      title: 'Valor',
-      dataIndex: 'valor_total',
-      key: 'valor_total',
-      render: (val: number) => formatCurrency(val)
-    },
-    {
-      title: 'Status',
-      dataIndex: 'status',
-      key: 'status',
-      render: (status: string) => {
-        let color = 'default';
-        let text = status.toUpperCase();
-        if (status === 'pago') color = 'success';
-        if (status === 'pendente') color = 'warning';
-        if (status === 'cancelado') color = 'error';
-        return <Tag color={color}>{text}</Tag>;
-      }
-    },
-    {
-      title: 'Ações',
-      key: 'acoes',
-      render: (_: any, record: any) => (
-        <div className="flex gap-2">
-          {record.status !== 'pago' && record.status !== 'cancelado' && (
-            <Tooltip title="Dar Baixa (Pagar)">
-              <IconButton size="small" color="success" onClick={() => confirmarBaixa(record.id)}>
-                <Payments fontSize="small" />
-              </IconButton>
-            </Tooltip>
-          )}
-          <Tooltip title="Visualizar/Despesas">
-            <IconButton size="small" color="info" onClick={() => {}}>
-              <Visibility fontSize="small" />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="Excluir">
-            <IconButton size="small" color="error" onClick={() => confirmarExclusao(record.id)}>
-              <Delete fontSize="small" />
-            </IconButton>
-          </Tooltip>
+  // Renderização de Loading Premium B2B
+  if (isLoading && (!contas || contas.length === 0)) {
+    return (
+      <Layout>
+        <div className="flex justify-center items-center h-[calc(100vh-140px)]">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#F1F5F9] border-t-[#5B21B6]"></div>
         </div>
-      )
-    }
-  ];
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
-      <div className={`transition-opacity duration-500 ${mounted ? 'opacity-100' : 'opacity-0'}`}>
-        <div className="w-full text-start mb-6">
-          <span className="text-[#9842F6] font-bold text-2xl">Contas a Pagar</span>
+      <div className={`transition-all duration-500 ease-in-out ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'} pb-8`}>
+        
+        {/* HEADER DA PÁGINA */}
+        <div className="flex flex-col mb-8">
+          <Typography variant="h3" fontWeight={800} color="#0F172A" sx={{ letterSpacing: '-0.02em', mb: 1 }}>
+            Contas a Pagar
+          </Typography>
+          <Typography variant="body2" color="#64748B">
+            Controle as despesas da sua empresa, evite juros e acompanhe os próximos vencimentos.
+          </Typography>
         </div>
 
-        {/* CARDS DE RESUMO */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
-          <Card sx={{ border: "1px solid #E9DEF6", boxShadow: "none" }}>
-            <CardContent>
-              <div className="text-sm font-semibold text-gray-500 mb-2 flex justify-between">
-                A vencer <span className="text-[#9842F6]">➔</span>
-              </div>
-              <div className="text-2xl font-bold text-[#9842F6]">{formatCurrency(resumo.aVencer)}</div>
-            </CardContent>
-          </Card>
-          <Card sx={{ border: "1px solid #E9DEF6", boxShadow: "none" }}>
-            <CardContent>
-              <div className="text-sm font-semibold text-gray-500 mb-2 flex justify-between">
-                Vence hoje <span className="text-[#9842F6]">➔</span>
-              </div>
-              <div className="text-2xl font-bold text-[#f44336]">{formatCurrency(resumo.venceHoje)}</div>
-            </CardContent>
-          </Card>
-          <Card sx={{ border: "1px solid #E9DEF6", boxShadow: "none" }}>
-            <CardContent>
-              <div className="text-sm font-semibold text-gray-500 mb-2 flex justify-between">
-                Vencidos <span className="text-[#9842F6]">➔</span>
-              </div>
-              <div className="text-2xl font-bold text-[#6B00A1]">{formatCurrency(resumo.vencidos)}</div>
-            </CardContent>
-          </Card>
-          <Card sx={{ border: "1px solid #E9DEF6", boxShadow: "none" }}>
-            <CardContent>
-              <div className="text-sm font-semibold text-gray-500 mb-2 flex justify-between">
-                Pagos <span className="text-[#9842F6]">➔</span>
-              </div>
-              <div className="text-2xl font-bold text-[#4caf50]">{formatCurrency(resumo.pagos)}</div>
-            </CardContent>
-          </Card>
-          <Card sx={{ border: "1px solid #E9DEF6", boxShadow: "none" }}>
-            <CardContent>
-              <div className="text-sm font-semibold text-gray-500 mb-2 flex justify-between">
-                Total <span className="text-[#9842F6]">➔</span>
-              </div>
-              <div className="text-2xl font-bold text-[#6B00A1]">{formatCurrency(resumo.total)}</div>
-            </CardContent>
-          </Card>
+        {/* WIDGETS DE RESUMO FINANCEIRO (Soft UX) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+          
+          {/* Card: A Vencer */}
+          <Box className="bg-white rounded-2xl border border-[#E2E8F0] p-5 flex flex-col relative overflow-hidden transition-all hover:shadow-md hover:-translate-y-1">
+            <div className="flex justify-between items-start mb-3">
+               <div className="p-2.5 bg-[#F1F5F9] rounded-lg text-[#64748B]"><DateRangeOutlined fontSize="small" /></div>
+            </div>
+            <Typography variant="caption" fontWeight={700} color="#64748B" sx={{ textTransform: 'uppercase', letterSpacing: '0.05em', mb: 0.5 }}>A Vencer</Typography>
+            <Typography variant="h5" fontWeight={800} color="#0F172A">{formatCurrency(resumo.aVencer)}</Typography>
+          </Box>
+
+          {/* Card: Vence Hoje */}
+          <Box className="bg-white rounded-2xl border border-[#FDE68A] p-5 flex flex-col relative overflow-hidden transition-all hover:shadow-md hover:-translate-y-1">
+            <div className="flex justify-between items-start mb-3">
+               <div className="p-2.5 bg-[#FFFBEB] rounded-lg text-[#F59E0B]"><WarningAmberOutlined fontSize="small" /></div>
+            </div>
+            <Typography variant="caption" fontWeight={700} color="#D97706" sx={{ textTransform: 'uppercase', letterSpacing: '0.05em', mb: 0.5 }}>Vence Hoje</Typography>
+            <Typography variant="h5" fontWeight={800} color="#B45309">{formatCurrency(resumo.venceHoje)}</Typography>
+          </Box>
+
+          {/* Card: Vencidos */}
+          <Box className="bg-[#FEF2F2] rounded-2xl border border-[#FECACA] p-5 flex flex-col relative overflow-hidden transition-all hover:shadow-md hover:-translate-y-1">
+            <div className="flex justify-between items-start mb-3">
+               <div className="p-2.5 bg-white rounded-lg text-[#EF4444] shadow-sm"><ErrorOutline fontSize="small" /></div>
+            </div>
+            <Typography variant="caption" fontWeight={700} color="#DC2626" sx={{ textTransform: 'uppercase', letterSpacing: '0.05em', mb: 0.5 }}>Vencidos</Typography>
+            <Typography variant="h5" fontWeight={800} color="#991B1B">{formatCurrency(resumo.vencidos)}</Typography>
+          </Box>
+
+          {/* Card: Pagos */}
+          <Box className="bg-white rounded-2xl border border-[#A7F3D0] p-5 flex flex-col relative overflow-hidden transition-all hover:shadow-md hover:-translate-y-1">
+            <div className="flex justify-between items-start mb-3">
+               <div className="p-2.5 bg-[#ECFDF5] rounded-lg text-[#10B981]"><CheckCircleOutline fontSize="small" /></div>
+            </div>
+            <Typography variant="caption" fontWeight={700} color="#059669" sx={{ textTransform: 'uppercase', letterSpacing: '0.05em', mb: 0.5 }}>Pagos (Mês)</Typography>
+            <Typography variant="h5" fontWeight={800} color="#047857">{formatCurrency(resumo.pagos)}</Typography>
+          </Box>
+
+          {/* Card: Total */}
+          <Box className="bg-gradient-to-br from-[#3C0473] to-[#5B21B6] rounded-2xl p-5 flex flex-col relative overflow-hidden shadow-[0_10px_20px_-5px_rgba(91,33,182,0.3)] transition-all hover:-translate-y-1">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-white opacity-5 rounded-full blur-2xl transform translate-x-1/3 -translate-y-1/3 pointer-events-none"></div>
+            <div className="flex justify-between items-start mb-3 relative z-10">
+               <div className="p-2.5 bg-white/10 backdrop-blur-md rounded-lg text-white"><AccountBalanceWalletOutlined fontSize="small" /></div>
+            </div>
+            <Typography variant="caption" fontWeight={700} color="#E2E8F0" sx={{ textTransform: 'uppercase', letterSpacing: '0.05em', mb: 0.5, position: 'relative', zIndex: 10 }}>Total Geral</Typography>
+            <Typography variant="h5" fontWeight={800} color="#FFFFFF" sx={{ position: 'relative', zIndex: 10 }}>{formatCurrency(resumo.total)}</Typography>
+          </Box>
+
         </div>
 
-        {/* AÇÕES E FILTROS */}
-        <Card sx={{ boxShadow: "none !important", borderRadius: "4px", border: "1px solid #E9DEF6", mb: 4 }}>
-          <CardContent>
-            <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-4">
-              <div className="flex gap-2 w-full md:w-auto">
-                <Button 
-                  variant="contained" 
-                  startIcon={<Add />} 
-                  sx={{ bgcolor: '#4caf50', '&:hover': { bgcolor: '#388e3c' }, textTransform: 'none' }}
-                  onClick={() => navigate('/financeiro/pagar/novo')}
-                >
-                  Adicionar
-                </Button>
-                {/* Outros botões como Transferir, etc */}
-              </div>
+        {/* CONTAINER PRINCIPAL DA TABELA E AÇÕES */}
+        <Box 
+          sx={{ 
+            backgroundColor: '#FFFFFF', 
+            borderRadius: '24px', 
+            boxShadow: '0 4px 24px rgba(0,0,0,0.02)', 
+            border: '1px solid #E2E8F0',
+            overflow: 'hidden',
+            display: 'flex',
+            flexDirection: 'column'
+          }}
+        >
+          {/* BARRA DE AÇÕES */}
+          <Box sx={{ p: 3, borderBottom: '1px solid #F1F5F9', backgroundColor: '#F8FAFC' }}>
+            <ContasPagarActions 
+              mounted={mounted}
+              onAdd={() => navigate('/financeiro/pagar/novo')}
+              onRefresh={() => fetchContas()}
+              onToggleFilters={() => setOpenFilters(!openFilters)}
+              onSearchSimple={handleSearchSimple}
+              onExport={(formato) => exportarContas(formato as 'csv'|'xlsx'|'pdf', filtros)}
+            />
+          </Box>
 
-              <div className="flex gap-2 w-full md:w-auto">
-                <Button
-                  variant="contained"
-                  startIcon={<FilterList />}
-                  sx={{ bgcolor: '#6B00A1', '&:hover': { bgcolor: '#3C0473' }, textTransform: 'none' }}
-                  onClick={() => setOpenFilters(!openFilters)}
-                >
-                  Busca avançada
-                </Button>
-              </div>
+          {/* FILTROS RETRÁTEIS */}
+          <Collapse in={openFilters}>
+            <Box sx={{ p: 4, borderBottom: '1px solid #E2E8F0', backgroundColor: '#FFFFFF' }}>
+              <ContasPagarFilters 
+                filtros={filtros}
+                setFiltros={setFiltros}
+                onBuscar={handleBuscar}
+                onLimpar={handleLimparFiltros}
+              />
+            </Box>
+          </Collapse>
+
+          {/* ÁREA DA TABELA */}
+          <Box sx={{ p: 4 }}>
+            <div className="flex justify-between items-center mb-4">
+              <span className="text-[#64748B] text-xs font-bold uppercase tracking-wider bg-[#F1F5F9] px-3 py-1.5 rounded-md">
+                {contas && contas.length > 0 ? `${contas.length} contas encontradas` : 'Nenhuma conta encontrada'}
+              </span>
             </div>
 
-            <Collapse in={openFilters}>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 bg-gray-50 rounded mb-4 border border-gray-200">
-                <TextField
-                  label="Status"
-                  select
-                  size="small"
-                  value={filtros.status || ''}
-                  onChange={(e) => setFiltros({ ...filtros, status: e.target.value })}
-                  fullWidth
-                >
-                  <MenuItem value="">Todos</MenuItem>
-                  <MenuItem value="pendente">Pendente</MenuItem>
-                  <MenuItem value="pago">Pago</MenuItem>
-                  <MenuItem value="vencido">Vencido</MenuItem>
-                </TextField>
-                <TextField
-                  label="Data Início (Venc.)"
-                  type="date"
-                  size="small"
-                  InputLabelProps={{ shrink: true }}
-                  value={filtros.data_vencimento_inicio || ''}
-                  onChange={(e) => setFiltros({ ...filtros, data_vencimento_inicio: e.target.value })}
-                  fullWidth
-                />
-                <TextField
-                  label="Data Fim (Venc.)"
-                  type="date"
-                  size="small"
-                  InputLabelProps={{ shrink: true }}
-                  value={filtros.data_vencimento_fim || ''}
-                  onChange={(e) => setFiltros({ ...filtros, data_vencimento_fim: e.target.value })}
-                  fullWidth
-                />
-                <div className="flex gap-2">
-                  <Button variant="contained" color="primary" onClick={handleBuscar} sx={{ bgcolor: '#4caf50', '&:hover': { bgcolor: '#388e3c' } }}>Buscar</Button>
-                  <Button variant="outlined" color="error" onClick={handleLimparFiltros}>Limpar</Button>
-                </div>
-              </div>
-            </Collapse>
-
-            {/* TABELA */}
             <ConfigProvider
               theme={{
                 components: {
-                  Table: { rowSelectedBg: '#f4dfff', rowSelectedHoverBg: '#ecc6ff' },
-                  Pagination: { colorPrimary: '#6B00A1', colorPrimaryHover: '#1a0027' },
-                  Spin: { colorPrimary: '#3C0473' }
+                  Table: {
+                    headerBg: '#F8FAFC',
+                    headerColor: '#475569',
+                    headerBorderRadius: 8,
+                    rowHoverBg: '#F8FAFC',
+                    rowSelectedBg: '#F3E8FF',
+                    rowSelectedHoverBg: '#E9D5FF',
+                    borderColor: '#F1F5F9',
+                  },
+                  Pagination: { colorPrimary: '#5B21B6', colorPrimaryHover: '#3C0473', itemActiveBg: '#F3E8FF' },
+                  Spin: { colorPrimary: '#5B21B6' }
                 }
               }}
             >
-              <div className="text-[#3C0473] font-normal text-sm mb-4">
-                {contas.length > 0 ? `Mostrando ${contas.length} registros` : 'Nenhum registro encontrado'}
-              </div>
-              <Table 
-                dataSource={contas} 
-                columns={columns} 
-                rowKey="id"
-                loading={isLoading}
-                pagination={{ pageSize: 10, align: 'center' }}
-                scroll={{ x: 'max-content' }}
+              <TabelaContasPagar 
+                contas={contas as any}
+                isLoading={isLoading}
+                onRefresh={() => fetchContas()}
+                pagination={pagination}
+                onDelete={excluirConta}
+                onBaixa={darBaixa}
               />
             </ConfigProvider>
-
-          </CardContent>
-        </Card>
+          </Box>
+        </Box>
       </div>
     </Layout>
   );

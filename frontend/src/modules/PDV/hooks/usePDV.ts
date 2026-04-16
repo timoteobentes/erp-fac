@@ -95,6 +95,10 @@ export const usePDV = () => {
 
     setIsSubmitting(true);
     try {
+      // Tira uma "foto" dos itens antes de limpar
+      const itensVendidos = [...carrinho];
+      const valorTotalVendido = totalCarrinho;
+
       const payload = {
         cliente_id: clienteId || null,
         forma_pagamento: formaPagamento, // 'dinheiro' | 'pix' | 'cartao_credito' | 'cartao_debito'
@@ -106,8 +110,17 @@ export const usePDV = () => {
 
       const response = await checkoutPDVService(payload);
       toast.success('Venda finalizada com sucesso! Verifique a nota fiscal.');
-      limparCarrinho();
-      return { sucesso: true, dadosVenda: response.data };
+      
+      limparCarrinho(); // Limpa a tela, mas nós já salvamos a foto
+      
+      return { 
+        sucesso: true, 
+        dadosVenda: {
+          ...response.data,
+          itens: itensVendidos, // Injeta os itens para o cupom ler
+          valor_total: valorTotalVendido
+        } 
+      };
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Erro ao finalizar venda.');
       return { sucesso: false };

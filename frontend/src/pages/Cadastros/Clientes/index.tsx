@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect, useCallback } from "react";
-import { Card, CardContent, Collapse, Snackbar, Alert } from "@mui/material";
+import { Collapse, Snackbar, Alert, Box, Typography } from "@mui/material";
 import { ConfigProvider } from "antd";
 import Layout from "../../../template/Layout";
 import { useNavigate } from "react-router";
@@ -9,7 +9,7 @@ import { TabelaClientes } from "../../../modules/Cadastros/Clientes/components/T
 import { ClientesFilters, type FiltrosType } from "../../../modules/Cadastros/Clientes/components/ClientesFilters";
 import { ClientesActions } from "../../../modules/Cadastros/Clientes/components/ClientesActions";
 
-// Estado inicial dos filtros extraído para constante
+// Estado inicial dos filtros mantido intacto
 const INITIAL_FILTERS: FiltrosType = {
   tipo: "", codigo: "", nome: "", cpfCnpj: "", telefone: "",
   email: "", cidade: "", estado: "", vendedor: "", situacao: "",
@@ -26,21 +26,20 @@ const Clientes: React.FC = () => {
   const [filtros, setFiltros] = useState<FiltrosType>(INITIAL_FILTERS);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' | 'info' });
 
-  // Efeito de Montagem (Animação)
+  // Efeito de Montagem (Animação Suave)
   useEffect(() => {
     fetchClientes();
     const timer = setTimeout(() => setMounted(true), 100);
     return () => clearTimeout(timer);
-  }, []); // Dependência vazia: roda apenas uma vez
+  }, []);
 
-  // Handlers Otimizados
+  // Handlers Otimizados mantidos
   const showSnackbar = useCallback((message: string, severity: 'success' | 'error' | 'info' = 'success') => {
     setSnackbar({ open: true, message, severity });
   }, []);
 
   const handleBuscarAvancada = async () => {
     try {
-      // Remove campos vazios e mapeia chaves para API
       const filtrosAtivos = Object.entries(filtros).reduce((acc: any, [key, value]) => {
         if (value) {
           const apiKey = key === 'cpfCnpj' ? 'cpf_cnpj' : key === 'vendedor' ? 'vendedor_responsavel' : key;
@@ -50,7 +49,6 @@ const Clientes: React.FC = () => {
       }, {});
 
       await aplicarFiltrosManuais(filtrosAtivos);
-      // setOpenFilters(false);
       showSnackbar('Filtros aplicados com sucesso!');
     } catch (error) {
       console.error(error);
@@ -69,7 +67,6 @@ const Clientes: React.FC = () => {
   const handleExport = async (formato: string) => {
     showSnackbar(`Iniciando exportação ${formato.toUpperCase()}...`, 'info');
     try {
-      // Lógica de mapeamento de filtros similar à busca (pode extrair para função auxiliar se quiser reutilizar)
       const filtrosAtivos = Object.entries(filtros).reduce((acc: any, [key, value]) => {
         if (value) acc[key === 'cpfCnpj' ? 'cpf_cnpj' : key] = value;
         return acc;
@@ -88,12 +85,12 @@ const Clientes: React.FC = () => {
     showSnackbar('Filtros limpos');
   };
 
-  // Renderização
+  // Renderização de Loading Premium
   if (isLoading && clientes.length === 0) {
     return (
       <Layout>
-        <div className="flex justify-center items-center min-h-screen">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#9842F6]"></div>
+        <div className="flex justify-center items-center h-[calc(100vh-140px)]">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#F1F5F9] border-t-[#5B21B6]"></div>
         </div>
       </Layout>
     );
@@ -101,14 +98,32 @@ const Clientes: React.FC = () => {
 
   return (
     <Layout>
-      <div className={`transition-opacity duration-500 ${mounted ? 'opacity-100' : 'opacity-0'}`}>
-        <div className="w-full text-start mb-6">
-          <span className="text-[#9842F6] font-bold text-2xl">Clientes</span>
+      <div className={`transition-all duration-500 ease-in-out ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'} pb-8`}>
+        
+        {/* HEADER DA PÁGINA */}
+        <div className="flex flex-col mb-8">
+          <Typography variant="h3" fontWeight={800} color="#0F172A" sx={{ letterSpacing: '-0.02em', mb: 1 }}>
+            Clientes
+          </Typography>
+          <Typography variant="body2" color="#64748B">
+            Gerencie sua base de clientes, consulte históricos e aplique filtros para relatórios precisos.
+          </Typography>
         </div>
 
-        <Card sx={{ boxShadow: "none !important", borderRadius: "4px", border: "1px solid #E9DEF6" }}>
-          <CardContent>
-            {/* Componente de Ações (Botões) */}
+        {/* CONTAINER PRINCIPAL (Soft UX) */}
+        <Box 
+          sx={{ 
+            backgroundColor: '#FFFFFF', 
+            borderRadius: '24px', 
+            boxShadow: '0 4px 24px rgba(0,0,0,0.02)', 
+            border: '1px solid #E2E8F0',
+            overflow: 'hidden',
+            display: 'flex',
+            flexDirection: 'column'
+          }}
+        >
+          {/* BARRA DE AÇÕES (Fundo levemente destacado) */}
+          <Box sx={{ p: 3, borderBottom: '1px solid #F1F5F9', backgroundColor: '#F8FAFC' }}>
             <ClientesActions
               onAdd={() => navigate("/cadastros/clientes/novo")}
               onRefresh={fetchClientes}
@@ -117,61 +132,90 @@ const Clientes: React.FC = () => {
               onSearchSimple={handleSearchSimple}
               mounted={mounted}
             />
+          </Box>
 
-            {/* Componente de Filtros (Collapsible) */}
-            <Collapse in={openFilters}>
+          {/* ÁREA DE FILTROS */}
+          <Collapse in={openFilters}>
+            <Box sx={{ p: 4, borderBottom: '1px solid #E2E8F0', backgroundColor: '#FFFFFF' }}>
               <ClientesFilters 
                 filtros={filtros}
                 setFiltros={setFiltros}
                 onBuscar={handleBuscarAvancada}
                 onLimpar={handleLimpar}
               />
-            </Collapse>
+            </Box>
+          </Collapse>
 
-            {/* Tabela */}
+          {/* ÁREA DA TABELA */}
+          <Box sx={{ p: 4 }}>
+            <div className="flex justify-between items-center mb-4">
+              {/* Badge indicadora de registros */}
+              <span className="text-[#64748B] text-xs font-bold uppercase tracking-wider bg-[#F1F5F9] px-3 py-1.5 rounded-md">
+                {clientes.length > 0 ? `${clientes.length} de ${paginacao.total} registros` : 'Nenhum registro encontrado'}
+              </span>
+            </div>
+
             <ConfigProvider
               theme={{
                 components: {
                   Checkbox: {
-                    colorPrimary: '#6B00A1',
-                    colorPrimaryHover: '#1a0027'
+                    colorPrimary: '#5B21B6',
+                    colorPrimaryHover: '#3C0473'
                   },
                   Table: {
-                    rowSelectedBg: '#f4dfff',
-                    rowSelectedHoverBg: '#ecc6ff'
+                    headerBg: '#F8FAFC',
+                    headerColor: '#475569',
+                    headerBorderRadius: 8,
+                    rowHoverBg: '#F8FAFC',
+                    rowSelectedBg: '#F3E8FF',      // Roxo super claro B2B
+                    rowSelectedHoverBg: '#E9D5FF', // Hover do selecionado
+                    borderColor: '#F1F5F9',
                   },
                   Pagination: {
-                    colorPrimary: '#6B00A1',
-                    colorPrimaryHover: '#1a0027'
+                    colorPrimary: '#5B21B6',
+                    colorPrimaryHover: '#3C0473',
+                    itemActiveBg: '#F3E8FF'
                   },
                   Spin: {
-                    colorPrimary: '#3C0473'
+                    colorPrimary: '#5B21B6'
                   }
                 }
               }}
             >
-              <div className="text-[#3C0473] font-normal text-lg mb-4">
-                {clientes.length > 0 ? `Mostrando ${clientes.length} de ${paginacao.total}` : 'Nenhum registro'}
-              </div>
               <TabelaClientes 
                 clientes={clientes} 
                 isLoading={isLoading} 
                 onRefresh={fetchClientes}
                 onChange={() => {}} 
-                pagination={{ current: paginacao.pagina, pageSize: paginacao.limite, total: paginacao.total, align: 'center' }} 
+                pagination={{ 
+                  current: paginacao.pagina, 
+                  pageSize: paginacao.limite, 
+                  total: paginacao.total, 
+                  align: 'center',
+                  showSizeChanger: true,
+                }} 
               />
             </ConfigProvider>
-          </CardContent>
-        </Card>
+          </Box>
+        </Box>
       </div>
 
+      {/* SNACKBAR REFINADO */}
       <Snackbar 
         open={snackbar.open} 
         autoHideDuration={4000} 
         onClose={() => setSnackbar(p => ({ ...p, open: false }))}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
       >
-        <Alert severity={snackbar.severity} onClose={() => setSnackbar(p => ({ ...p, open: false }))}>
+        <Alert 
+          severity={snackbar.severity} 
+          onClose={() => setSnackbar(p => ({ ...p, open: false }))}
+          sx={{ 
+            borderRadius: '12px', 
+            boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1)',
+            fontWeight: 600
+          }}
+        >
           {snackbar.message}
         </Alert>
       </Snackbar>

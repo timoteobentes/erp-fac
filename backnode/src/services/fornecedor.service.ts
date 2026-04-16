@@ -25,7 +25,7 @@ export interface OpcoesExportacao {
 }
 
 export interface OpcoesPaginacao {
-  limite: number;
+  limit: number;
   offset: number;
 }
 

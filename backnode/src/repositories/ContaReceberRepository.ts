@@ -42,7 +42,7 @@ export class ContaReceberRepository extends BaseRepository {
   // ==========================================
   // 2. LISTAR COM FILTROS (MVP)
   // ==========================================
-  async listar(usuarioId: number, filtros: FiltrosContaReceber) {
+  async listar(usuarioId: number, filtros: FiltrosContaReceber, paginacao?: { limit: number, offset: number }) {
     let query = `
       SELECT 
         cr.*,
@@ -75,15 +75,30 @@ export class ContaReceberRepository extends BaseRepository {
       count++;
     }
 
-    query += ` ORDER BY cr.data_vencimento ASC`;
+    let finalQuery = query + ` ORDER BY cr.data_vencimento ASC`;
 
-    const res = await pool.query(query, values);
+    if (paginacao) {
+      const safeLimit = Math.min(Number(paginacao.limit) || 500, 500);
+      const safeOffset = Math.max(Number(paginacao.offset) || 0, 0);
+      finalQuery += ` LIMIT $${count} OFFSET $${count + 1}`;
+      values.push(safeLimit, safeOffset);
+    }
+
+    const countQuery = `SELECT COUNT(*) as total FROM (${query}) as sub`;
+    const countValues = values.slice(0, values.length - (paginacao ? 2 : 0));
+
+    const [res, countRes] = await Promise.all([
+      pool.query(finalQuery, values),
+      pool.query(countQuery, countValues)
+    ]);
     
-    // Converte numerics
-    return res.rows.map(row => ({
-      ...row,
-      valor_total: Number(row.valor_total)
-    }));
+    return {
+      dados: res.rows.map(row => ({
+        ...row,
+        valor_total: Number(row.valor_total)
+      })),
+      total: parseInt(countRes.rows[0].total)
+    };
   }
 
   // ==========================================

@@ -28,9 +28,27 @@ const NovoProduto = lazy(() => import('../pages/Cadastros/Produtos/Novo'));
 const EditarProduto = lazy(() => import('../pages/Cadastros/Produtos/Editar'));
 const VisualizarProduto = lazy(() => import('../pages/Cadastros/Produtos/Visualizar'));
 
+// Módulo: Servicos Gerais
+const Servicos = lazy(() => import('../pages/Servicos/Cadastro'));
+const NovoServico = lazy(() => import('../pages/Servicos/Cadastro/Novo'));
+const EditarServico = lazy(() => import('../pages/Servicos/Cadastro/Editar'));
+
+// Módulo: Servicos (Emissão NFSe)
+const HistoricoNFSe = lazy(() => import('../pages/Servicos/NFSe'));
+const NovaNFSe = lazy(() => import('../pages/Servicos/NFSe/Nova'));
+
+// Módulo: Estoque
+const GerenciarEstoque = lazy(() => import('../pages/Estoque/Gerenciar'));
+const MovimentacoesEstoque = lazy(() => import('../pages/Estoque/Movimentacoes'));
+
 // Módulo: Financeiro
 const ContasPagar = lazy(() => import('../pages/Financeiro/ContasPagar'));
 const NovoPagamento = lazy(() => import('../pages/Financeiro/ContasPagar/Novo'));
+const VisualizarPagamento = lazy(() => import('../pages/Financeiro/ContasPagar/Visualizar'));
+const EditarPagamento = lazy(() => import('../pages/Financeiro/ContasPagar/Editar'));
+const ContasReceber = lazy(() => import('../pages/Financeiro/ContasReceber'));
+const VisualizarRecebimento = lazy(() => import('../pages/Financeiro/ContasReceber/Visualizar'));
+const EditarRecebimento = lazy(() => import('../pages/Financeiro/ContasReceber/Editar'));
 
 // Módulo: PDV
 const PDV = lazy(() => import('../pages/PDV'));
@@ -71,7 +89,7 @@ const AppRoutes = () => {
         <Route element={<PublicLayout />}>
           <Route path="/login" element={<Login />} />
           <Route path="/cadastro" element={<Cadastro />} />
-          <Route path="/esqueci-senha" element={<SolicitarNovaSenha />} />
+          <Route path="/solicitar-nova-senha" element={<SolicitarNovaSenha />} />
           <Route path="/redefinir-senha" element={<RedefinirSenha />} />
         </Route>
 
@@ -99,9 +117,34 @@ const AppRoutes = () => {
              <Route path="visualizar/:id" element={<VisualizarProduto />} />
           </Route>
 
+          {/* Módulo: Serviços Principais */}
+          <Route path="/servicos/cadastro">
+             <Route index element={<Servicos />} />
+             <Route path="novo" element={<NovoServico />} />
+             <Route path="editar/:id" element={<EditarServico />} />
+          </Route>
+
+          <Route path="/servicos/nfse">
+             <Route index element={<HistoricoNFSe />} />
+             <Route path="nova" element={<NovaNFSe />} />
+          </Route>
+
+          {/* Módulo: Estoque */}
+          <Route path="/estoque" element={<GerenciarEstoque />} />
+          <Route path="/estoque/movimentacoes" element={<MovimentacoesEstoque />} />
+
           {/* Módulo: Financeiro */}
-          <Route path="/financeiro/pagar" element={<ContasPagar />} />
-          <Route path="/financeiro/pagar/novo" element={<NovoPagamento />} />
+          <Route path="/financeiro/pagar">
+            <Route index element={<ContasPagar />} />
+            <Route path="novo" element={<NovoPagamento />} />
+            <Route path="visualizar/:id" element={<VisualizarPagamento />} />
+            <Route path="editar/:id" element={<EditarPagamento />} />
+          </Route>
+          <Route path="/financeiro/receber">
+            <Route index element={<ContasReceber />} />
+            <Route path="visualizar/:id" element={<VisualizarRecebimento />} />
+            <Route path="editar/:id" element={<EditarRecebimento />} />
+          </Route>
 
           {/* Módulo: PDV Frente de Caixa */}
           <Route path="/pdv" element={<PDV />} />

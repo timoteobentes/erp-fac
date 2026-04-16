@@ -52,29 +52,10 @@ export const getStaticMenuItems = (navigate: any, user: any, adm: boolean) => {
       label: 'Serviços',
       disabled,
       children: [
+        { key: 'servicos-cadastro', label: 'Meus Serviços', onClick: () => navigate('/servicos/cadastro') },
+        { key: 'servicos-nfse', label: 'Emissão de NFS-e', onClick: () => navigate('/servicos/nfse') },
         { key: 'servicos-sub1', label: 'Pedidos' },
         { key: 'servicos-sub2', label: 'Orçamentos' },
-      ],
-    },
-    {
-      key: 'contabilidade',
-      icon: <RequestQuoteOutlined />,
-      label: 'Contabilidade',
-      disabled,
-      children: [
-        { key: 'contas-pagar', label: 'Contas a Pagar' },
-        { key: 'contas-receber', label: 'Contas a Receber' },
-        { key: 'fluxo-caixa', label: 'Fluxo de Caixa' },
-      ],
-    },
-    {
-      key: 'vendas',
-      icon: <ShoppingBagOutlined />,
-      label: 'Vendas',
-      disabled,
-      children: [
-        { key: 'vendas-sub1', label: 'Pedidos' },
-        { key: 'vendas-sub2', label: 'Orçamentos' },
       ],
     },
     {
@@ -83,8 +64,8 @@ export const getStaticMenuItems = (navigate: any, user: any, adm: boolean) => {
       label: 'Estoque',
       disabled,
       children: [
-        { key: 'estoque-sub1', label: 'Pedidos' },
-        { key: 'estoque-sub2', label: 'Orçamentos' },
+        { key: 'estoque-gerenciar', label: 'Gerenciar Estoque', onClick: () => navigate('/estoque') },
+        { key: 'estoque-movimentacoes', label: 'Histórico de Movimentações', onClick: () => navigate('/estoque/movimentacoes') },
       ],
     },
     {
@@ -94,14 +75,36 @@ export const getStaticMenuItems = (navigate: any, user: any, adm: boolean) => {
       disabled,
       children: [
         { key: 'financeiro-pagar', label: 'Contas a Pagar', onClick: () => navigate('/financeiro/pagar') },
-        { key: 'financeiro-receber', label: 'Contas a Receber' },
+        { key: 'financeiro-receber', label: 'Contas a Receber', onClick: () => navigate('/financeiro/receber') },
       ],
     },
+    {
+      key: 'contabilidade',
+      icon: <RequestQuoteOutlined />,
+      disabled: true,
+      label: 'Contabilidade',
+      children: [
+        { key: 'contas-pagar', label: 'Contas a Pagar', onClick: () => navigate('/financeiro/pagar') },
+        { key: 'contas-receber', label: 'Contas a Receber', onClick: () => navigate('/financeiro/receber') },
+        { key: 'fluxo-caixa', label: 'Fluxo de Caixa' },
+      ],
+    },
+    {
+      key: 'vendas',
+      icon: <ShoppingBagOutlined />,
+      label: 'Vendas',
+      disabled: true,
+      children: [
+        { key: 'vendas-sub1', label: 'Pedidos' },
+        { key: 'vendas-sub2', label: 'Orçamentos' },
+      ],
+    },
+    // estoque e financeiro
     {
       key: 'nota-fiscal',
       icon: <ReceiptLongOutlined />,
       label: 'Nota Fiscal',
-      disabled,
+      disabled: true,
       children: [
         { key: 'nota-fiscal-sub1', label: 'Pedidos' },
         { key: 'nota-fiscal-sub2', label: 'Orçamentos' },
@@ -111,7 +114,7 @@ export const getStaticMenuItems = (navigate: any, user: any, adm: boolean) => {
       key: 'contratos',
       icon: <BorderColor />,
       label: 'Contratos',
-      disabled,
+      disabled: true,
       children: [
         { key: 'contratos-sub1', label: 'Pedidos' },
         { key: 'contratos-sub2', label: 'Orçamentos' },
@@ -121,7 +124,7 @@ export const getStaticMenuItems = (navigate: any, user: any, adm: boolean) => {
       key: 'relatorios',
       icon: <TextSnippet />,
       label: 'Relatórios',
-      disabled,
+      disabled: true,
       children: [
         { key: 'relatorios-sub1', label: 'Pedidos' },
         { key: 'relatorios-sub2', label: 'Orçamentos' },
@@ -131,7 +134,7 @@ export const getStaticMenuItems = (navigate: any, user: any, adm: boolean) => {
       key: 'configuracoes',
       icon: <Settings />,
       label: 'Configurações',
-      disabled,
+      disabled: true,
       children: [
         { key: 'configuracoes-sub1', label: 'Pedidos' },
         { key: 'configuracoes-sub2', label: 'Orçamentos' },

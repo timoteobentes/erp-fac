@@ -42,19 +42,47 @@ export const useFornecedores = () => {
       const filtrosAtuais = novosFiltros || filtros;
       const ordenacaoAtual = novaOrdenacao || ordenacao;
       
-      const resultado: ResultadoFornecedores = await listarFornecedoresService(
+      const resultado: any = await listarFornecedoresService(
         pagina,
         limite,
         filtrosAtuais,
         ordenacaoAtual
       );
 
-      setFornecedores(resultado.fornecedores || []);
+      let dataArray: any[] = [];
+      
+      // 1. Remove o wrapper { success, data } se ele existir
+      const payload = (resultado && resultado.data && !Array.isArray(resultado.data) && resultado.success !== undefined) 
+        ? resultado.data 
+        : resultado;
+
+      // 2. Extrai o Array
+      if (Array.isArray(payload)) {
+        dataArray = payload;
+      } else if (payload && typeof payload === 'object') {
+        if (Array.isArray(payload.dados)) dataArray = payload.dados;
+        else if (Array.isArray(payload.data)) dataArray = payload.data;
+        else if (Array.isArray(payload.clientes)) dataArray = payload.clientes;
+        else if (Array.isArray(payload.produtos)) dataArray = payload.produtos;
+        else if (Array.isArray(payload.fornecedores)) dataArray = payload.fornecedores;
+        else if (Array.isArray(payload.servicos)) dataArray = payload.servicos;
+        else if (Array.isArray(payload.contas)) dataArray = payload.contas;
+        else if (Array.isArray(payload.vendas)) dataArray = payload.vendas;
+        else if (Array.isArray(payload.movimentacoes)) dataArray = payload.movimentacoes;
+        else {
+          const arrayEncontrado = Object.values(payload).find(val => Array.isArray(val));
+          if (arrayEncontrado) dataArray = arrayEncontrado as any[];
+        }
+      }
+
+      let totalItems = payload?.total || resultado?.paginacao?.total || 0;
+
+      setFornecedores(dataArray);
       setPaginacao(prev => ({
         ...prev,
         current: pagina,
         pageSize: limite,
-        total: resultado.paginacao?.total || 0
+        total: totalItems
       }));
       
       if (novosFiltros) {

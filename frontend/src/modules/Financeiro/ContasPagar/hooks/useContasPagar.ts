@@ -3,6 +3,7 @@ import {
   listarContasPagarService, 
   baixarContaPagarService, 
   excluirContaPagarService,
+  exportarContasPagarService,
   type FiltrosContaPagar
 } from '../services/contasPagarService';
 import { toast } from 'react-toastify';
@@ -54,9 +55,31 @@ export const useContasPagar = () => {
     setIsLoading(true);
     try {
       const response = await listarContasPagarService(filtros);
-      const data = response.data || [];
-      setContas(data);
-      calcularResumo(data);
+      
+      let dataArray: any[] = [];
+      
+      // 1. Remove a casca do { success: true, data: ... } se ela existir
+      const payload = (response && response.data && !Array.isArray(response.data) && response.success !== undefined) 
+        ? response.data 
+        : response;
+
+      // 2. Extrai o Array de dentro do payload
+      if (Array.isArray(payload)) {
+        dataArray = payload;
+      } else if (payload && typeof payload === 'object') {
+        if (Array.isArray(payload.dados)) dataArray = payload.dados;
+        else if (Array.isArray(payload.data)) dataArray = payload.data;
+        else if (Array.isArray(payload.contas)) dataArray = payload.contas;
+        else if (Array.isArray(payload.contas_pagar)) dataArray = payload.contas_pagar;
+        else {
+          const arrayEncontrado = Object.values(payload).find(val => Array.isArray(val));
+          if (arrayEncontrado) dataArray = arrayEncontrado as any[];
+        }
+      }
+
+      setContas(dataArray);
+      calcularResumo(dataArray);
+      
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Erro ao carregar contas a pagar');
     } finally {
@@ -84,12 +107,34 @@ export const useContasPagar = () => {
     }
   };
 
+  const exportarContas = async (formato: 'csv' | 'xlsx' | 'pdf', filtros?: FiltrosContaPagar) => {
+    setIsLoading(true);
+    try {
+      const blob = await exportarContasPagarService(formato, filtros);
+      const url = window.URL.createObjectURL(new Blob([blob]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `relatorio_contas_pagar_${new Date().getTime()}.${formato}`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      toast.success(`Download do ${formato.toUpperCase()} iniciado com sucesso!`);
+    } catch (error) {
+      console.error('Erro ao exportar contas a pagar:', error);
+      toast.error('Erro ao exportar o relatório.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return {
     contas,
     isLoading,
     resumo,
     fetchContas,
     darBaixa,
-    excluirConta
+    excluirConta,
+    exportarContas
   };
 };

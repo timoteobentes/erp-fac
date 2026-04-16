@@ -87,6 +87,41 @@ export class FinanceiroController {
     }
   }
 
+  exportarContasReceber = async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const usuarioId = req.usuario?.id;
+      if (!usuarioId) { res.status(401).json({ message: 'Acesso negado.' }); return; }
+
+      const formato = (req.query.formato as 'csv' | 'xlsx' | 'pdf') || 'csv';
+      const filtros = {
+        status: req.query.status as string,
+        data_vencimento_inicio: req.query.data_vencimento_inicio as string,
+        data_vencimento_fim: req.query.data_vencimento_fim as string,
+        cliente_id: req.query.cliente_id ? parseInt(req.query.cliente_id as string) : undefined
+      };
+
+      const bufferOrString = await this.financeiroService.exportarContasReceber(usuarioId, { formato, filtros });
+      const filename = `relatorio_contas_receber_${new Date().toISOString().split('T')[0]}`;
+
+      if (formato === 'csv') {
+        res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+        res.setHeader('Content-Disposition', `attachment; filename=${filename}.csv`);
+        res.send(bufferOrString);
+      } else if (formato === 'xlsx') {
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', `attachment; filename=${filename}.xlsx`);
+        res.send(bufferOrString);
+      } else if (formato === 'pdf') {
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename=${filename}.pdf`);
+        res.send(bufferOrString);
+      }
+    } catch (error: any) {
+      console.error('Erro na exportação de contas a receber:', error);
+      res.status(500).json({ success: false, message: 'Erro ao gerar arquivo de exportação.' });
+    }
+  }
+
   // =========================================================================
   // 2. CONTAS A PAGAR
   // =========================================================================
@@ -159,6 +194,41 @@ export class FinanceiroController {
       res.status(200).json({ success: true, message: 'Conta excluída com sucesso.' });
     } catch (error: any) {
       res.status(400).json({ success: false, message: error.message });
+    }
+  }
+
+  exportarContasPagar = async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const usuarioId = req.usuario?.id;
+      if (!usuarioId) { res.status(401).json({ message: 'Acesso negado.' }); return; }
+
+      const formato = (req.query.formato as 'csv' | 'xlsx' | 'pdf') || 'csv';
+      const filtros = {
+        status: req.query.status as string,
+        data_vencimento_inicio: req.query.data_vencimento_inicio as string,
+        data_vencimento_fim: req.query.data_vencimento_fim as string,
+        fornecedor_id: req.query.fornecedor_id ? parseInt(req.query.fornecedor_id as string) : undefined
+      };
+
+      const bufferOrString = await this.financeiroService.exportarContasPagar(usuarioId, { formato, filtros });
+      const filename = `relatorio_contas_pagar_${new Date().toISOString().split('T')[0]}`;
+
+      if (formato === 'csv') {
+        res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+        res.setHeader('Content-Disposition', `attachment; filename=${filename}.csv`);
+        res.send(bufferOrString);
+      } else if (formato === 'xlsx') {
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', `attachment; filename=${filename}.xlsx`);
+        res.send(bufferOrString);
+      } else if (formato === 'pdf') {
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename=${filename}.pdf`);
+        res.send(bufferOrString);
+      }
+    } catch (error: any) {
+      console.error('Erro na exportação de contas a pagar:', error);
+      res.status(500).json({ success: false, message: 'Erro ao gerar arquivo de exportação.' });
     }
   }
 }

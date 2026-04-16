@@ -110,7 +110,7 @@ export class FornecedorController {
       const resultado = await this.fornecedorService.listarFornecedoresComFiltros(
         usuarioId, 
         filtros, 
-        { limite, offset },
+        { limit: limite, offset: offset },
         { ordenarPor, ordem }
       );
 

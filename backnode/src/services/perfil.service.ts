@@ -13,7 +13,7 @@ export class PerfilService {
   }
 
   async atualizarPerfil(usuario_id: number, dados: any) {
-    const { usuario, fiscal } = dados;
+    const { usuario, fiscal, fiscal_nfse } = dados;
 
     // Se a senha foi informada para trocar, fazer o hash
     if (usuario && usuario.senha) {
@@ -43,7 +43,8 @@ export class PerfilService {
     await this.perfilRepository.atualizarPerfilTransacional(
       usuario_id, 
       usuario || {}, 
-      fiscal || {}
+      fiscal || {},
+      fiscal_nfse || {}
     );
 
     return { success: true, message: 'Perfil e Configurações Fiscais atualizados' };

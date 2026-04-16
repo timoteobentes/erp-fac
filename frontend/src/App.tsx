@@ -6,8 +6,10 @@ import AppRoutes from './routes/route.tsx';
 import facTheme from './theme/facTheme.ts';
 import AOSProvider from './providers/aos-provider.tsx';
 import { ToastContainer } from 'react-toastify';
+import { applyAntiInspect } from './utils/preventInspect.ts';
 
 function App() {
+  applyAntiInspect();
   return (
     <AOSProvider>
       <ToastContainer />

@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { EstoqueService } from '../services/estoque.service';
 import { MovimentacaoEstoque } from '../models/MovimentacaoEstoque';
+import { EstoqueRepository } from '../repositories/EstoqueRepository';
 
 interface AuthRequest extends Request {
   usuario?: {
@@ -75,4 +76,64 @@ export class EstoqueController {
       res.status(500).json({ success: false, message: 'Erro interno.' });
     }
   }
+
+  // =========================================================================
+  // 3. LISTAR HISTÓRICO GLOBAL
+  // =========================================================================
+  listarHistoricoGlobal = async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const usuarioId = req.usuario?.id;
+      if (!usuarioId) {
+        res.status(401).json({ message: 'Acesso negado. Usuário não autenticado.' });
+        return;
+      }
+
+      const estoqueRepository = new EstoqueRepository();
+      const historico = await estoqueRepository.listarHistoricoGlobal(usuarioId);
+
+      res.status(200).json({
+        success: true,
+        data: historico
+      });
+
+    } catch (error: any) {
+      console.error('Erro ao listar histórico global de estoque:', error);
+      res.status(500).json({ success: false, message: 'Erro interno.' });
+    }
+  }
+  // =========================================================================
+  // 4. EXPORTAR HISTÓRICO GLOBAL
+  // =========================================================================
+  exportarMovimentacoes = async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const usuarioId = req.usuario?.id;
+      if (!usuarioId) {
+        res.status(401).json({ message: 'Acesso negado.' });
+        return;
+      }
+
+      const formato = (req.query.formato as 'csv' | 'xlsx' | 'pdf') || 'csv';
+
+      const bufferOrString = await this.estoqueService.exportarMovimentacoes(usuarioId, { formato });
+      const filename = `relatorio_movimentacoes_estoque_${new Date().toISOString().split('T')[0]}`;
+
+      if (formato === 'csv') {
+        res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+        res.setHeader('Content-Disposition', `attachment; filename=${filename}.csv`);
+        res.send(bufferOrString);
+      } else if (formato === 'xlsx') {
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', `attachment; filename=${filename}.xlsx`);
+        res.send(bufferOrString);
+      } else if (formato === 'pdf') {
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename=${filename}.pdf`);
+        res.send(bufferOrString);
+      }
+    } catch (error: any) {
+      console.error('Erro na exportação do histórico de estoque:', error);
+      res.status(500).json({ success: false, message: 'Erro ao gerar arquivo de exportação.' });
+    }
+  }
 }
+

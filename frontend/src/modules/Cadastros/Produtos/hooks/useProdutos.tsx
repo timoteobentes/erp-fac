@@ -8,6 +8,7 @@ import {
   atualizarProdutoService,
   excluirProdutoService,
   obterDadosAuxiliaresService,
+  exportarProdutosService,
   type FiltrosProduto,
   type PaginacaoProduto,
   type DadosAuxiliares
@@ -53,14 +54,42 @@ export const useProdutos = () => {
   ) => {
     setIsLoading(true);
     try {
-      const response = await listarProdutosService(pagina, limite, filtrosAtuais);
+      const response: any = await listarProdutosService(pagina, limite, filtrosAtuais);
       
-      setProdutos(response.data);
+      let dataArray: any[] = [];
+      
+      // 1. Remove o wrapper { success, data } se ele existir
+      const payload = (response && response.data && !Array.isArray(response.data) && response.success !== undefined) 
+        ? response.data 
+        : response;
+
+      // 2. Extrai o Array
+      if (Array.isArray(payload)) {
+        dataArray = payload;
+      } else if (payload && typeof payload === 'object') {
+        if (Array.isArray(payload.dados)) dataArray = payload.dados;
+        else if (Array.isArray(payload.data)) dataArray = payload.data;
+        else if (Array.isArray(payload.clientes)) dataArray = payload.clientes;
+        else if (Array.isArray(payload.produtos)) dataArray = payload.produtos;
+        else if (Array.isArray(payload.fornecedores)) dataArray = payload.fornecedores;
+        else if (Array.isArray(payload.servicos)) dataArray = payload.servicos;
+        else if (Array.isArray(payload.contas)) dataArray = payload.contas;
+        else if (Array.isArray(payload.vendas)) dataArray = payload.vendas;
+        else if (Array.isArray(payload.movimentacoes)) dataArray = payload.movimentacoes;
+        else {
+          const arrayEncontrado = Object.values(payload).find(val => Array.isArray(val));
+          if (arrayEncontrado) dataArray = arrayEncontrado as any[];
+        }
+      }
+
+      let totalItems = payload?.total || response?.meta?.total || 0;
+
+      setProdutos(dataArray);
       setPaginacao({
-        page: response.meta.page,
-        limit: response.meta.limit,
-        total: response.meta.total,
-        totalPages: response.meta.totalPages
+        page: response?.meta?.page || pagina,
+        limit: response?.meta?.limit || limite,
+        total: totalItems,
+        totalPages: response?.meta?.totalPages || Math.ceil(totalItems / limite) || 1
       });
       
       // Atualiza o estado local de filtros se foram passados novos
@@ -158,6 +187,30 @@ export const useProdutos = () => {
     }
   };
 
+  /**
+   * Exporta a listagem atual em CSV, Excel ou PDF
+   */
+  const exportarProdutos = useCallback(async (formato: 'csv' | 'xlsx' | 'pdf') => {
+    setIsLoading(true);
+    try {
+      const blob = await exportarProdutosService(formato, filtros);
+      const url = window.URL.createObjectURL(new Blob([blob]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `relatorio_produtos_${new Date().getTime()}.${formato}`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      toast.success(`Download do ${formato.toUpperCase()} iniciado com sucesso!`);
+    } catch (error) {
+      console.error('Erro ao exportar produtos:', error);
+      toast.error(`Erro ao exportar o relatório.`);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [filtros]);
+
   // ============================================================================
   // HANDLERS DE UI (Busca, Filtros, Paginação)
   // ============================================================================
@@ -193,6 +246,7 @@ export const useProdutos = () => {
     createProduto,
     updateProduto,
     deleteProduto,
+    exportarProdutos,
 
     // Helpers UI
     handleSearch,

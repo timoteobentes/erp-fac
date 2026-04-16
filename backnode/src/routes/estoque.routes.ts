@@ -12,6 +12,10 @@ router.use(authMiddleware);
 router.use(isolamentoMiddleware);
 router.use(loggerMiddleware);
 
+// Rota de listagem de histórico global
+router.get('/estoque/movimentacoes/exportar', estoqueController.exportarMovimentacoes);
+router.get('/estoque/movimentacoes', estoqueController.listarHistoricoGlobal);
+
 // Rota de listagem de histórico
 router.get('/estoque/:produto_id/historico', estoqueController.listarHistorico);
 

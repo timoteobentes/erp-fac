@@ -13,7 +13,7 @@ const PLANS = [
   {
     id: 'mei',
     name: 'MEI',
-    price: 96.90,
+    price: 1, // 97,00
     color: '#64748b',
     features: ['Gestão de Clientes', 'Controle de Vendas', 'Relatórios Básicos'],
     moreFeatures: ['Suporte por E-mail', '1 Usuário', 'Backup Diário']
@@ -21,7 +21,7 @@ const PLANS = [
   {
     id: 'essencial',
     name: 'Essencial',
-    price: 316.90,
+    price: 2, // 337,00
     recommended: true,
     color: '#6B00A1', // Roxo Principal
     features: ['Tudo do Básico', 'Múltiplos Usuários', 'Emissão de NFe/NFCe'],
@@ -30,7 +30,15 @@ const PLANS = [
   {
     id: 'controle',
     name: 'Controle',
-    price: 216.90,
+    price: 3, // 227,00
+    color: '#1e293b', // Dark
+    features: ['Filiais Ilimitadas', 'Gestor de Conta Dedicado'],
+    moreFeatures: ['Auditória Avançada', 'BI Personalizado', 'SLA Garantido', 'Treinamento Equipe']
+  },
+  {
+    id: 'anual',
+    name: 'Anual',
+    price: 4, // 303,30
     color: '#1e293b', // Dark
     features: ['Filiais Ilimitadas', 'Gestor de Conta Dedicado'],
     moreFeatures: ['Auditória Avançada', 'BI Personalizado', 'SLA Garantido', 'Treinamento Equipe']
@@ -56,7 +64,7 @@ export const StepPlans: React.FC<StepPlansProps> = ({ selectedPlan, onSelect }) 
           Escolha o plano ideal para o seu negócio
         </Typography>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {PLANS.map((plan) => {
             const isSelected = selectedPlan?.id === plan.id;
             const isRecommended = plan.recommended;

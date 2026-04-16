@@ -1,14 +1,17 @@
 import { VendaRepository } from '../repositories/VendaRepository';
 import { Venda, ItemVenda } from '../models/Venda';
 import { NfceService } from './nfce.service';
+import { EstoqueService } from './estoque.service';
 
 export class VendaService {
   private vendaRepository: VendaRepository;
   private nfceService: NfceService;
+  private estoqueService: EstoqueService;
 
   constructor() {
     this.vendaRepository = new VendaRepository();
     this.nfceService = new NfceService();
+    this.estoqueService = new EstoqueService();
   }
 
   async realizarCheckout(usuario_id: number, vendaData: any) {
@@ -34,14 +37,23 @@ export class VendaService {
         }
     }
 
-    const novaVenda: Venda = {
+    // Regra de Negócio: Liquidez do Pagamento
+    const formaPagamentoStr = vendaData.forma_pagamento.toLowerCase();
+    const isPagamentoImediato = ['dinheiro', 'pix'].includes(formaPagamentoStr);
+    
+    const statusFinanceiro = isPagamentoImediato ? 'recebido' : 'pendente';
+    const dataRecebimento = isPagamentoImediato ? new Date().toISOString().split('T')[0] : null;
+
+    const novaVenda: Venda & { status_financeiro?: string; data_recebimento?: string | null } = {
       usuario_id,
       cliente_id: vendaData.cliente_id || null,
       valor_bruto: valorLiquido + desconto,
       desconto: desconto,
       valor_total: valorLiquido,
       forma_pagamento: vendaData.forma_pagamento,
-      status: 'concluida'
+      status: 'concluida',
+      status_financeiro: statusFinanceiro, // Passando para o Repositório
+      data_recebimento: dataRecebimento    // Passando para o Repositório
     };
 
     const itensMap: ItemVenda[] = vendaData.itens.map((i: any) => ({
@@ -54,6 +66,8 @@ export class VendaService {
     // Aciona a transação que salva a venda, os itens, baixa estoque e lança no contas a receber
     const novaVendaSalva = await this.vendaRepository.processarVendaTransaction(novaVenda, itensMap);
     
+    // O Estoque e as Movimentações já foram processados na transação principal ACID acima.
+
     // Motor Sefaz: Tenta emitir NFC-e
     try {
         const nfceResult = await this.nfceService.emitir(novaVendaSalva.id!, usuario_id);
@@ -86,7 +100,7 @@ export class VendaService {
     }
   }
 
-  async listarVendas(filtros?: any) {
-    return await this.vendaRepository.listar(filtros);
+  async listarVendas(filtros?: any, paginacao?: { limit: number, offset: number }) {
+    return await this.vendaRepository.listar(filtros, paginacao);
   }
 }

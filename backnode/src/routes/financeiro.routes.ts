@@ -12,6 +12,7 @@ router.use(isolamentoMiddleware);
 router.use(loggerMiddleware);
 
 // --- CONTAS A RECEBER ---
+router.get('/financeiro/receber/exportar', financeiroController.exportarContasReceber);
 router.post('/financeiro/receber', financeiroController.criarContaReceber);
 router.get('/financeiro/receber', financeiroController.listarContasReceber);
 router.get('/financeiro/receber/:id', financeiroController.buscarContaReceber);
@@ -19,6 +20,7 @@ router.patch('/financeiro/receber/:id/baixa', financeiroController.baixarContaRe
 router.delete('/financeiro/receber/:id', financeiroController.excluirContaReceber);
 
 // --- CONTAS A PAGAR ---
+router.get('/financeiro/pagar/exportar', financeiroController.exportarContasPagar);
 router.post('/financeiro/pagar', financeiroController.criarContaPagar);
 router.get('/financeiro/pagar', financeiroController.listarContasPagar);
 router.get('/financeiro/pagar/:id', financeiroController.buscarContaPagar);

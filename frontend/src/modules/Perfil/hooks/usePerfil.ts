@@ -5,7 +5,7 @@ import { toast } from 'react-toastify';
 export const usePerfil = () => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [perfil, setPerfil] = useState<{ usuario: any, fiscal: any }>({ usuario: {}, fiscal: {} });
+  const [perfil, setPerfil] = useState<{ usuario: any, fiscal: any, fiscal_nfse: any }>({ usuario: {}, fiscal: {}, fiscal_nfse: {} });
 
   const fetchPerfil = async () => {
     try {
@@ -13,8 +13,9 @@ export const usePerfil = () => {
       const data = await obterPerfilService();
       if (data.success) {
         setPerfil({
-           usuario: data.data.usuario || {},
-           fiscal: data.data.fiscal || {}
+           usuario: data.data.usuario,
+           fiscal: data.data.fiscal,
+           fiscal_nfse: data.data.fiscal_nfse
         });
       }
     } catch (error: any) {
@@ -52,6 +53,14 @@ export const usePerfil = () => {
            ambiente_sefaz: dadosMistos.ambiente_sefaz,
            certificado_base64: dadosMistos.certificado_base64,
            certificado_senha: dadosMistos.certificado_senha
+        },
+        fiscal_nfse: {
+           inscricao_municipal: dadosMistos.inscricao_municipal_nfse,
+           codigo_tributacao_nacional: dadosMistos.codigo_tributacao_nacional,
+           codigo_tributacao_municipal: dadosMistos.codigo_tributacao_municipal,
+           serie_dps: dadosMistos.serie_dps,
+           cnbs: dadosMistos.cnbs,
+           cnae: dadosMistos.cnae_nfse
         }
       };
 

@@ -1,9 +1,9 @@
 import React from 'react';
 import {
-  FormControl, InputLabel, Select, MenuItem, TextField, Button,
+  FormControl, InputLabel, Select, MenuItem, TextField, Button, Box, Typography,
   type SelectChangeEvent
 } from '@mui/material';
-import { Check, Close } from '@mui/icons-material';
+import { Search, FilterListOff, FilterAltOutlined } from '@mui/icons-material';
 
 // Tipagem dos filtros
 export interface FiltrosType {
@@ -23,6 +23,22 @@ interface ProdutosFiltersProps {
   onLimpar: () => void;
 }
 
+// Estilo Premium B2B para os Inputs do MUI
+const premiumInputStyles = {
+  '& .MuiOutlinedInput-root': {
+    borderRadius: '8px',
+    backgroundColor: '#F8FAFC',
+    transition: 'all 0.2s ease-in-out',
+    '& fieldset': { borderColor: '#E2E8F0' },
+    '&:hover fieldset': { borderColor: '#CBD5E1' },
+    '&.Mui-focused': {
+      backgroundColor: '#FFFFFF',
+      boxShadow: '0 0 0 3px rgba(91, 33, 182, 0.1)',
+    },
+    '&.Mui-focused fieldset': { borderColor: '#5B21B6', borderWidth: '1px' },
+  }
+};
+
 export const ProdutosFilters: React.FC<ProdutosFiltersProps> = ({
   filtros,
   setFiltros,
@@ -37,35 +53,45 @@ export const ProdutosFilters: React.FC<ProdutosFiltersProps> = ({
 
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
+    // Higiene: Força tudo a maiúsculas para manter a consistência da pesquisa
     setFiltros(prev => ({ ...prev, [name as keyof FiltrosType]: value }));
   };
 
   return (
-    <div className='bg-[#E9DEF6] rounded-lg p-4 mb-8'>
+    <Box className='flex flex-col gap-4'>
+      
+      <div className="flex items-center gap-2 mb-2 text-[#475569]">
+        <FilterAltOutlined fontSize="small" />
+        <Typography variant="subtitle2" fontWeight={600} className="uppercase tracking-wider text-xs">
+          Filtros Avançados
+        </Typography>
+      </div>
+
       <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4'>
-        <FormControl fullWidth size="small">
+        
+        <FormControl fullWidth size="small" sx={premiumInputStyles}>
           <InputLabel id="tipo-filtro-label">Grupo</InputLabel>
           <Select
             labelId="tipo-filtro-label"
             name="tipo"
             value={filtros.tipo}
-            label="Tipo"
+            label="Grupo"
             onChange={handleChange}
           >
-            <MenuItem value="">TODOS</MenuItem>
-            <MenuItem value="PJ">PESSOA JURÍDICA</MenuItem>
-            <MenuItem value="PF">PESSOA FÍSICA</MenuItem>
-            <MenuItem value="estrangeiro">ESTRANGEIRO</MenuItem>
+            <MenuItem value=""><em>TODOS</em></MenuItem>
+            <MenuItem value="produtos">PRODUTOS ACABADOS</MenuItem>
+            <MenuItem value="servicos">SERVIÇOS</MenuItem>
+            <MenuItem value="materiais">MATÉRIAS-PRIMAS</MenuItem>
           </Select>
         </FormControl>
 
-        <TextField fullWidth name="codigo" label='Código' value={filtros.codigo} onChange={handleInputChange} size="small" />
-        <TextField fullWidth name="nome" label='Nome' value={filtros.nome} onChange={handleInputChange} size="small" />
-        <TextField fullWidth name="fornecedor" label='Fornecedor' value={filtros.fornecedor} onChange={handleInputChange} size="small" />
-        <TextField fullWidth name="marca" label='Marca' value={filtros.marca} onChange={handleInputChange} size="small" />
-        <TextField fullWidth name="modelo" label='Modelo' value={filtros.modelo} onChange={handleInputChange} size="small" />
+        <TextField fullWidth name="codigo" label='Código ou EAN' value={filtros.codigo} onChange={handleInputChange} size="small" sx={premiumInputStyles} />
+        <TextField fullWidth name="nome" label='Nome do Produto' value={filtros.nome} onChange={handleInputChange} size="small" sx={premiumInputStyles} />
+        <TextField fullWidth name="fornecedor" label='Fornecedor' value={filtros.fornecedor} onChange={handleInputChange} size="small" sx={premiumInputStyles} />
+        <TextField fullWidth name="marca" label='Marca' value={filtros.marca} onChange={handleInputChange} size="small" sx={premiumInputStyles} />
+        <TextField fullWidth name="modelo" label='Modelo' value={filtros.modelo} onChange={handleInputChange} size="small" sx={premiumInputStyles} />
 
-        <FormControl fullWidth size="small">
+        <FormControl fullWidth size="small" sx={premiumInputStyles}>
           <InputLabel id="situacao-filtro-label">Situação</InputLabel>
           <Select
             labelId="situacao-filtro-label"
@@ -74,33 +100,48 @@ export const ProdutosFilters: React.FC<ProdutosFiltersProps> = ({
             label="Situação"
             onChange={handleChange}
           >
-            <MenuItem value="">TODOS</MenuItem>
+            <MenuItem value=""><em>TODOS</em></MenuItem>
             <MenuItem value="ativo">ATIVO</MenuItem>
             <MenuItem value="inativo">INATIVO</MenuItem>
-            <MenuItem value="bloqueado">BLOQUEADO</MenuItem>
           </Select>
         </FormControl>
       </div>
 
-      <div className='mt-4 flex gap-2'>
+      <div className='mt-2 flex gap-3 justify-end border-t border-[#F1F5F9] pt-4'>
         <Button
-          variant='contained'
-          startIcon={<Check />}
-          color='success'
-          sx={{ color: '#FFFFFF' }}
-          onClick={onBuscar}
+          variant='outlined'
+          startIcon={<FilterListOff />}
+          onClick={onLimpar}
+          sx={{ 
+            borderColor: '#E2E8F0', 
+            color: '#64748B', 
+            textTransform: 'none', 
+            fontWeight: 600, 
+            borderRadius: '8px',
+            px: 3,
+            '&:hover': { borderColor: '#CBD5E1', backgroundColor: '#F8FAFC', color: '#0F172A' }
+          }}
         >
-          Buscar
+          Limpar Filtros
         </Button>
         <Button
           variant='contained'
-          startIcon={<Close />}
-          color='error'
-          onClick={onLimpar}
+          startIcon={<Search />}
+          onClick={onBuscar}
+          sx={{ 
+            background: 'linear-gradient(90deg, #3C0473 0%, #5B21B6 100%)',
+            color: '#ffffff', 
+            textTransform: 'none', 
+            fontWeight: 600, 
+            borderRadius: '8px',
+            px: 4,
+            boxShadow: '0 4px 14px 0 rgba(91, 33, 182, 0.25)',
+            '&:hover': { background: 'linear-gradient(90deg, #28024D 0%, #4C1D95 100%)', boxShadow: '0 6px 20px rgba(91, 33, 182, 0.3)' }
+          }}
         >
-          Limpar
+          Aplicar Filtros
         </Button>
       </div>
-    </div>
+    </Box>
   );
 };

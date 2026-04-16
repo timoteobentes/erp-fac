@@ -128,6 +128,18 @@ CREATE TABLE public.configuracoes_fiscais (
   CONSTRAINT configuracoes_fiscais_pkey PRIMARY KEY (id),
   CONSTRAINT fk_config_usuario FOREIGN KEY (usuario_id) REFERENCES public.usuarios(id)
 );
+CREATE TABLE public.configuracoes_fiscais_nfse (
+  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
+  usuario_id bigint NOT NULL UNIQUE,
+  inscricao_municipal character varying,
+  codigo_tributacao_nacional character varying,
+  codigo_tributacao_municipal character varying,
+  cnae character varying,
+  cnbs character varying,
+  serie_dps character varying DEFAULT '1'::character varying,
+  atualizado_em timestamp with time zone DEFAULT now(),
+  CONSTRAINT configuracoes_fiscais_nfse_pkey PRIMARY KEY (id)
+);
 CREATE TABLE public.contas_pagar (
   id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
   usuario_id bigint NOT NULL,
@@ -332,6 +344,29 @@ CREATE TABLE public.movimentacoes_estoque (
   CONSTRAINT fk_mov_estoque_usuario FOREIGN KEY (usuario_id) REFERENCES public.usuarios(id),
   CONSTRAINT fk_mov_estoque_produto FOREIGN KEY (produto_id) REFERENCES public.produtos(id)
 );
+CREATE TABLE public.nfse (
+  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
+  usuario_id bigint NOT NULL,
+  cliente_id bigint NOT NULL,
+  servico_id bigint NOT NULL,
+  competencia date DEFAULT CURRENT_DATE,
+  valor_servico numeric NOT NULL DEFAULT 0.00,
+  desconto numeric DEFAULT 0.00,
+  valor_total numeric NOT NULL DEFAULT 0.00,
+  aliquota_iss numeric NOT NULL DEFAULT 0.00,
+  valor_iss numeric DEFAULT 0.00,
+  status character varying DEFAULT 'rascunho'::character varying CHECK (status::text = ANY (ARRAY['rascunho'::character varying, 'emitida'::character varying, 'rejeitada'::character varying, 'cancelada'::character varying]::text[])),
+  chave_acesso character varying,
+  protocolo character varying,
+  xml_autorizado text,
+  mensagem_retorno text,
+  criado_em timestamp with time zone DEFAULT now(),
+  atualizado_em timestamp with time zone DEFAULT now(),
+  CONSTRAINT nfse_pkey PRIMARY KEY (id),
+  CONSTRAINT fk_nfse_usuario FOREIGN KEY (usuario_id) REFERENCES public.usuarios(id),
+  CONSTRAINT fk_nfse_cliente FOREIGN KEY (cliente_id) REFERENCES public.clientes(id),
+  CONSTRAINT fk_nfse_servico FOREIGN KEY (servico_id) REFERENCES public.servicos(id)
+);
 CREATE TABLE public.pagamentos (
   id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
   usuario_id bigint NOT NULL,
@@ -455,6 +490,21 @@ CREATE TABLE public.produtos_imagens (
   ordem integer DEFAULT 0,
   principal boolean DEFAULT false,
   CONSTRAINT produtos_imagens_pkey PRIMARY KEY (id)
+);
+CREATE TABLE public.servicos (
+  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
+  usuario_id bigint NOT NULL,
+  nome character varying NOT NULL,
+  codigo_lc116 character varying NOT NULL,
+  cnae character varying,
+  aliquota_iss numeric NOT NULL DEFAULT 0.00,
+  valor_padrao numeric DEFAULT 0.00,
+  ativo boolean DEFAULT true,
+  criado_em timestamp with time zone DEFAULT now(),
+  atualizado_em timestamp with time zone DEFAULT now(),
+  codigo_tributacao_nacional character varying,
+  CONSTRAINT servicos_pkey PRIMARY KEY (id),
+  CONSTRAINT fk_servicos_usuario FOREIGN KEY (usuario_id) REFERENCES public.usuarios(id)
 );
 CREATE TABLE public.unidades_medida (
   id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,

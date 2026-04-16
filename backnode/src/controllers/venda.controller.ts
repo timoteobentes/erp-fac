@@ -44,7 +44,7 @@ export class VendaController {
       return res.status(200).json({
         success: true,
         data: vendas,
-        meta: { total: vendas.length }
+        meta: { total: (vendas as any).total }
       });
     } catch (error: any) {
       console.error('Erro ao listar vendas:', error);

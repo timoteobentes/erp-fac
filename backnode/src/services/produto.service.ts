@@ -1,5 +1,7 @@
 import { ProdutoRepository, ProdutoFiltros } from '../repositories/ProdutoRepository';
 import { Produto } from '../models/Produto';
+import * as ExcelJS from 'exceljs';
+import PDFDocument from 'pdfkit';
 
 export class ProdutoService {
   private produtoRepository: ProdutoRepository;
@@ -88,7 +90,113 @@ export class ProdutoService {
   }
 
   // =========================================================================
-  // 3. REGRAS DE NEGÓCIO E VALIDAÇÕES (Privados)
+  // 3. EXPORTAÇÃO (CSV, EXCEL, PDF)
+  // =========================================================================
+
+  async exportarProdutos(usuarioId: number, opcoes: { formato: 'csv' | 'xlsx' | 'pdf', filtros?: ProdutoFiltros }): Promise<Buffer | string> {
+    const listagem = await this.listarProdutos(usuarioId, opcoes.filtros || {}, { page: 1, limit: 10000 });
+    const produtos = listagem.produtos;
+
+    switch (opcoes.formato) {
+      case 'csv':
+        return this.gerarArquivoCSV(produtos);
+      case 'xlsx':
+        return await this.gerarArquivoExcel(produtos);
+      case 'pdf':
+        return await this.gerarArquivoPDF(produtos);
+      default:
+        throw new Error('Formato inválido');
+    }
+  }
+
+  private gerarArquivoCSV(produtos: any[]): string {
+    const header = ['ID', 'NOME', 'SKU/CODIGO', 'PRECO_VENDA', 'ESTOQUE', 'SITUACAO'].join(';');
+    const rows = produtos.map(p => 
+      `${p.id};"${p.nome}";${p.codigo_interno || p.codigo_barras || '-'};${Number(p.preco_venda || 0).toFixed(2)};${Number(p.estoque_atual || 0).toFixed(2)};${p.situacao}`
+    );
+    return [header, ...rows].join('\n');
+  }
+
+  private async gerarArquivoExcel(produtos: any[]): Promise<Buffer> {
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Produtos');
+
+    worksheet.columns = [
+      { header: 'ID', key: 'id', width: 10 },
+      { header: 'Nome do Produto', key: 'nome', width: 40 },
+      { header: 'SKU / Código', key: 'codigo', width: 20 },
+      { header: 'Preço Venda', key: 'preco', width: 15 },
+      { header: 'Estoque Atual', key: 'estoque', width: 15 },
+      { header: 'Situação', key: 'situacao', width: 15 }
+    ];
+
+    produtos.forEach(p => {
+      worksheet.addRow({
+        id: p.id,
+        nome: p.nome,
+        codigo: p.codigo_interno || p.codigo_barras || '-',
+        preco: Number(p.preco_venda || 0),
+        estoque: Number(p.estoque_atual || 0),
+        situacao: p.situacao
+      });
+    });
+
+    worksheet.getRow(1).font = { bold: true };
+    return await workbook.xlsx.writeBuffer() as unknown as Buffer;
+  }
+
+  private async gerarArquivoPDF(produtos: any[]): Promise<Buffer> {
+    return new Promise((resolve, reject) => {
+      const doc = new PDFDocument({ margin: 30, size: 'A4', layout: 'landscape' });
+      const buffers: Buffer[] = [];
+      doc.on('data', buffers.push.bind(buffers));
+      doc.on('end', () => resolve(Buffer.concat(buffers)));
+      doc.on('error', reject);
+
+      doc.fontSize(18).text('Relatório de Produtos', { align: 'center' }).moveDown();
+
+      const drawHeader = (posY: number) => {
+        doc.fontSize(10).font('Helvetica-Bold');
+        doc.text('ID', 30, posY);
+        doc.text('NOME', 80, posY);
+        doc.text('CÓDIGO', 350, posY);
+        doc.text('PREÇO', 480, posY);
+        doc.text('ESTOQUE', 600, posY);
+        doc.text('SITUAÇÃO', 700, posY);
+        doc.moveTo(30, posY + 15).lineTo(770, posY + 15).stroke();
+      };
+
+      let y = 100;
+      drawHeader(y);
+      y += 25;
+      doc.font('Helvetica').fontSize(9);
+
+      produtos.forEach(p => {
+        if (y > 550) {
+          doc.addPage();
+          y = 50;
+          drawHeader(y);
+          y += 25;
+          doc.font('Helvetica').fontSize(9);
+        }
+        doc.text(String(p.id), 30, y);
+        doc.text((p.nome || '').substring(0, 45), 80, y);
+        doc.text(p.codigo_interno || p.codigo_barras || '-', 350, y);
+        doc.text(Number(p.preco_venda || 0).toFixed(2), 480, y);
+        doc.text(Number(p.estoque_atual || 0).toFixed(2), 600, y);
+        const cor = p.situacao === 'inativo' ? 'red' : 'green';
+        doc.fillColor(cor).text(p.situacao.toUpperCase(), 700, y).fillColor('black');
+        
+        y += 20;
+        doc.save().strokeColor('#eeeeee').lineWidth(0.5).moveTo(30, y - 5).lineTo(770, y - 5).stroke().restore();
+      });
+
+      doc.end();
+    });
+  }
+
+  // =========================================================================
+  // 4. REGRAS DE NEGÓCIO E VALIDAÇÕES (Privados)
   // =========================================================================
 
   private validarProduto(dados: Produto) {

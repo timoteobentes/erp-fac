@@ -15,6 +15,8 @@ export interface ProdutoFiltros {
   marca_id?: number;
   situacao?: string;
   tipo_item?: string;
+  page?: number | string;
+  limit?: number | string;
 }
 
 export class ProdutoRepository extends BaseRepository {
@@ -161,10 +163,11 @@ export class ProdutoRepository extends BaseRepository {
   // 3. READ (LISTAGEM E BUSCA POR ID)
   // ============================================================================
   
-  async listar(usuarioId: number, filtros: ProdutoFiltros, paginacao: { limit: number, offset: number }) {
+  async listar(usuarioId: number, filtros: ProdutoFiltros, paginacao?: { limit: number, offset: number }) {
     let query = `
       SELECT 
         p.id, p.nome, p.codigo_interno, p.codigo_barras, p.preco_venda, p.estoque_atual, p.situacao, p.tipo_item,
+        p.movimenta_estoque,
         c.nome as categoria_nome,
         m.nome as marca_nome,
         u.sigla as unidade_sigla,
@@ -197,16 +200,27 @@ export class ProdutoRepository extends BaseRepository {
       count++;
     }
 
-    // Ordenação e Paginação
-    const queryData = `${query} ORDER BY p.nome ASC LIMIT $${count} OFFSET $${count + 1}`;
-    const valuesData = [...values, paginacao.limit, paginacao.offset];
+    // Ordenação Padrão
+    let finalQuery = `${query} ORDER BY p.nome ASC`;
+    
+    // Paginação com Hard Limit Defensivo (Blindagem OOM)
+    if (paginacao) {
+      const safeLimit = Math.min(Number(paginacao.limit) || 500, 500);
+      const safeOffset = Math.max(Number(paginacao.offset) || 0, 0);
 
-    // Query de Contagem
+      finalQuery += ` LIMIT $${count} OFFSET $${count + 1}`;
+      values.push(safeLimit, safeOffset);
+    }
+
+    // Query de Contagem (O split isola apenas as condições)
     const queryCount = `SELECT COUNT(*) as total FROM produtos p WHERE p.usuario_id = $1` + query.split('WHERE p.usuario_id = $1')[1];
     
+    // Na contagem não enviamos o Limit e Offset para o banco
+    const countValues = paginacao ? values.slice(0, values.length - 2) : values;
+
     const [resData, resCount] = await Promise.all([
-      pool.query(queryData, valuesData),
-      pool.query(queryCount, values)
+      pool.query(finalQuery, values),
+      pool.query(queryCount, countValues)
     ]);
 
     return {
@@ -317,7 +331,7 @@ export class ProdutoRepository extends BaseRepository {
   }
 
   async listarUnidades(usuarioId: number) {
-    const res = await pool.query(`SELECT id, sigla, descricao FROM unidades_medida WHERE usuario_id = $1 ORDER BY sigla`, [usuarioId]);
+    const res = await pool.query(`SELECT id, sigla, descricao FROM unidades_medida WHERE usuario_id = $1 OR usuario_id IS NULL ORDER BY sigla`, [usuarioId]);
     return res.rows;
   }
 }

@@ -135,8 +135,8 @@ export class NfceService {
     return sig.getSignedXml();
   }
 
-  private buildImpostoItemXml(iv: any): string {
-    return `<imposto><ICMS><ICMSSN102><orig>0</orig><CSOSN>102</CSOSN></ICMSSN102></ICMS><PIS><PISNT><CST>07</CST></PISNT></PIS><COFINS><COFINSNT><CST>07</CST></COFINSNT></COFINS></imposto>`;
+  private buildImpostoItemXml(iv: any, tagIcms: string): string {
+    return `<imposto><ICMS>${tagIcms}</ICMS><PIS><PISNT><CST>07</CST></PISNT></PIS><COFINS><COFINSNT><CST>07</CST></COFINSNT></COFINS></imposto>`;
   }
 
   private buildInfRespTecXml(): string {
@@ -177,12 +177,12 @@ export class NfceService {
     let xml = `<NFe xmlns="http://www.portalfiscal.inf.br/nfe"><infNFe Id="${idAcesso}" versao="4.00"><ide><cUF>${cUF}</cUF><cNF>${cNF}</cNF><natOp>VENDA DE MERCADORIA</natOp><mod>${mod}</mod><serie>${parseInt(serie)}</serie><nNF>${parseInt(nNF)}</nNF><dhEmi>${dataHoraEmissao}</dhEmi><tpNF>1</tpNF><idDest>1</idDest><cMunFG>1302603</cMunFG><tpImp>4</tpImp><tpEmis>${tpEmis}</tpEmis><cDV>${cDV}</cDV><tpAmb>${venda.ambiente_sefaz === 'homologacao' ? '2' : '1'}</tpAmb><finNFe>1</finNFe><indFinal>1</indFinal><indPres>1</indPres><procEmi>0</procEmi><verProc>FacoAContaERP</verProc></ide>${emitXml}`;
 
     // Itens
+    // Itens
     let nItem = 1;
     for (const iv of venda.itens) {
       const ncm = (iv.ncm ? iv.ncm.replace(/\D/g, '') : '00000000').padEnd(8, '0').substring(0, 8);
       // Prioridade: CFOP do item na venda -> CFOP padrão do produto -> fallback '5102'
       const cfop = (iv.cfop || iv.cfop_padrao ? (iv.cfop || iv.cfop_padrao).toString().replace(/\D/g, '') : '5102').padEnd(4, '0').substring(0, 4);
-      const impostoXml = this.buildImpostoItemXml(iv);
       
       let xProd = iv.produto_nome;
       const tpAmb = venda.ambiente_sefaz === 'homologacao' ? '2' : '1';
@@ -190,7 +190,32 @@ export class NfceService {
           xProd = 'NOTA FISCAL EMITIDA EM AMBIENTE DE HOMOLOGACAO - SEM VALOR FISCAL';
       }
 
-      xml += `<det nItem="${nItem}"><prod><cProd>${iv.produto_id}</cProd><cEAN>SEM GTIN</cEAN><xProd>${xProd}</xProd><NCM>${ncm}</NCM><CFOP>${cfop}</CFOP><uCom>${iv.unidade_sigla || 'UN'}</uCom><qCom>${Number(iv.quantidade).toFixed(4)}</qCom><vUnCom>${Number(iv.valor_unitario).toFixed(4)}</vUnCom><vProd>${Number(iv.subtotal || iv.valor_total).toFixed(2)}</vProd><cEANTrib>SEM GTIN</cEANTrib><uTrib>${iv.unidade_sigla || 'UN'}</uTrib><qTrib>${Number(iv.quantidade).toFixed(4)}</qTrib><vUnTrib>${Number(iv.valor_unitario).toFixed(4)}</vUnTrib><indTot>1</indTot></prod>${impostoXml}</det>`;
+      let uTrib = iv.unidade_sigla || 'UN';
+      let qTrib = Number(iv.quantidade);
+      let vUnTrib = Number(iv.valor_unitario);
+
+      // REGRA DO GÁS GLP (NCM 27111910)
+      // REGRA DO GÁS GLP (NCM 27111910)
+      let tagCombustivel = '';
+      let tagIcms = `<ICMSSN102><orig>0</orig><CSOSN>102</CSOSN></ICMSSN102>`;
+      
+      if (ncm === '27111910') {
+          // 210203001 é o código oficial da ANP para Gás Liquefeito de Petróleo
+          tagCombustivel = `<comb><cProdANP>210203001</cProdANP><descANP>GAS LIQUEFEITO DE PETROLEO</descANP><UFCons>AM</UFCons></comb>`;
+          uTrib = 'KG'; // Obrigatório para GLP
+          qTrib = Number(iv.quantidade) * 13; // 13KG por unidade comercial
+          vUnTrib = Number(iv.valor_unitario) / 13; // Valor rateado por KG
+          
+          // ICMS Monofásico (CST 61) - Obrigatório para Combustíveis (NT 2023.001)
+          const adRemICMS = 1.2571; // Alíquota fixa nacional em R$ por KG do GLP
+          const vICMSMonoRet = (qTrib * adRemICMS).toFixed(2);
+          
+          tagIcms = `<ICMS61><orig>0</orig><CST>61</CST><qBCMonoRet>${qTrib.toFixed(4)}</qBCMonoRet><adRemICMSRet>${adRemICMS.toFixed(4)}</adRemICMSRet><vICMSMonoRet>${vICMSMonoRet}</vICMSMonoRet></ICMS61>`;
+      }
+
+      const impostoXml = this.buildImpostoItemXml(iv, tagIcms);
+
+      xml += `<det nItem="${nItem}"><prod><cProd>${iv.produto_id}</cProd><cEAN>SEM GTIN</cEAN><xProd>${xProd}</xProd><NCM>${ncm}</NCM><CFOP>${cfop}</CFOP><uCom>${iv.unidade_sigla || 'UN'}</uCom><qCom>${Number(iv.quantidade).toFixed(4)}</qCom><vUnCom>${Number(iv.valor_unitario).toFixed(4)}</vUnCom><vProd>${Number(iv.subtotal || iv.valor_total).toFixed(2)}</vProd><cEANTrib>SEM GTIN</cEANTrib><uTrib>${uTrib}</uTrib><qTrib>${qTrib.toFixed(4)}</qTrib><vUnTrib>${vUnTrib.toFixed(4)}</vUnTrib><indTot>1</indTot>${tagCombustivel}</prod>${impostoXml}</det>`;
       nItem++;
     }
 
@@ -462,7 +487,8 @@ export class NfceService {
            chave_acesso: chaveAcesso,
            numero_nfe: parseInt(nNF),
            protocolo: nProt,
-           xml_autorizado: xmlAssinado // Em prod, anexar auth node.
+           xml_autorizado: xmlAssinado, // Em prod, anexar auth node.
+           url_qrcode: urlQRCode
          };
 
          await this.vendaRepository.atualizarDadosSefaz(vendaId, retornoSefaz);

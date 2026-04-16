@@ -8,7 +8,7 @@ export class DashboardRepository {
       const vendasHojeResult = await client.query(`
         SELECT COALESCE(SUM(valor_total), 0) as total 
         FROM vendas 
-        WHERE usuario_id = $1 AND DATE(data_venda) = CURRENT_DATE AND status = 'concluida'
+        WHERE usuario_id = $1 AND DATE(criado_em) = CURRENT_DATE AND status = 'concluida'
       `, [usuarioId]);
       const vendasHoje = Number(vendasHojeResult.rows[0].total) || 0;
 
@@ -44,7 +44,7 @@ export class DashboardRepository {
           d.data,
           COALESCE(SUM(v.valor_total), 0) as total_vendas
         FROM dates d
-        LEFT JOIN vendas v ON DATE(v.data_venda) = d.data AND v.usuario_id = $1 AND v.status = 'concluida'
+        LEFT JOIN vendas v ON DATE(v.criado_em) = d.data AND v.usuario_id = $1 AND v.status = 'concluida'
         GROUP BY d.data
         ORDER BY d.data ASC
       `, [usuarioId]);
@@ -56,10 +56,10 @@ export class DashboardRepository {
 
       // 5. Últimas Vendas
       const ultimasVendasResult = await client.query(`
-        SELECT id, valor_total, forma_pagamento, to_char(data_venda, 'HH24:MI') as hora
+        SELECT id, valor_total, forma_pagamento, to_char(criado_em, 'HH24:MI') as hora
         FROM vendas 
-        WHERE usuario_id = $1 AND status = 'concluida' AND DATE(data_venda) = CURRENT_DATE
-        ORDER BY data_venda DESC
+        WHERE usuario_id = $1 AND status = 'concluida' AND DATE(criado_em) = CURRENT_DATE
+        ORDER BY criado_em DESC
         LIMIT 5
       `, [usuarioId]);
 

@@ -3,7 +3,7 @@ import { Usuario } from '../models/Usuario';
 import { ConfiguracaoFiscal } from '../models/ConfiguracaoFiscal';
 
 export class PerfilRepository {
-  async getPerfilCompleto(usuario_id: number): Promise<{ usuario: Partial<Usuario>, fiscal: ConfiguracaoFiscal | null }> {
+  async getPerfilCompleto(usuario_id: number): Promise<{ usuario: Partial<Usuario>, fiscal: ConfiguracaoFiscal | null, fiscal_nfse: any }> {
     const queryUser = `
       SELECT id, email, nome_usuario, nome_completo, cpf, cnpj, nome_empresa, telefone, cidade, estado, status, grupo_acesso_id
       FROM usuarios
@@ -21,13 +21,20 @@ export class PerfilRepository {
     `;
     const resultFiscal = await pool.query(queryFiscal, [usuario_id]);
 
+    const queryFiscalNfse = `
+      SELECT * FROM configuracoes_fiscais_nfse
+      WHERE usuario_id = $1
+    `;
+    const resultFiscalNfse = await pool.query(queryFiscalNfse, [usuario_id]);
+
     return {
       usuario: resultUser.rows[0],
-      fiscal: resultFiscal.rows[0] || null
+      fiscal: resultFiscal.rows[0] || null,
+      fiscal_nfse: resultFiscalNfse.rows[0] || null
     };
   }
 
-  async atualizarPerfilTransacional(usuario_id: number, dadosUser: Partial<Usuario>, dadosFiscal: Partial<ConfiguracaoFiscal>) {
+  async atualizarPerfilTransacional(usuario_id: number, dadosUser: Partial<Usuario>, dadosFiscal: Partial<ConfiguracaoFiscal>, dadosFiscalNfse: any) {
     const client = await pool.connect();
 
     try {
@@ -119,6 +126,55 @@ export class PerfilRepository {
           dadosFiscal.certificado_senha || null
         ];
         await client.query(queryInsertFiscal, valuesFiscalInsert);
+      }
+
+      // 3. Verificar se já existe config fiscal NFS-e
+      if (dadosFiscalNfse) {
+          const checkFiscalNfse = await client.query('SELECT id FROM configuracoes_fiscais_nfse WHERE usuario_id = $1', [usuario_id]);
+          
+          if (checkFiscalNfse.rows.length > 0) {
+            // Atualizar
+            const queryUpdateNfse = `
+              UPDATE configuracoes_fiscais_nfse
+              SET 
+                inscricao_municipal = COALESCE($1, inscricao_municipal),
+                codigo_tributacao_nacional = COALESCE($2, codigo_tributacao_nacional),
+                codigo_tributacao_municipal = COALESCE($3, codigo_tributacao_municipal),
+                cnae = COALESCE($4, cnae),
+                cnbs = COALESCE($5, cnbs),
+                serie_dps = COALESCE($6, serie_dps),
+                atualizado_em = CURRENT_TIMESTAMP
+              WHERE usuario_id = $7
+            `;
+            const valuesNfse = [
+              dadosFiscalNfse.inscricao_municipal || null,
+              dadosFiscalNfse.codigo_tributacao_nacional || null,
+              dadosFiscalNfse.codigo_tributacao_municipal || null,
+              dadosFiscalNfse.cnae || null,
+              dadosFiscalNfse.cnbs || null,
+              dadosFiscalNfse.serie_dps || null,
+              usuario_id
+            ];
+            await client.query(queryUpdateNfse, valuesNfse);
+          } else {
+            // Inserir
+            const queryInsertNfse = `
+              INSERT INTO configuracoes_fiscais_nfse (
+                 usuario_id, inscricao_municipal, codigo_tributacao_nacional, 
+                 codigo_tributacao_municipal, cnae, cnbs, serie_dps
+              ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+            `;
+            const valuesInsertNfse = [
+              usuario_id,
+              dadosFiscalNfse.inscricao_municipal || null,
+              dadosFiscalNfse.codigo_tributacao_nacional || null,
+              dadosFiscalNfse.codigo_tributacao_municipal || null,
+              dadosFiscalNfse.cnae || null,
+              dadosFiscalNfse.cnbs || null,
+              dadosFiscalNfse.serie_dps || '1'
+            ];
+            await client.query(queryInsertNfse, valuesInsertNfse);
+          }
       }
 
       await client.query('COMMIT');
