@@ -16,7 +16,7 @@ export const servicoSchema = yup.object().shape({
   codigo_tributacao_nacional: yup
     .string()
     .nullable()
-    .test('len', 'Deve conter exatamente 6 números (ex: 140101)', val => {
+    .test('len', 'Deve conter exatamente 6 números (ex: 140101)', (val: any) => {
        if (!val) return true;
        return val.replace(/\\D/g, '').length === 6;
     }),
