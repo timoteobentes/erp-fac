@@ -11,7 +11,6 @@ import {
   exportarFornecedoressService,
   buscarFornecedoresPorDocumento,
   type FiltrosFornecedores,
-  type ResultadoFornecedores,
   type PaginacaoFornecedores
 } from "../services/fornecedoresService";
 

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { TextField, Button, IconButton, Select, MenuItem, Dialog, DialogContent, DialogActions, Box, Typography, Divider } from '@mui/material';
+import { TextField, Button, IconButton, Select, MenuItem, Dialog, DialogContent, DialogActions, Typography } from '@mui/material';
 import { Close, Settings } from '@mui/icons-material';
 import { usePDV } from '../../modules/PDV/hooks/usePDV';
 import { useNavigate } from 'react-router-dom';

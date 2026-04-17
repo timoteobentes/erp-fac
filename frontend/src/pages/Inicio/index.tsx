@@ -5,7 +5,6 @@ import {
   CheckCircleOutline, 
   Lock, 
   TrendingUp, 
-  People,
   AccountBalanceWallet, 
   RequestQuote, 
   MoneyOff, 

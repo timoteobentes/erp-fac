@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Box, Typography } from '@mui/material';
 import { ConfigProvider } from "antd";
 import Layout from "../../../template/Layout";

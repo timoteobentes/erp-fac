@@ -9,7 +9,7 @@ import {
   CircularProgress, InputAdornment, Typography, Divider 
 } from "@mui/material";
 import { 
-  Add, DeleteOutline, Search, CloudUploadOutlined, AttachFile, Check, Close, ArrowBack,
+  Add, DeleteOutline, Search, CloudUploadOutlined, AttachFile, Check, ArrowBack,
   BadgeOutlined, MapOutlined, ContactsOutlined, MonetizationOnOutlined, FormatQuoteOutlined, ImageOutlined 
 } from "@mui/icons-material";
 import { styled } from '@mui/material/styles';

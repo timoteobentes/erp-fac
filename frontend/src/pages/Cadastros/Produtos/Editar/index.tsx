@@ -9,7 +9,7 @@ import {
   InputAdornment, Switch, FormControlLabel, Divider, Typography, Tabs, Tab, IconButton
 } from "@mui/material";
 import { 
-  Check, Close, DeleteOutline, Add, Search, ArrowBack,
+  Check, DeleteOutline, Add, Search, ArrowBack,
   CategoryOutlined, StraightenOutlined, MonetizationOnOutlined, 
   Inventory2Outlined, LayersOutlined, LocalShippingOutlined, ReceiptLongOutlined
 } from "@mui/icons-material";

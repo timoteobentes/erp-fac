@@ -1,11 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { ConfigProvider, Layout as AntLayout, Menu, Avatar, theme as antTheme, List, Badge, Divider } from 'antd';
+import React, { useState, useEffect, useMemo } from 'react';
+import { ConfigProvider, Layout as AntLayout, Menu, Avatar, Badge, Divider } from 'antd';
 import { Button, IconButton, Popover, Box, Typography } from '@mui/material';
 import { KeyboardDoubleArrowLeft, KeyboardDoubleArrowRight, BalanceOutlined, PersonalVideoOutlined, NotificationsOutlined } from '@mui/icons-material';
 import { useLogin } from '../modules/Login/hooks/useLogin';
 import fac_logo_branco from '../assets/FAC_logo_branco.svg';
-import fac_logo_roxo from '../assets/FAC_logo_roxo.svg';
 import { useNavigate, useLocation } from 'react-router';
 import { getStaticMenuItems } from '../components/menuConfig';
 import dayjs from 'dayjs';
@@ -36,8 +35,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     { id: 1, titulo: 'Bem-vindo', mensagem: 'Obrigado por usar a plataforma Faço a Conta! Explore os menus ao lado.', criado_em: new Date(), lido_em: null },
     { id: 2, titulo: 'Atualização do Sistema', mensagem: 'O Frente de Caixa agora possui integração nativa.', criado_em: new Date(Date.now() - 86400000), lido_em: new Date() }
   ]);
-
-  const { token: { colorBgContainer } } = antTheme.useToken();
 
   // 1. CONFIG PROVIDER BLINDADO: Matando o Azul do AntD
   const layoutTheme = useMemo(() => ({

@@ -11,7 +11,6 @@ import {
   exportarClientesService,
   buscarClientePorDocumento,
   type FiltrosCliente,
-  type ResultadoClientes,
   type PaginacaoCliente
 } from "../services/clienteService";
 import { useNavigate } from "react-router";
