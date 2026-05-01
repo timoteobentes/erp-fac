@@ -49,8 +49,24 @@ const EditarPagamento = lazy(() => import('../pages/Financeiro/ContasPagar/Edita
 const ContasReceber = lazy(() => import('../pages/Financeiro/ContasReceber'));
 const VisualizarRecebimento = lazy(() => import('../pages/Financeiro/ContasReceber/Visualizar'));
 const EditarRecebimento = lazy(() => import('../pages/Financeiro/ContasReceber/Editar'));
+const CentroCustos = lazy(() => import('../pages/Financeiro/CentroCustos'));
+const NovoCentroCusto = lazy(() => import('../pages/Financeiro/CentroCustos/Novo'));
+const VisualizarCentroCusto = lazy(() => import('../pages/Financeiro/CentroCustos/Visualizar'));
+const EditarCentroCusto = lazy(() => import('../pages/Financeiro/CentroCustos/Editar'));
+const PlanosContas = lazy(() => import('../pages/Financeiro/PlanosContas'));
+const NovoPlanoConta = lazy(() => import('../pages/Financeiro/PlanosContas/Novo'));
+const VisualizarPlanoConta = lazy(() => import('../pages/Financeiro/PlanosContas/Visualizar'));
+const EditarPlanoConta = lazy(() => import('../pages/Financeiro/PlanosContas/Editar'));
+const ContasBancarias = lazy(() => import('../pages/Financeiro/ContasBancarias'));
+const NovaContaBancaria = lazy(() => import('../pages/Financeiro/ContasBancarias/Novo'));
+const VisualizarContaBancaria = lazy(() => import('../pages/Financeiro/ContasBancarias/Visualizar'));
+const EditarContaBancaria = lazy(() => import('../pages/Financeiro/ContasBancarias/Editar'));
 
 // Módulo: PDV
+const FormasPagamento = lazy(() => import('../pages/Financeiro/FormasPagamento'));
+const NovaFormaPagamento = lazy(() => import('../pages/Financeiro/FormasPagamento/Novo'));
+const VisualizarFormaPagamento = lazy(() => import('../pages/Financeiro/FormasPagamento/Visualizar'));
+const EditarFormaPagamento = lazy(() => import('../pages/Financeiro/FormasPagamento/Editar'));
 const PDV = lazy(() => import('../pages/PDV'));
 
 // Módulo: Perfil
@@ -146,7 +162,32 @@ const AppRoutes = () => {
             <Route path="editar/:id" element={<EditarRecebimento />} />
           </Route>
 
+          <Route path="/financeiro/centro-custos">
+            <Route index element={<CentroCustos />} />
+            <Route path="novo" element={<NovoCentroCusto />} />
+            <Route path="visualizar/:id" element={<VisualizarCentroCusto />} />
+            <Route path="editar/:id" element={<EditarCentroCusto />} />
+          </Route>
+          <Route path="/financeiro/planos-de-contas">
+            <Route index element={<PlanosContas />} />
+            <Route path="novo" element={<NovoPlanoConta />} />
+            <Route path="visualizar/:id" element={<VisualizarPlanoConta />} />
+            <Route path="editar/:id" element={<EditarPlanoConta />} />
+          </Route>
+          <Route path="/financeiro/contas-bancarias">
+            <Route index element={<ContasBancarias />} />
+            <Route path="novo" element={<NovaContaBancaria />} />
+            <Route path="visualizar/:id" element={<VisualizarContaBancaria />} />
+            <Route path="editar/:id" element={<EditarContaBancaria />} />
+          </Route>
+
           {/* Módulo: PDV Frente de Caixa */}
+          <Route path="/financeiro/formas-de-pagamento">
+            <Route index element={<FormasPagamento />} />
+            <Route path="novo" element={<NovaFormaPagamento />} />
+            <Route path="visualizar/:id" element={<VisualizarFormaPagamento />} />
+            <Route path="editar/:id" element={<EditarFormaPagamento />} />
+          </Route>
           <Route path="/pdv" element={<PDV />} />
 
           {/* Módulo: Perfil e Configurações */}

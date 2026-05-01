@@ -30,6 +30,26 @@ export const useDashboard = () => {
     fetchResumo();
   }, []);
 
+  useEffect(() => {
+    const handleWindowFocus = () => {
+      fetchResumo();
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        fetchResumo();
+      }
+    };
+
+    window.addEventListener('focus', handleWindowFocus);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener('focus', handleWindowFocus);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, []);
+
   return {
     resumo,
     loading,

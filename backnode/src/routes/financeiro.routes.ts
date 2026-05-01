@@ -27,4 +27,47 @@ router.get('/financeiro/pagar/:id', financeiroController.buscarContaPagar);
 router.patch('/financeiro/pagar/:id/baixa', financeiroController.baixarContaPagar);
 router.delete('/financeiro/pagar/:id', financeiroController.excluirContaPagar);
 
+// --- CENTRO DE CUSTOS ---
+router.post('/financeiro/centro-custos', financeiroController.criarCentroCusto);
+router.get('/financeiro/centro-custos', financeiroController.listarCentroCustos);
+router.get('/financeiro/centro-custos/:id', financeiroController.buscarCentroCusto);
+router.put('/financeiro/centro-custos/:id', financeiroController.atualizarCentroCusto);
+router.delete('/financeiro/centro-custos/:id', financeiroController.excluirCentroCusto);
+
+// --- PLANOS DE CONTAS ---
+router.post('/financeiro/planos-de-contas', financeiroController.criarPlanoConta);
+router.get('/financeiro/planos-de-contas', financeiroController.listarPlanosContas);
+router.get('/financeiro/planos-de-contas/:id', financeiroController.buscarPlanoConta);
+router.put('/financeiro/planos-de-contas/:id', financeiroController.atualizarPlanoConta);
+router.delete('/financeiro/planos-de-contas/:id', financeiroController.excluirPlanoConta);
+router.post('/financeiro/planos-contas', financeiroController.criarPlanoConta);
+router.get('/financeiro/planos-contas', financeiroController.listarPlanosContas);
+router.get('/financeiro/planos-contas/:id', financeiroController.buscarPlanoConta);
+router.put('/financeiro/planos-contas/:id', financeiroController.atualizarPlanoConta);
+router.delete('/financeiro/planos-contas/:id', financeiroController.excluirPlanoConta);
+
+// --- CONTAS BANCARIAS ---
+router.post('/financeiro/contas-bancarias', financeiroController.criarContaBancaria);
+router.get('/financeiro/contas-bancarias', financeiroController.listarContasBancarias);
+router.get('/financeiro/contas-bancarias/:id', financeiroController.buscarContaBancaria);
+router.put('/financeiro/contas-bancarias/:id', financeiroController.atualizarContaBancaria);
+router.delete('/financeiro/contas-bancarias/:id', financeiroController.excluirContaBancaria);
+router.post('/financeiro/contas-bancaria', financeiroController.criarContaBancaria);
+router.get('/financeiro/contas-bancaria', financeiroController.listarContasBancarias);
+router.get('/financeiro/contas-bancaria/:id', financeiroController.buscarContaBancaria);
+router.put('/financeiro/contas-bancaria/:id', financeiroController.atualizarContaBancaria);
+router.delete('/financeiro/contas-bancaria/:id', financeiroController.excluirContaBancaria);
+
+// --- FORMAS DE PAGAMENTO ---
+router.post('/financeiro/formas-pagamento', financeiroController.criarFormaPagamento);
+router.get('/financeiro/formas-pagamento', financeiroController.listarFormasPagamento);
+router.get('/financeiro/formas-pagamento/:id', financeiroController.buscarFormaPagamento);
+router.put('/financeiro/formas-pagamento/:id', financeiroController.atualizarFormaPagamento);
+router.delete('/financeiro/formas-pagamento/:id', financeiroController.excluirFormaPagamento);
+router.post('/financeiro/formas-de-pagamento', financeiroController.criarFormaPagamento);
+router.get('/financeiro/formas-de-pagamento', financeiroController.listarFormasPagamento);
+router.get('/financeiro/formas-de-pagamento/:id', financeiroController.buscarFormaPagamento);
+router.put('/financeiro/formas-de-pagamento/:id', financeiroController.atualizarFormaPagamento);
+router.delete('/financeiro/formas-de-pagamento/:id', financeiroController.excluirFormaPagamento);
+
 export default router;

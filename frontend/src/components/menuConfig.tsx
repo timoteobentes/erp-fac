@@ -13,7 +13,7 @@ import {
   Settings
 } from '@mui/icons-material';
 
-// Helper para verificar permissão
+// Helper para verificar permissao
 const hasAccess = (user: any, adm: boolean) => Boolean(user?.status == "ativo" && adm);
 
 export const getStaticMenuItems = (navigate: any, user: any, adm: boolean) => {
@@ -24,7 +24,7 @@ export const getStaticMenuItems = (navigate: any, user: any, adm: boolean) => {
     {
       key: 'inicio',
       icon: <HomeOutlined />,
-      label: 'Início',
+      label: 'Inicio',
       onClick: () => navigate('/inicio'),
     },
     {
@@ -39,23 +39,20 @@ export const getStaticMenuItems = (navigate: any, user: any, adm: boolean) => {
           label: 'Produtos',
           children: [
             { key: 'cadastros-produtos-gerenciar', label: 'Gerenciar produtos', onClick: () => navigate('/cadastros/produtos') },
-            // { key: 'cadastros-produtos-valores', label: 'Valores de produtos' },
-            // { key: 'cadastros-produtos-etiquetas', label: 'Etiquetas' },
           ]
         },
       ],
     },
-    // ... (Aplique a mesma lógica para os outros itens, removendo a repetição do disabled)
     {
       key: 'servicos',
       icon: <LocalShippingOutlined />,
-      label: 'Serviços',
+      label: 'Servicos',
       disabled,
       children: [
-        { key: 'servicos-cadastro', label: 'Meus Serviços', onClick: () => navigate('/servicos/cadastro') },
-        { key: 'servicos-nfse', label: 'Emissão de NFS-e', onClick: () => navigate('/servicos/nfse') },
+        { key: 'servicos-cadastro', label: 'Meus Servicos', onClick: () => navigate('/servicos/cadastro') },
+        { key: 'servicos-nfse', label: 'Emissao de NFS-e', onClick: () => navigate('/servicos/nfse') },
         { key: 'servicos-sub1', label: 'Pedidos' },
-        { key: 'servicos-sub2', label: 'Orçamentos' },
+        { key: 'servicos-sub2', label: 'Orcamentos' },
       ],
     },
     {
@@ -65,7 +62,7 @@ export const getStaticMenuItems = (navigate: any, user: any, adm: boolean) => {
       disabled,
       children: [
         { key: 'estoque-gerenciar', label: 'Gerenciar Estoque', onClick: () => navigate('/estoque') },
-        { key: 'estoque-movimentacoes', label: 'Histórico de Movimentações', onClick: () => navigate('/estoque/movimentacoes') },
+        { key: 'estoque-movimentacoes', label: 'Historico de Movimentacoes', onClick: () => navigate('/estoque/movimentacoes') },
       ],
     },
     {
@@ -76,6 +73,16 @@ export const getStaticMenuItems = (navigate: any, user: any, adm: boolean) => {
       children: [
         { key: 'financeiro-pagar', label: 'Contas a Pagar', onClick: () => navigate('/financeiro/pagar') },
         { key: 'financeiro-receber', label: 'Contas a Receber', onClick: () => navigate('/financeiro/receber') },
+        {
+          key: 'financeiro-opcoes-auxiliares',
+          label: 'Opções auxiliares',
+          children: [
+            { key: 'financeiro-centro-custos', label: 'Centro de Custos', onClick: () => navigate('/financeiro/centro-custos') },
+            { key: 'financeiro-planos-contas', label: 'Planos de Contas', onClick: () => navigate('/financeiro/planos-de-contas') },
+            { key: 'financeiro-contas-bancarias', label: 'Contas Bancárias', onClick: () => navigate('/financeiro/contas-bancarias') },
+            { key: 'financeiro-formas-pagamento', label: 'Formas de Pagamento', onClick: () => navigate('/financeiro/formas-de-pagamento') },
+          ]
+        },
       ],
     },
     {
@@ -96,10 +103,9 @@ export const getStaticMenuItems = (navigate: any, user: any, adm: boolean) => {
       disabled: true,
       children: [
         { key: 'vendas-sub1', label: 'Pedidos' },
-        { key: 'vendas-sub2', label: 'Orçamentos' },
+        { key: 'vendas-sub2', label: 'Orcamentos' },
       ],
     },
-    // estoque e financeiro
     {
       key: 'nota-fiscal',
       icon: <ReceiptLongOutlined />,
@@ -107,7 +113,7 @@ export const getStaticMenuItems = (navigate: any, user: any, adm: boolean) => {
       disabled: true,
       children: [
         { key: 'nota-fiscal-sub1', label: 'Pedidos' },
-        { key: 'nota-fiscal-sub2', label: 'Orçamentos' },
+        { key: 'nota-fiscal-sub2', label: 'Orcamentos' },
       ],
     },
     {
@@ -117,27 +123,27 @@ export const getStaticMenuItems = (navigate: any, user: any, adm: boolean) => {
       disabled: true,
       children: [
         { key: 'contratos-sub1', label: 'Pedidos' },
-        { key: 'contratos-sub2', label: 'Orçamentos' },
+        { key: 'contratos-sub2', label: 'Orcamentos' },
       ],
     },
     {
       key: 'relatorios',
       icon: <TextSnippet />,
-      label: 'Relatórios',
+      label: 'Relatorios',
       disabled: true,
       children: [
         { key: 'relatorios-sub1', label: 'Pedidos' },
-        { key: 'relatorios-sub2', label: 'Orçamentos' },
+        { key: 'relatorios-sub2', label: 'Orcamentos' },
       ],
     },
     {
       key: 'configuracoes',
       icon: <Settings />,
-      label: 'Configurações',
+      label: 'Configuracoes',
       disabled: true,
       children: [
         { key: 'configuracoes-sub1', label: 'Pedidos' },
-        { key: 'configuracoes-sub2', label: 'Orçamentos' },
+        { key: 'configuracoes-sub2', label: 'Orcamentos' },
       ],
     }
   ];
