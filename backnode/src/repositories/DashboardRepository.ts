@@ -6,18 +6,36 @@ export class DashboardRepository {
 
     try {
       const [
-        vendasHojeResult,
-        aReceberResult,
-        aPagarResult,
+        aReceberHojeResult,
+        aPagarHojeResult,
+        recebimentosMesRealizadoResult,
+        recebimentosMesFaltaResult,
+        pagamentosMesRealizadoResult,
+        pagamentosMesFaltaResult,
         vendas7DiasResult,
         ultimasVendasResult
       ] = await Promise.all([
         client.query(`
           SELECT COALESCE(SUM(valor_total), 0) as total
-          FROM vendas
+          FROM contas_receber
           WHERE usuario_id = $1
-            AND DATE(criado_em) = CURRENT_DATE
-            AND status = 'concluida'
+            AND status IN ('pendente', 'atrasado')
+            AND data_vencimento = CURRENT_DATE
+        `, [usuarioId]),
+        client.query(`
+          SELECT COALESCE(SUM(valor_total), 0) as total
+          FROM contas_pagar
+          WHERE usuario_id = $1
+            AND status IN ('pendente', 'atrasado')
+            AND data_vencimento = CURRENT_DATE
+        `, [usuarioId]),
+        client.query(`
+          SELECT COALESCE(SUM(valor_total), 0) as total
+          FROM contas_receber
+          WHERE usuario_id = $1
+            AND status = 'recebido'
+            AND data_recebimento >= date_trunc('month', CURRENT_DATE)
+            AND data_recebimento < (date_trunc('month', CURRENT_DATE) + INTERVAL '1 month')
         `, [usuarioId]),
         client.query(`
           SELECT COALESCE(SUM(valor_total), 0) as total
@@ -26,6 +44,14 @@ export class DashboardRepository {
             AND status IN ('pendente', 'atrasado')
             AND data_vencimento >= date_trunc('month', CURRENT_DATE)
             AND data_vencimento < (date_trunc('month', CURRENT_DATE) + INTERVAL '1 month')
+        `, [usuarioId]),
+        client.query(`
+          SELECT COALESCE(SUM(valor_total), 0) as total
+          FROM contas_pagar
+          WHERE usuario_id = $1
+            AND status = 'pago'
+            AND data_pagamento >= date_trunc('month', CURRENT_DATE)
+            AND data_pagamento < (date_trunc('month', CURRENT_DATE) + INTERVAL '1 month')
         `, [usuarioId]),
         client.query(`
           SELECT COALESCE(SUM(valor_total), 0) as total
@@ -62,9 +88,16 @@ export class DashboardRepository {
         `, [usuarioId])
       ]);
 
-      const vendasHoje = Number(vendasHojeResult.rows[0].total) || 0;
-      const contasReceberPendente = Number(aReceberResult.rows[0].total) || 0;
-      const contasPagarPendente = Number(aPagarResult.rows[0].total) || 0;
+      const aReceberHoje = Number(aReceberHojeResult.rows[0].total) || 0;
+      const aPagarHoje = Number(aPagarHojeResult.rows[0].total) || 0;
+
+      const recebimentosRealizado = Number(recebimentosMesRealizadoResult.rows[0].total) || 0;
+      const recebimentosFalta = Number(recebimentosMesFaltaResult.rows[0].total) || 0;
+      const recebimentosPrevisto = recebimentosRealizado + recebimentosFalta;
+
+      const pagamentosRealizado = Number(pagamentosMesRealizadoResult.rows[0].total) || 0;
+      const pagamentosFalta = Number(pagamentosMesFaltaResult.rows[0].total) || 0;
+      const pagamentosPrevisto = pagamentosRealizado + pagamentosFalta;
 
       const graficosVendas = vendas7DiasResult.rows.map((row) => ({
         data: row.data_formatada,
@@ -72,9 +105,18 @@ export class DashboardRepository {
       }));
 
       return {
-        vendas_hoje: vendasHoje,
-        contas_receber_pendente_mes: contasReceberPendente,
-        contas_pagar_pendente_mes: contasPagarPendente,
+        a_receber_hoje: aReceberHoje,
+        a_pagar_hoje: aPagarHoje,
+        recebimentos_mes: {
+          realizado: recebimentosRealizado,
+          falta: recebimentosFalta,
+          previsto: recebimentosPrevisto
+        },
+        pagamentos_mes: {
+          realizado: pagamentosRealizado,
+          falta: pagamentosFalta,
+          previsto: pagamentosPrevisto
+        },
         graficos_vendas: graficosVendas,
         ultimas_vendas: ultimasVendasResult.rows
       };

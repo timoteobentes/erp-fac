@@ -16,6 +16,7 @@ router.get('/financeiro/receber/exportar', financeiroController.exportarContasRe
 router.post('/financeiro/receber', financeiroController.criarContaReceber);
 router.get('/financeiro/receber', financeiroController.listarContasReceber);
 router.get('/financeiro/receber/:id', financeiroController.buscarContaReceber);
+router.put('/financeiro/receber/:id', financeiroController.atualizarContaReceber);
 router.patch('/financeiro/receber/:id/baixa', financeiroController.baixarContaReceber);
 router.delete('/financeiro/receber/:id', financeiroController.excluirContaReceber);
 
@@ -69,5 +70,20 @@ router.get('/financeiro/formas-de-pagamento', financeiroController.listarFormasP
 router.get('/financeiro/formas-de-pagamento/:id', financeiroController.buscarFormaPagamento);
 router.put('/financeiro/formas-de-pagamento/:id', financeiroController.atualizarFormaPagamento);
 router.delete('/financeiro/formas-de-pagamento/:id', financeiroController.excluirFormaPagamento);
+
+// --- DRE GERENCIAL ---
+router.get('/financeiro/dre-gerencial/exportar', financeiroController.exportarDreGerencial);
+router.get('/financeiro/dre-gerencial', financeiroController.obterDreGerencial);
+
+// --- CATEGORIAS DRE ---
+router.post('/financeiro/dre-gerencial/categorias', financeiroController.criarCategoriaDre);
+router.get('/financeiro/dre-gerencial/categorias', financeiroController.listarCategoriasDre);
+router.get('/financeiro/dre-gerencial/categorias/:id', financeiroController.buscarCategoriaDre);
+router.put('/financeiro/dre-gerencial/categorias/:id', financeiroController.atualizarCategoriaDre);
+router.delete('/financeiro/dre-gerencial/categorias/:id', financeiroController.excluirCategoriaDre);
+
+// --- FLUXO DE CAIXA ---
+router.get('/financeiro/fluxo-caixa/exportar', financeiroController.exportarFluxoCaixa);
+router.get('/financeiro/fluxo-caixa', financeiroController.obterFluxoCaixa);
 
 export default router;

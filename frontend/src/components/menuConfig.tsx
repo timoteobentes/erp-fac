@@ -73,9 +73,11 @@ export const getStaticMenuItems = (navigate: any, user: any, adm: boolean) => {
       children: [
         { key: 'financeiro-pagar', label: 'Contas a Pagar', onClick: () => navigate('/financeiro/pagar') },
         { key: 'financeiro-receber', label: 'Contas a Receber', onClick: () => navigate('/financeiro/receber') },
+        { key: 'financeiro-dre-gerencial', label: 'DRE Gerencial', onClick: () => navigate('/financeiro/dre-gerencial') },
+        { key: 'financeiro-fluxo-caixa', label: 'Fluxo de Caixa', onClick: () => navigate('/financeiro/fluxo-caixa') },
         {
           key: 'financeiro-opcoes-auxiliares',
-          label: 'Opções auxiliares',
+          label: 'Opções Auxiliares',
           children: [
             { key: 'financeiro-centro-custos', label: 'Centro de Custos', onClick: () => navigate('/financeiro/centro-custos') },
             { key: 'financeiro-planos-contas', label: 'Planos de Contas', onClick: () => navigate('/financeiro/planos-de-contas') },
@@ -93,7 +95,7 @@ export const getStaticMenuItems = (navigate: any, user: any, adm: boolean) => {
       children: [
         { key: 'contas-pagar', label: 'Contas a Pagar', onClick: () => navigate('/financeiro/pagar') },
         { key: 'contas-receber', label: 'Contas a Receber', onClick: () => navigate('/financeiro/receber') },
-        { key: 'fluxo-caixa', label: 'Fluxo de Caixa' },
+        { key: 'fluxo-caixa', label: 'Fluxo de Caixa', onClick: () => navigate('/financeiro/fluxo-caixa') },
       ],
     },
     {

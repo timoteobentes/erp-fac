@@ -60,6 +60,19 @@ export class FinanceiroController {
     }
   }
 
+  atualizarContaReceber = async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const usuarioId = req.usuario?.id;
+      const id = parseInt(req.params.id);
+      if (!usuarioId || isNaN(id)) { res.status(400).json({ message: 'Dados inválidos.' }); return; }
+
+      const conta = await this.financeiroService.atualizarContaReceber(id, req.body, usuarioId);
+      res.status(200).json({ success: true, message: 'Conta a receber atualizada com sucesso.', data: conta });
+    } catch (error: any) {
+      res.status(400).json({ success: false, message: error.message });
+    }
+  }
+
   baixarContaReceber = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
       const usuarioId = req.usuario?.id;
@@ -518,6 +531,186 @@ export class FinanceiroController {
       res.status(200).json({ success: true, message: 'Forma de Pagamento excluida com sucesso.' });
     } catch (error: any) {
       res.status(400).json({ success: false, message: error.message });
+    }
+  }
+
+  // =========================================================================
+  // 7. CATEGORIAS DRE
+  // =========================================================================
+
+  criarCategoriaDre = async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const usuarioId = req.usuario?.id;
+      if (!usuarioId) { res.status(401).json({ message: 'Acesso negado.' }); return; }
+
+      const id = await this.financeiroService.criarCategoriaDre(req.body, usuarioId);
+      res.status(201).json({ success: true, message: 'Categoria DRE criada.', id });
+    } catch (error: any) {
+      res.status(400).json({ success: false, message: error.message });
+    }
+  }
+
+  listarCategoriasDre = async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const usuarioId = req.usuario?.id;
+      if (!usuarioId) { res.status(401).json({ message: 'Acesso negado.' }); return; }
+
+      const filtros = {
+        grupo: req.query.grupo as string,
+        tipo: req.query.tipo as string,
+        ativo: req.query.ativo === undefined ? undefined : String(req.query.ativo) === 'true',
+        termo: req.query.termo as string,
+      };
+
+      const categorias = await this.financeiroService.listarCategoriasDre(usuarioId, filtros);
+      res.status(200).json({ success: true, data: categorias });
+    } catch (error: any) {
+      res.status(500).json({ success: false, message: error.message });
+    }
+  }
+
+  buscarCategoriaDre = async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const usuarioId = req.usuario?.id;
+      const id = parseInt(req.params.id);
+      if (!usuarioId || isNaN(id)) { res.status(400).json({ message: 'Dados invalidos.' }); return; }
+
+      const categoria = await this.financeiroService.buscarCategoriaDre(id, usuarioId);
+      res.status(200).json({ success: true, data: categoria });
+    } catch (error: any) {
+      res.status(404).json({ success: false, message: error.message });
+    }
+  }
+
+  atualizarCategoriaDre = async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const usuarioId = req.usuario?.id;
+      const id = parseInt(req.params.id);
+      if (!usuarioId || isNaN(id)) { res.status(400).json({ message: 'Dados invalidos.' }); return; }
+
+      const categoria = await this.financeiroService.atualizarCategoriaDre(id, usuarioId, req.body);
+      res.status(200).json({ success: true, message: 'Categoria DRE atualizada.', data: categoria });
+    } catch (error: any) {
+      res.status(400).json({ success: false, message: error.message });
+    }
+  }
+
+  excluirCategoriaDre = async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const usuarioId = req.usuario?.id;
+      const id = parseInt(req.params.id);
+      if (!usuarioId || isNaN(id)) { res.status(400).json({ message: 'Dados invalidos.' }); return; }
+
+      await this.financeiroService.excluirCategoriaDre(id, usuarioId);
+      res.status(200).json({ success: true, message: 'Categoria DRE excluida com sucesso.' });
+    } catch (error: any) {
+      res.status(400).json({ success: false, message: error.message });
+    }
+  }
+
+  // =========================================================================
+  // 8. DRE GERENCIAL
+  // =========================================================================
+
+  obterDreGerencial = async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const usuarioId = req.usuario?.id;
+      if (!usuarioId) { res.status(401).json({ message: 'Acesso negado.' }); return; }
+
+      const filtros = {
+        data_inicial: req.query.data_inicial as string | undefined,
+        data_final: req.query.data_final as string | undefined,
+      };
+
+      const dre = await this.financeiroService.obterDreGerencial(usuarioId, filtros);
+      res.status(200).json({ success: true, data: dre });
+    } catch (error: any) {
+      res.status(400).json({ success: false, message: error.message });
+    }
+  }
+
+  exportarDreGerencial = async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const usuarioId = req.usuario?.id;
+      if (!usuarioId) { res.status(401).json({ message: 'Acesso negado.' }); return; }
+
+      const formato = (req.query.formato as 'csv' | 'xlsx') || 'csv';
+      const bufferOrString = await this.financeiroService.exportarDreGerencial(usuarioId, {
+        formato,
+        data_inicial: req.query.data_inicial as string | undefined,
+        data_final: req.query.data_final as string | undefined,
+      });
+
+      const filename = `dre_gerencial_${new Date().toISOString().split('T')[0]}`;
+
+      if (formato === 'csv') {
+        res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+        res.setHeader('Content-Disposition', `attachment; filename=${filename}.csv`);
+        res.send(bufferOrString);
+      } else {
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', `attachment; filename=${filename}.xlsx`);
+        res.send(bufferOrString);
+      }
+    } catch (error: any) {
+      res.status(500).json({ success: false, message: error.message || 'Erro ao exportar DRE Gerencial.' });
+    }
+  }
+
+  // =========================================================================
+  // 9. FLUXO DE CAIXA
+  // =========================================================================
+
+  obterFluxoCaixa = async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const usuarioId = req.usuario?.id;
+      if (!usuarioId) { res.status(401).json({ message: 'Acesso negado.' }); return; }
+
+      const filtros = {
+        data_inicio: req.query.data_inicio as string | undefined,
+        data_fim: req.query.data_fim as string | undefined,
+      };
+
+      const fluxoCaixa = await this.financeiroService.obterFluxoCaixa(usuarioId, filtros);
+      res.status(200).json({ success: true, data: fluxoCaixa });
+    } catch (error: any) {
+      res.status(400).json({ success: false, message: error.message });
+    }
+  }
+
+  exportarFluxoCaixa = async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const usuarioId = req.usuario?.id;
+      if (!usuarioId) { res.status(401).json({ message: 'Acesso negado.' }); return; }
+
+      const formato = (req.query.formato as 'csv' | 'xlsx' | 'pdf') || 'csv';
+      const filtros = {
+        data_inicio: req.query.data_inicio as string | undefined,
+        data_fim: req.query.data_fim as string | undefined,
+      };
+
+      const bufferOrString = await this.financeiroService.exportarFluxoCaixa(usuarioId, {
+        formato,
+        ...filtros,
+      });
+
+      const filename = `fluxo_caixa_${new Date().toISOString().split('T')[0]}`;
+
+      if (formato === 'csv') {
+        res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+        res.setHeader('Content-Disposition', `attachment; filename=${filename}.csv`);
+        res.send(bufferOrString);
+      } else if (formato === 'xlsx') {
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', `attachment; filename=${filename}.xlsx`);
+        res.send(bufferOrString);
+      } else {
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename=${filename}.pdf`);
+        res.send(bufferOrString);
+      }
+    } catch (error: any) {
+      res.status(500).json({ success: false, message: error.message || 'Erro ao exportar fluxo de caixa.' });
     }
   }
 }

@@ -3,9 +3,18 @@ import { obterResumoDashboardService } from '../services/dashboardService';
 import { toast } from 'react-toastify';
 
 export interface ResumoDashboard {
-  vendas_hoje: number;
-  contas_receber_pendente_mes: number;
-  contas_pagar_pendente_mes: number;
+  a_receber_hoje: number;
+  a_pagar_hoje: number;
+  recebimentos_mes: {
+    realizado: number;
+    falta: number;
+    previsto: number;
+  };
+  pagamentos_mes: {
+    realizado: number;
+    falta: number;
+    previsto: number;
+  };
   graficos_vendas: { data: string; valor: number }[];
   ultimas_vendas: any[];
 }
@@ -28,26 +37,6 @@ export const useDashboard = () => {
 
   useEffect(() => {
     fetchResumo();
-  }, []);
-
-  useEffect(() => {
-    const handleWindowFocus = () => {
-      fetchResumo();
-    };
-
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        fetchResumo();
-      }
-    };
-
-    window.addEventListener('focus', handleWindowFocus);
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-
-    return () => {
-      window.removeEventListener('focus', handleWindowFocus);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
   }, []);
 
   return {

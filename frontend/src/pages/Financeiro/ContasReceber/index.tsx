@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { Box, Collapse, Typography } from "@mui/material";
 import { ConfigProvider } from "antd";
+import { useNavigate } from "react-router-dom";
 import { 
   ErrorOutline, 
   CheckCircleOutline, 
@@ -18,6 +19,7 @@ const formatCurrency = (value: number) => {
 };
 
 const ContasReceber: React.FC = () => {
+  const navigate = useNavigate();
   const { contas, loading, carregarContas, baixarConta, excluirConta, exportarContas } = useContasReceber();
   const [mounted, setMounted] = useState(false);
   const [openFilters, setOpenFilters] = useState(false);
@@ -161,7 +163,7 @@ const ContasReceber: React.FC = () => {
           <Box sx={{ p: 3, borderBottom: '1px solid #F1F5F9', backgroundColor: '#F8FAFC' }}>
             <ContasReceberActions 
               mounted={mounted}
-              // onAdd={() => navigate('/financeiro/receber/novo')} - Sem criação manual por enquanto (regra PDV)
+              onAdd={() => navigate('/financeiro/receber/novo')}
               onRefresh={() => carregarContas?.()}
               onToggleFilters={() => setOpenFilters(!openFilters)}
               onSearchSimple={(term) => setTermoBusca(term)}

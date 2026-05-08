@@ -47,8 +47,15 @@ const NovoPagamento = lazy(() => import('../pages/Financeiro/ContasPagar/Novo'))
 const VisualizarPagamento = lazy(() => import('../pages/Financeiro/ContasPagar/Visualizar'));
 const EditarPagamento = lazy(() => import('../pages/Financeiro/ContasPagar/Editar'));
 const ContasReceber = lazy(() => import('../pages/Financeiro/ContasReceber'));
+const NovoRecebimento = lazy(() => import('../pages/Financeiro/ContasReceber/Novo'));
 const VisualizarRecebimento = lazy(() => import('../pages/Financeiro/ContasReceber/Visualizar'));
 const EditarRecebimento = lazy(() => import('../pages/Financeiro/ContasReceber/Editar'));
+const DreGerencial = lazy(() => import('../pages/Financeiro/DreGerencial'));
+const CategoriasDre = lazy(() => import('../pages/Financeiro/DreGerencial/Categorias'));
+const NovaCategoriaDre = lazy(() => import('../pages/Financeiro/DreGerencial/Categorias/Novo'));
+const VisualizarCategoriaDre = lazy(() => import('../pages/Financeiro/DreGerencial/Categorias/Visualizar'));
+const EditarCategoriaDre = lazy(() => import('../pages/Financeiro/DreGerencial/Categorias/Editar'));
+const FluxoCaixa = lazy(() => import('../pages/Financeiro/FluxoCaixa'));
 const CentroCustos = lazy(() => import('../pages/Financeiro/CentroCustos'));
 const NovoCentroCusto = lazy(() => import('../pages/Financeiro/CentroCustos/Novo'));
 const VisualizarCentroCusto = lazy(() => import('../pages/Financeiro/CentroCustos/Visualizar'));
@@ -158,9 +165,18 @@ const AppRoutes = () => {
           </Route>
           <Route path="/financeiro/receber">
             <Route index element={<ContasReceber />} />
+            <Route path="novo" element={<NovoRecebimento />} />
             <Route path="visualizar/:id" element={<VisualizarRecebimento />} />
             <Route path="editar/:id" element={<EditarRecebimento />} />
           </Route>
+          <Route path="/financeiro/dre-gerencial">
+            <Route index element={<DreGerencial />} />
+            <Route path="categorias" element={<CategoriasDre />} />
+            <Route path="categorias/novo" element={<NovaCategoriaDre />} />
+            <Route path="categorias/visualizar/:id" element={<VisualizarCategoriaDre />} />
+            <Route path="categorias/editar/:id" element={<EditarCategoriaDre />} />
+          </Route>
+          <Route path="/financeiro/fluxo-caixa" element={<FluxoCaixa />} />
 
           <Route path="/financeiro/centro-custos">
             <Route index element={<CentroCustos />} />

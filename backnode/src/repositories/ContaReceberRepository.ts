@@ -18,9 +18,14 @@ export class ContaReceberRepository extends BaseRepository {
     const query = `
       INSERT INTO contas_receber (
         usuario_id, cliente_id, venda_id, descricao, valor_total,
-        data_vencimento, status, forma_pagamento, observacao
+        data_vencimento, status, forma_pagamento, observacao,
+        plano_conta_id, centro_custo_id, forma_pagamento_id, conta_bancaria_id,
+        recebimento_quitado, data_compensacao, entidade_tipo, entidade_id,
+        data_competencia, informacoes_complementares, anexos
       ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9
+        $1, $2, $3, $4, $5, $6, $7, $8, $9,
+        $10, $11, $12, $13, $14, $15, $16, $17,
+        $18, $19, $20
       ) RETURNING id
     `;
     const values = [
@@ -32,7 +37,18 @@ export class ContaReceberRepository extends BaseRepository {
       dados.data_vencimento,
       dados.status || 'pendente',
       dados.forma_pagamento || null,
-      dados.observacao || null
+      dados.observacao || null,
+      dados.plano_conta_id || null,
+      dados.centro_custo_id || null,
+      dados.forma_pagamento_id || null,
+      dados.conta_bancaria_id || null,
+      dados.recebimento_quitado ?? false,
+      dados.data_compensacao || null,
+      dados.entidade_tipo || null,
+      dados.entidade_id || null,
+      dados.data_competencia || null,
+      dados.informacoes_complementares || null,
+      dados.anexos ? JSON.stringify(dados.anexos) : null,
     ];
 
     const res = await pool.query(query, values);
@@ -46,9 +62,23 @@ export class ContaReceberRepository extends BaseRepository {
     let query = `
       SELECT 
         cr.*,
-        c.nome as cliente_nome
+        c.nome as cliente_nome,
+        pc.nome as plano_conta_nome,
+        cc.nome as centro_custo_nome,
+        fp.nome as forma_pagamento_nome_relacionada,
+        cb.nome as conta_bancaria_nome,
+        CASE
+          WHEN cr.entidade_tipo = 'cliente' THEN c.nome
+          WHEN cr.entidade_tipo = 'fornecedor' THEN f.nome
+          ELSE NULL
+        END as entidade_nome
       FROM contas_receber cr
       LEFT JOIN clientes c ON cr.cliente_id = c.id
+      LEFT JOIN fornecedores f ON cr.entidade_tipo = 'fornecedor' AND cr.entidade_id = f.id
+      LEFT JOIN plano_contas pc ON cr.plano_conta_id = pc.id
+      LEFT JOIN centro_custos cc ON cr.centro_custo_id = cc.id
+      LEFT JOIN formas_pagamento fp ON cr.forma_pagamento_id = fp.id
+      LEFT JOIN contas_bancarias cb ON cr.conta_bancaria_id = cb.id
       WHERE cr.usuario_id = $1
     `;
     const values: any[] = [usuarioId];
@@ -95,7 +125,9 @@ export class ContaReceberRepository extends BaseRepository {
     return {
       dados: res.rows.map(row => ({
         ...row,
-        valor_total: Number(row.valor_total)
+        valor_total: Number(row.valor_total),
+        recebimento_quitado: Boolean(row.recebimento_quitado),
+        anexos: Array.isArray(row.anexos) ? row.anexos : [],
       })),
       total: parseInt(countRes.rows[0].total)
     };
@@ -106,7 +138,26 @@ export class ContaReceberRepository extends BaseRepository {
   // ==========================================
   async buscarPorId(id: number, usuarioId: number): Promise<ContaReceber | null> {
     const res = await pool.query(
-      `SELECT * FROM contas_receber WHERE id = $1 AND usuario_id = $2`,
+      `SELECT
+        cr.*,
+        c.nome as cliente_nome,
+        pc.nome as plano_conta_nome,
+        cc.nome as centro_custo_nome,
+        fp.nome as forma_pagamento_nome_relacionada,
+        cb.nome as conta_bancaria_nome,
+        CASE
+          WHEN cr.entidade_tipo = 'cliente' THEN c.nome
+          WHEN cr.entidade_tipo = 'fornecedor' THEN f.nome
+          ELSE NULL
+        END as entidade_nome
+      FROM contas_receber cr
+      LEFT JOIN clientes c ON cr.cliente_id = c.id
+      LEFT JOIN fornecedores f ON cr.entidade_tipo = 'fornecedor' AND cr.entidade_id = f.id
+      LEFT JOIN plano_contas pc ON cr.plano_conta_id = pc.id
+      LEFT JOIN centro_custos cc ON cr.centro_custo_id = cc.id
+      LEFT JOIN formas_pagamento fp ON cr.forma_pagamento_id = fp.id
+      LEFT JOIN contas_bancarias cb ON cr.conta_bancaria_id = cb.id
+      WHERE cr.id = $1 AND cr.usuario_id = $2`,
       [id, usuarioId]
     );
 
@@ -115,8 +166,61 @@ export class ContaReceberRepository extends BaseRepository {
     const conta = res.rows[0];
     return {
       ...conta,
-      valor_total: Number(conta.valor_total)
+      valor_total: Number(conta.valor_total),
+      recebimento_quitado: Boolean(conta.recebimento_quitado),
+      anexos: Array.isArray(conta.anexos) ? conta.anexos : [],
     };
+  }
+
+  async atualizar(id: number, usuarioId: number, dados: Partial<ContaReceber>): Promise<ContaReceber | null> {
+    const camposAtualizados: string[] = [];
+    const valores: unknown[] = [];
+    let queryIndex = 1;
+
+    const adicionarCampo = (campo: string, valor: unknown) => {
+      camposAtualizados.push(`${campo} = $${queryIndex++}`);
+      valores.push(valor);
+    };
+
+    if (dados.cliente_id !== undefined) adicionarCampo('cliente_id', dados.cliente_id);
+    if (dados.venda_id !== undefined) adicionarCampo('venda_id', dados.venda_id);
+    if (dados.descricao !== undefined) adicionarCampo('descricao', dados.descricao);
+    if (dados.valor_total !== undefined) adicionarCampo('valor_total', dados.valor_total);
+    if (dados.data_vencimento !== undefined) adicionarCampo('data_vencimento', dados.data_vencimento);
+    if (dados.data_recebimento !== undefined) adicionarCampo('data_recebimento', dados.data_recebimento);
+    if (dados.status !== undefined) adicionarCampo('status', dados.status);
+    if (dados.forma_pagamento !== undefined) adicionarCampo('forma_pagamento', dados.forma_pagamento);
+    if (dados.observacao !== undefined) adicionarCampo('observacao', dados.observacao);
+    if (dados.plano_conta_id !== undefined) adicionarCampo('plano_conta_id', dados.plano_conta_id);
+    if (dados.centro_custo_id !== undefined) adicionarCampo('centro_custo_id', dados.centro_custo_id);
+    if (dados.forma_pagamento_id !== undefined) adicionarCampo('forma_pagamento_id', dados.forma_pagamento_id);
+    if (dados.conta_bancaria_id !== undefined) adicionarCampo('conta_bancaria_id', dados.conta_bancaria_id);
+    if (dados.recebimento_quitado !== undefined) adicionarCampo('recebimento_quitado', dados.recebimento_quitado);
+    if (dados.data_compensacao !== undefined) adicionarCampo('data_compensacao', dados.data_compensacao);
+    if (dados.entidade_tipo !== undefined) adicionarCampo('entidade_tipo', dados.entidade_tipo);
+    if (dados.entidade_id !== undefined) adicionarCampo('entidade_id', dados.entidade_id);
+    if (dados.data_competencia !== undefined) adicionarCampo('data_competencia', dados.data_competencia);
+    if (dados.informacoes_complementares !== undefined) adicionarCampo('informacoes_complementares', dados.informacoes_complementares);
+    if (dados.anexos !== undefined) adicionarCampo('anexos', dados.anexos ? JSON.stringify(dados.anexos) : null);
+
+    if (camposAtualizados.length === 0) {
+      return this.buscarPorId(id, usuarioId);
+    }
+
+    camposAtualizados.push('atualizado_em = NOW()');
+    valores.push(id, usuarioId);
+
+    const query = `
+      UPDATE contas_receber
+      SET ${camposAtualizados.join(', ')}
+      WHERE id = $${queryIndex++} AND usuario_id = $${queryIndex++}
+      RETURNING id
+    `;
+
+    const res = await pool.query(query, valores);
+    if (!res.rows[0]) return null;
+
+    return this.buscarPorId(id, usuarioId);
   }
 
   // ==========================================
