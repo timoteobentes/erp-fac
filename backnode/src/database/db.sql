@@ -42,6 +42,18 @@ CREATE TABLE public.categorias (
   CONSTRAINT fk_categorias_usuario FOREIGN KEY (usuario_id) REFERENCES public.usuarios(id),
   CONSTRAINT fk_categorias_pai FOREIGN KEY (categoria_pai_id) REFERENCES public.categorias(id)
 );
+CREATE TABLE public.categorias_dre (
+  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
+  usuario_id bigint NOT NULL,
+  grupo character varying NOT NULL CHECK (grupo::text = ANY (ARRAY['NENHUM'::character varying::text, 'CUSTOS_OPERACIONAIS'::character varying::text, 'DEDUCOES'::character varying::text, 'DESPESAS_FINANCEIRAS'::character varying::text, 'DESPESAS_OPERACIONAIS'::character varying::text, 'OUTRAS_DESPESAS'::character varying::text, 'OUTRAS_RECEITAS'::character varying::text, 'RECEITA_BRUTA'::character varying::text, 'RECEITAS_FINANCEIRAS'::character varying::text])),
+  nome character varying NOT NULL,
+  tipo character varying NOT NULL CHECK (tipo::text = ANY (ARRAY['DESPESA'::character varying::text, 'RECEITA'::character varying::text, 'TOTALIZADOR'::character varying::text])),
+  ativo boolean NOT NULL DEFAULT true,
+  criado_em timestamp with time zone DEFAULT now(),
+  atualizado_em timestamp with time zone DEFAULT now(),
+  CONSTRAINT categorias_dre_pkey PRIMARY KEY (id),
+  CONSTRAINT fk_categorias_dre_usuario FOREIGN KEY (usuario_id) REFERENCES public.usuarios(id)
+);
 CREATE TABLE public.categorias_produtos (
   id bigint NOT NULL,
   usuario_id bigint NOT NULL,
@@ -60,18 +72,6 @@ CREATE TABLE public.centro_custos (
   atualizado_em timestamp with time zone DEFAULT now(),
   CONSTRAINT centro_custos_pkey PRIMARY KEY (id),
   CONSTRAINT fk_centro_custos_usuario FOREIGN KEY (usuario_id) REFERENCES public.usuarios(id)
-);
-CREATE TABLE public.categorias_dre (
-  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
-  usuario_id bigint NOT NULL,
-  grupo character varying NOT NULL CHECK (grupo::text = ANY (ARRAY['NENHUM'::character varying::text, 'CUSTOS_OPERACIONAIS'::character varying::text, 'DEDUCOES'::character varying::text, 'DESPESAS_FINANCEIRAS'::character varying::text, 'DESPESAS_OPERACIONAIS'::character varying::text, 'OUTRAS_DESPESAS'::character varying::text, 'OUTRAS_RECEITAS'::character varying::text, 'RECEITA_BRUTA'::character varying::text, 'RECEITAS_FINANCEIRAS'::character varying::text])),
-  nome character varying NOT NULL,
-  tipo character varying NOT NULL CHECK (tipo::text = ANY (ARRAY['DESPESA'::character varying::text, 'RECEITA'::character varying::text, 'TOTALIZADOR'::character varying::text])),
-  ativo boolean NOT NULL DEFAULT true,
-  criado_em timestamp with time zone DEFAULT now(),
-  atualizado_em timestamp with time zone DEFAULT now(),
-  CONSTRAINT categorias_dre_pkey PRIMARY KEY (id),
-  CONSTRAINT fk_categorias_dre_usuario FOREIGN KEY (usuario_id) REFERENCES public.usuarios(id)
 );
 CREATE TABLE public.clientes (
   id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
@@ -186,8 +186,42 @@ CREATE TABLE public.contas_pagar (
   observacao text,
   criado_em timestamp with time zone DEFAULT now(),
   atualizado_em timestamp with time zone DEFAULT now(),
+  plano_conta_id bigint,
+  centro_custo_id bigint,
+  forma_pagamento_id bigint,
+  conta_bancaria_id bigint,
+  pagamento_quitado boolean NOT NULL DEFAULT false,
+  data_compensacao date,
+  parcelamento_recorrencia_ativo boolean NOT NULL DEFAULT false,
+  tipo_parcela character varying CHECK (tipo_parcela IS NULL OR (tipo_parcela::text = ANY (ARRAY['DIVIDIR_VALOR_ENTRE_PARCELAS'::character varying, 'MULTIPLICAR_VALOR_PELAS_PARCELAS'::character varying]::text[]))),
+  repeticao character varying CHECK (repeticao IS NULL OR (repeticao::text = ANY (ARRAY['QUINZENAL'::character varying, 'MENSAL'::character varying, 'TRIMESTRAL'::character varying, 'SEMESTRAL'::character varying, 'ANUAL'::character varying]::text[]))),
+  quantidade_parcelas integer,
+  data_primeira_parcela date,
   CONSTRAINT contas_pagar_pkey PRIMARY KEY (id),
-  CONSTRAINT fk_cp_usuario FOREIGN KEY (usuario_id) REFERENCES public.usuarios(id)
+  CONSTRAINT fk_cp_usuario FOREIGN KEY (usuario_id) REFERENCES public.usuarios(id),
+  CONSTRAINT fk_cp_plano_conta FOREIGN KEY (plano_conta_id) REFERENCES public.plano_contas(id),
+  CONSTRAINT fk_cp_centro_custo FOREIGN KEY (centro_custo_id) REFERENCES public.centro_custos(id),
+  CONSTRAINT fk_cp_forma_pagamento FOREIGN KEY (forma_pagamento_id) REFERENCES public.formas_pagamento(id),
+  CONSTRAINT fk_cp_conta_bancaria FOREIGN KEY (conta_bancaria_id) REFERENCES public.contas_bancarias(id)
+);
+CREATE TABLE public.contas_pagar_parcelas (
+  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
+  usuario_id bigint NOT NULL,
+  conta_pagar_id bigint NOT NULL,
+  numero_parcela integer NOT NULL CHECK (numero_parcela > 0),
+  data_vencimento date NOT NULL,
+  valor numeric NOT NULL DEFAULT 0.00 CHECK (valor >= 0::numeric),
+  forma_pagamento_id bigint NOT NULL,
+  conta_bancaria_id bigint,
+  pago boolean NOT NULL DEFAULT false,
+  observacao text,
+  criado_em timestamp with time zone DEFAULT now(),
+  atualizado_em timestamp with time zone DEFAULT now(),
+  CONSTRAINT contas_pagar_parcelas_pkey PRIMARY KEY (id),
+  CONSTRAINT fk_cpp_usuario FOREIGN KEY (usuario_id) REFERENCES public.usuarios(id),
+  CONSTRAINT fk_cpp_conta_pagar FOREIGN KEY (conta_pagar_id) REFERENCES public.contas_pagar(id),
+  CONSTRAINT fk_cpp_forma_pagamento FOREIGN KEY (forma_pagamento_id) REFERENCES public.formas_pagamento(id),
+  CONSTRAINT fk_cpp_conta_bancaria FOREIGN KEY (conta_bancaria_id) REFERENCES public.contas_bancarias(id)
 );
 CREATE TABLE public.contas_receber (
   id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
@@ -201,6 +235,8 @@ CREATE TABLE public.contas_receber (
   status character varying DEFAULT 'pendente'::character varying CHECK (status::text = ANY (ARRAY['pendente'::character varying::text, 'recebido'::character varying::text, 'atrasado'::character varying::text, 'cancelado'::character varying::text])),
   forma_pagamento character varying,
   observacao text,
+  criado_em timestamp with time zone DEFAULT now(),
+  atualizado_em timestamp with time zone DEFAULT now(),
   plano_conta_id bigint,
   centro_custo_id bigint,
   forma_pagamento_id bigint,
@@ -212,12 +248,10 @@ CREATE TABLE public.contas_receber (
   data_competencia date,
   informacoes_complementares text,
   anexos jsonb,
-  criado_em timestamp with time zone DEFAULT now(),
-  atualizado_em timestamp with time zone DEFAULT now(),
   CONSTRAINT contas_receber_pkey PRIMARY KEY (id),
+  CONSTRAINT fk_cr_plano_conta FOREIGN KEY (plano_conta_id) REFERENCES public.plano_contas(id),
   CONSTRAINT fk_cr_usuario FOREIGN KEY (usuario_id) REFERENCES public.usuarios(id),
   CONSTRAINT fk_cr_cliente FOREIGN KEY (cliente_id) REFERENCES public.clientes(id),
-  CONSTRAINT fk_cr_plano_conta FOREIGN KEY (plano_conta_id) REFERENCES public.plano_contas(id),
   CONSTRAINT fk_cr_centro_custo FOREIGN KEY (centro_custo_id) REFERENCES public.centro_custos(id),
   CONSTRAINT fk_cr_forma_pagamento FOREIGN KEY (forma_pagamento_id) REFERENCES public.formas_pagamento(id),
   CONSTRAINT fk_cr_conta_bancaria FOREIGN KEY (conta_bancaria_id) REFERENCES public.contas_bancarias(id)

@@ -10,6 +10,40 @@ export interface FiltrosContaPagar {
   termo?: string;
 }
 
+export interface ContaPagarParcelaPayload {
+  id?: number;
+  numero_parcela: number;
+  data_vencimento: string;
+  valor: number;
+  forma_pagamento_id: number;
+  conta_bancaria_id?: number | null;
+  pago?: boolean;
+  observacao?: string | null;
+}
+
+export interface ContaPagarPayload {
+  fornecedor_id?: number | null;
+  descricao: string;
+  valor_total: number;
+  data_vencimento: string;
+  data_pagamento?: string | null;
+  status?: 'pendente' | 'pago' | 'cancelado' | 'atrasado';
+  categoria_despesa?: string | null;
+  observacao?: string | null;
+  plano_conta_id?: number | null;
+  centro_custo_id?: number | null;
+  forma_pagamento_id?: number | null;
+  conta_bancaria_id?: number | null;
+  pagamento_quitado?: boolean;
+  data_compensacao?: string | null;
+  parcelamento_recorrencia_ativo?: boolean;
+  tipo_parcela?: string | null;
+  repeticao?: string | null;
+  quantidade_parcelas?: number | null;
+  data_primeira_parcela?: string | null;
+  parcelas?: ContaPagarParcelaPayload[];
+}
+
 export const listarContasPagarService = async (filtros?: FiltrosContaPagar) => {
   try {
     const params: any = { ...filtros };
@@ -24,7 +58,7 @@ export const listarContasPagarService = async (filtros?: FiltrosContaPagar) => {
   }
 };
 
-export const criarContaPagarService = async (dados: any) => {
+export const criarContaPagarService = async (dados: ContaPagarPayload) => {
   try {
     const response = await api.post("/api/financeiro/pagar", dados);
     return response.data;
@@ -60,7 +94,7 @@ export const excluirContaPagarService = async (id: number | string) => {
   }
 };
 
-export const atualizarContaPagarService = async (id: number | string, dados: any) => {
+export const atualizarContaPagarService = async (id: number | string, dados: ContaPagarPayload) => {
   try {
     const response = await api.put(`/api/financeiro/pagar/${id}`, dados);
     return response.data;

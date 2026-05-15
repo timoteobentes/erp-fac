@@ -47,7 +47,7 @@ export const listarFornecedoresService = async (
     };
 
     if (ordenacao) {
-      params.ordenarPor = ordenacao.campo;
+      params.ordenar_por = ordenacao.campo;
       params.ordem = ordenacao.ordem;
     }
 
@@ -106,7 +106,7 @@ export const mudarStatusFornecedoresService = async (id: string, situacao: strin
 export const excluirFornecedoresService = async (id: string, hardDelete: boolean = false) => {
   try {
     if (hardDelete) {
-      const response = await api.delete(`/api/fornecedores/${id}`);
+      const response = await api.delete(`/api/fornecedores/${id}`, { params: { hard: true } });
       return response.data;
     } else {
       return await mudarStatusFornecedoresService(id, 'inativo');
@@ -146,3 +146,6 @@ export const exportarFornecedoressService = async (
     throw new Error(`Falha na exportação: ${error.message}`);
   }
 }
+
+export const obterEstatisticasFornecedores = obterEstatisticasFornecedoress;
+export const exportarFornecedoresService = exportarFornecedoressService;

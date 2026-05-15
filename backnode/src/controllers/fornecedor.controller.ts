@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import { FornecedorService } from '../services/fornecedor.service';
 import { NovoFornecedorRequest } from '../models/Fornecedor';
 import { AuthRequest } from '../middleware/auth';
@@ -283,13 +283,18 @@ export class FornecedorController {
   };
 
   // Exportar fornecedores
-  async exportarFornecedores(req: Request, res: Response): Promise<void> {
+  async exportarFornecedores(req: AuthRequest, res: Response): Promise<void> {
     try {
       console.log('exportarFornecedores chamado');
       
-      const usuarioId = (req as any).usuarioId;
+      const usuarioId = req.usuario?.id || (req as any).usuarioId;
       const formato = req.query.formato as string || 'csv';
       const filtros = req.query as any;
+
+      if (!usuarioId) {
+        res.status(401).json({ error: 'UsuÃ¡rio nÃ£o autenticado' });
+        return;
+      }
 
       console.log('usuarioId:', usuarioId);
       console.log('formato:', formato);

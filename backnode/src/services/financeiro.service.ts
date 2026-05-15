@@ -104,6 +104,8 @@ export class FinanceiroService {
 
   async criarContaPagar(dados: ContaPagar, usuarioId: number): Promise<number> {
     this.validarContaBasica(dados.valor_total, dados.data_vencimento);
+    await this.validarRelacionamentosContaPagar(dados, usuarioId);
+    this.validarParcelamentoContaPagar(dados);
     return await this.contaPagarRepository.criar(dados, usuarioId);
   }
 
@@ -129,6 +131,19 @@ export class FinanceiroService {
 
     const dataFinal = dataPagamento || new Date().toISOString().split('T')[0];
     await this.contaPagarRepository.atualizarStatus(id, usuarioId, 'pago', dataFinal);
+  }
+
+  async atualizarContaPagar(id: number, dados: Partial<ContaPagar>, usuarioId: number): Promise<ContaPagar> {
+    const contaAtual = await this.buscarContaPagar(id, usuarioId);
+    const payload: ContaPagar = { ...contaAtual, ...dados };
+
+    this.validarContaBasica(Number(payload.valor_total), payload.data_vencimento);
+    await this.validarRelacionamentosContaPagar(payload, usuarioId);
+    this.validarParcelamentoContaPagar(payload);
+
+    const conta = await this.contaPagarRepository.atualizar(id, usuarioId, payload);
+    if (!conta) throw new Error('Conta a pagar nao encontrada.');
+    return conta;
   }
 
   async excluirContaPagar(id: number, usuarioId: number): Promise<void> {
@@ -1145,6 +1160,99 @@ export class FinanceiroService {
       dados.status = 'recebido';
     } else if (dados.recebimento_quitado === false && dados.status === 'recebido') {
       dados.status = 'pendente';
+    }
+  }
+
+  private async validarRelacionamentosContaPagar(dados: Partial<ContaPagar>, usuarioId: number) {
+    const contasMaeDespesa = [
+      'PAGAMENTO',
+      'DESPESAS_ADMINISTRATIVAS_E_COMERCIAIS',
+      'DESPESAS_PRODUTOS_VENDIDOS',
+      'DESPESAS_FINANCEIRAS',
+      'INVESTIMENTOS',
+      'OUTRAS_DESPESAS',
+    ];
+
+    if (!dados.descricao || !dados.descricao.trim()) {
+      throw new Error('Descricao do pagamento e obrigatoria.');
+    }
+
+    if (dados.plano_conta_id) {
+      const planoConta = await this.planoContaRepository.buscarPorId(Number(dados.plano_conta_id), usuarioId);
+      if (!planoConta) {
+        throw new Error('Plano de contas informado nao foi encontrado.');
+      }
+      if (!contasMaeDespesa.includes(planoConta.conta_mae)) {
+        throw new Error('Selecione um plano de contas valido para contas a pagar.');
+      }
+      dados.categoria_despesa = planoConta.nome;
+    }
+
+    if (dados.centro_custo_id) {
+      const centroCusto = await this.centroCustoRepository.buscarPorId(Number(dados.centro_custo_id), usuarioId);
+      if (!centroCusto) {
+        throw new Error('Centro de custo informado nao foi encontrado.');
+      }
+    }
+
+    if (dados.forma_pagamento_id) {
+      const formaPagamento = await this.formaPagamentoRepository.buscarPorId(Number(dados.forma_pagamento_id), usuarioId);
+      if (!formaPagamento) {
+        throw new Error('Forma de pagamento informada nao foi encontrada.');
+      }
+      if (!['CONTAS_A_PAGAR_E_RECEBER', 'SOMENTE_CONTAS_A_PAGAR'].includes(formaPagamento.disponivel_em)) {
+        throw new Error('Forma de pagamento indisponivel para contas a pagar.');
+      }
+      if (!dados.conta_bancaria_id && formaPagamento.conta_bancaria_id) {
+        dados.conta_bancaria_id = formaPagamento.conta_bancaria_id;
+      }
+    }
+
+    if (dados.conta_bancaria_id) {
+      const contaBancaria = await this.contaBancariaRepository.buscarPorId(Number(dados.conta_bancaria_id), usuarioId);
+      if (!contaBancaria) {
+        throw new Error('Conta bancaria informada nao foi encontrada.');
+      }
+    }
+
+    if (dados.pagamento_quitado) {
+      if (!dados.data_compensacao && !dados.data_pagamento) {
+        throw new Error('Informe a data de compensacao para pagamento quitado.');
+      }
+      dados.data_pagamento = dados.data_compensacao || dados.data_pagamento;
+      dados.status = 'pago';
+    } else if (dados.pagamento_quitado === false && dados.status === 'pago') {
+      dados.status = 'pendente';
+      dados.data_pagamento = null;
+    }
+  }
+
+  private validarParcelamentoContaPagar(dados: Partial<ContaPagar>) {
+    if (!dados.parcelamento_recorrencia_ativo) {
+      dados.tipo_parcela = null;
+      dados.repeticao = null;
+      dados.quantidade_parcelas = null;
+      dados.data_primeira_parcela = null;
+      dados.parcelas = [];
+      return;
+    }
+
+    const tipoParcelaValues = ['DIVIDIR_VALOR_ENTRE_PARCELAS', 'MULTIPLICAR_VALOR_PELAS_PARCELAS'];
+    const repeticaoValues = ['QUINZENAL', 'MENSAL', 'TRIMESTRAL', 'SEMESTRAL', 'ANUAL'];
+
+    if (!dados.forma_pagamento_id) throw new Error('Selecione uma forma de pagamento.');
+    if (!dados.conta_bancaria_id) throw new Error('Selecione uma conta bancaria.');
+    if (!dados.tipo_parcela || !tipoParcelaValues.includes(dados.tipo_parcela)) throw new Error('Informe o tipo de parcela.');
+    if (!dados.repeticao || !repeticaoValues.includes(dados.repeticao)) throw new Error('Informe a repeticao.');
+    if (!dados.quantidade_parcelas || Number(dados.quantidade_parcelas) <= 0) throw new Error('Informe a quantidade de parcelas.');
+    if (!dados.data_primeira_parcela) throw new Error('Informe a data da primeira parcela.');
+    if (!dados.parcelas || dados.parcelas.length === 0) throw new Error('Gere as parcelas antes de salvar.');
+
+    for (const parcela of dados.parcelas) {
+      if (!parcela.numero_parcela || parcela.numero_parcela <= 0) throw new Error('Numero de parcela invalido.');
+      if (!parcela.data_vencimento) throw new Error('Data de vencimento da parcela obrigatoria.');
+      if (Number(parcela.valor) < 0) throw new Error('Valor da parcela invalido.');
+      if (!parcela.forma_pagamento_id) throw new Error('Forma de pagamento da parcela obrigatoria.');
     }
   }
 

@@ -34,6 +34,7 @@ export const getStaticMenuItems = (navigate: any, user: any, adm: boolean) => {
       disabled,
       children: [
         { key: 'cadastros-clientes', label: 'Clientes', onClick: () => navigate('/cadastros/clientes') },
+        { key: 'cadastros-fornecedores', label: 'Fornecedores', onClick: () => navigate('/cadastros/fornecedores') },
         {
           key: 'cadastros-produtos',
           label: 'Produtos',

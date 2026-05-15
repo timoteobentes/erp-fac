@@ -183,6 +183,19 @@ export class FinanceiroController {
     }
   }
 
+  atualizarContaPagar = async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const usuarioId = req.usuario?.id;
+      const id = parseInt(req.params.id);
+      if (!usuarioId || isNaN(id)) { res.status(400).json({ message: 'Dados invalidos.' }); return; }
+
+      const conta = await this.financeiroService.atualizarContaPagar(id, req.body, usuarioId);
+      res.status(200).json({ success: true, message: 'Conta a pagar atualizada com sucesso.', data: conta });
+    } catch (error: any) {
+      res.status(400).json({ success: false, message: error.message });
+    }
+  }
+
   baixarContaPagar = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
       const usuarioId = req.usuario?.id;

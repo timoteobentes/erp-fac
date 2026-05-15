@@ -27,6 +27,10 @@ const Produtos = lazy(() => import('../pages/Cadastros/Produtos'));
 const NovoProduto = lazy(() => import('../pages/Cadastros/Produtos/Novo'));
 const EditarProduto = lazy(() => import('../pages/Cadastros/Produtos/Editar'));
 const VisualizarProduto = lazy(() => import('../pages/Cadastros/Produtos/Visualizar'));
+const Fornecedores = lazy(() => import('../pages/Cadastros/Fornecedores'));
+const NovoFornecedor = lazy(() => import('../pages/Cadastros/Fornecedores/Novo'));
+const EditarFornecedor = lazy(() => import('../pages/Cadastros/Fornecedores/Editar'));
+const VisualizarFornecedor = lazy(() => import('../pages/Cadastros/Fornecedores/Visualizar'));
 
 // Módulo: Servicos Gerais
 const Servicos = lazy(() => import('../pages/Servicos/Cadastro'));
@@ -138,6 +142,13 @@ const AppRoutes = () => {
              <Route path="novo" element={<NovoProduto />} />
              <Route path="editar/:id" element={<EditarProduto />} />
              <Route path="visualizar/:id" element={<VisualizarProduto />} />
+          </Route>
+
+          <Route path="/cadastros/fornecedores">
+             <Route index element={<Fornecedores />} />
+             <Route path="novo" element={<NovoFornecedor />} />
+             <Route path="editar/:id" element={<EditarFornecedor />} />
+             <Route path="visualizar/:id" element={<VisualizarFornecedor />} />
           </Route>
 
           {/* Módulo: Serviços Principais */}

@@ -147,12 +147,17 @@ export class FornecedorService {
     paginacao: OpcoesPaginacao,
     ordenacao: OpcoesOrdenacao
   ): Promise<ResultadoPaginado> {
-    return await this.fornecedorRepository.listarFornecedoresComFiltros(
+    const resultado = await this.fornecedorRepository.listarFornecedoresComFiltros(
       usuarioId, 
       filtros, 
       paginacao, 
       ordenacao
     );
+
+    return {
+      fornecedores: resultado.dados || resultado.fornecedores || [],
+      total: resultado.total || 0
+    };
   }
 
   async atualizarFornecedor(
@@ -171,10 +176,23 @@ export class FornecedorService {
       const cpfExiste = await this.fornecedorRepository.verificarDocumentoExistente(
         'PF', 
         fornecedorData.cpf, 
-        usuarioId
+        usuarioId,
+        fornecedorId
       );
       if (cpfExiste) {
         throw new Error('CPF já cadastrado para este usuário');
+      }
+    }
+
+    if (fornecedorData.cnpj && fornecedorData.tipo_fornecedor === 'PJ') {
+      const cnpjExiste = await this.fornecedorRepository.verificarDocumentoExistente(
+        'PJ',
+        fornecedorData.cnpj,
+        usuarioId,
+        fornecedorId
+      );
+      if (cnpjExiste) {
+        throw new Error('CNPJ jÃ¡ cadastrado para este usuÃ¡rio');
       }
     }
 

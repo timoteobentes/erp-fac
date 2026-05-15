@@ -279,8 +279,9 @@ export class FornecedorRepository extends BaseRepository {
   }
 
   // Verificar se CPF/CNPJ já existe
-  async verificarDocumentoExistente(tipo: string, documento: string, usuarioId: number): Promise<boolean> {
+  async verificarDocumentoExistente(tipo: string, documento: string, usuarioId: number, ignorarFornecedorId?: number): Promise<boolean> {
     let query = '';
+    const values: any[] = [documento, usuarioId];
     
     if (tipo === 'PF') {
       query = `
@@ -297,7 +298,12 @@ export class FornecedorRepository extends BaseRepository {
     }
     
     if (query) {
-      const result = await pool.query(query, [documento, usuarioId]);
+      if (ignorarFornecedorId) {
+        query += ' AND f.id <> $3';
+        values.push(ignorarFornecedorId);
+      }
+
+      const result = await pool.query(query, values);
       return result.rows.length > 0;
     }
     
@@ -427,37 +433,121 @@ export class FornecedorRepository extends BaseRepository {
 
   // Atualizar fornecedor
   async atualizarFornecedor(fornecedorId: number, usuarioId: number, fornecedorData: any): Promise<void> {
-    const camposPermitidos = [
-      'nome', 'email', 'telefone_comercial', 'telefone_celular', 'site',
-      'responsavel_compras', 'prazo_entrega', 'condicao_pagamento',
-      'observacoes', 'situacao'
-    ];
+    const client = await pool.connect();
 
-    const camposParaAtualizar: string[] = [];
-    const valores: any[] = [];
-    let paramCount = 1;
+    try {
+      await client.query('BEGIN');
 
-    for (const [campo, valor] of Object.entries(fornecedorData)) {
-      if (camposPermitidos.includes(campo) && valor !== undefined) {
-        camposParaAtualizar.push(`${campo} = $${paramCount}`);
-        valores.push(valor);
-        paramCount++;
+      const camposPermitidos = [
+        'tipo_fornecedor', 'nome', 'email', 'telefone_comercial', 'telefone_celular', 'site',
+        'responsavel_compras', 'prazo_entrega', 'condicao_pagamento',
+        'observacoes', 'situacao'
+      ];
+
+      const camposParaAtualizar: string[] = [];
+      const valores: any[] = [];
+      let paramCount = 1;
+
+      for (const [campo, valor] of Object.entries(fornecedorData)) {
+        if (camposPermitidos.includes(campo) && valor !== undefined) {
+          camposParaAtualizar.push(`${campo} = $${paramCount}`);
+          valores.push(valor);
+          paramCount++;
+        }
       }
+
+      if (camposParaAtualizar.length > 0) {
+        valores.push(fornecedorId, usuarioId);
+
+        await client.query(
+          `
+            UPDATE fornecedores
+            SET ${camposParaAtualizar.join(', ')}, atualizado_em = NOW()
+            WHERE id = $${paramCount} AND usuario_id = $${paramCount + 1}
+          `,
+          valores
+        );
+      }
+
+      const tipoFornecedor = fornecedorData.tipo_fornecedor;
+
+      if (tipoFornecedor === 'PF') {
+        await client.query('DELETE FROM fornecedores_pj WHERE fornecedor_id = $1', [fornecedorId]);
+        await client.query('DELETE FROM fornecedores_estrangeiro WHERE fornecedor_id = $1', [fornecedorId]);
+        await client.query(
+          `
+            INSERT INTO fornecedores_pf (fornecedor_id, cpf, rg, nascimento, tipo_contribuinte)
+            VALUES ($1, $2, $3, $4, $5)
+            ON CONFLICT (fornecedor_id) DO UPDATE
+            SET cpf = EXCLUDED.cpf,
+                rg = EXCLUDED.rg,
+                nascimento = EXCLUDED.nascimento,
+                tipo_contribuinte = EXCLUDED.tipo_contribuinte
+          `,
+          [
+            fornecedorId,
+            fornecedorData.cpf,
+            fornecedorData.rg,
+            fornecedorData.nascimento,
+            fornecedorData.tipo_contribuinte
+          ]
+        );
+      } else if (tipoFornecedor === 'PJ') {
+        await client.query('DELETE FROM fornecedores_pf WHERE fornecedor_id = $1', [fornecedorId]);
+        await client.query('DELETE FROM fornecedores_estrangeiro WHERE fornecedor_id = $1', [fornecedorId]);
+        await client.query(
+          `
+            INSERT INTO fornecedores_pj (
+              fornecedor_id, cnpj, razao_social, inscricao_estadual, isento,
+              tipo_contribuinte, inscricao_municipal, inscricao_suframa,
+              responsavel, ramo_atividade
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+            ON CONFLICT (fornecedor_id) DO UPDATE
+            SET cnpj = EXCLUDED.cnpj,
+                razao_social = EXCLUDED.razao_social,
+                inscricao_estadual = EXCLUDED.inscricao_estadual,
+                isento = EXCLUDED.isento,
+                tipo_contribuinte = EXCLUDED.tipo_contribuinte,
+                inscricao_municipal = EXCLUDED.inscricao_municipal,
+                inscricao_suframa = EXCLUDED.inscricao_suframa,
+                responsavel = EXCLUDED.responsavel,
+                ramo_atividade = EXCLUDED.ramo_atividade
+          `,
+          [
+            fornecedorId,
+            fornecedorData.cnpj,
+            fornecedorData.razao_social,
+            fornecedorData.inscricao_estadual,
+            fornecedorData.isento || false,
+            fornecedorData.tipo_contribuinte,
+            fornecedorData.inscricao_municipal,
+            fornecedorData.inscricao_suframa,
+            fornecedorData.responsavel,
+            fornecedorData.ramo_atividade
+          ]
+        );
+      } else if (tipoFornecedor === 'estrangeiro') {
+        await client.query('DELETE FROM fornecedores_pf WHERE fornecedor_id = $1', [fornecedorId]);
+        await client.query('DELETE FROM fornecedores_pj WHERE fornecedor_id = $1', [fornecedorId]);
+        await client.query(
+          `
+            INSERT INTO fornecedores_estrangeiro (fornecedor_id, documento, pais_origem)
+            VALUES ($1, $2, $3)
+            ON CONFLICT (fornecedor_id) DO UPDATE
+            SET documento = EXCLUDED.documento,
+                pais_origem = EXCLUDED.pais_origem
+          `,
+          [fornecedorId, fornecedorData.documento, fornecedorData.pais_origem]
+        );
+      }
+
+      await client.query('COMMIT');
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
     }
-
-    if (camposParaAtualizar.length === 0) {
-      return;
-    }
-
-    valores.push(fornecedorId, usuarioId);
-    
-    const query = `
-      UPDATE fornecedores 
-      SET ${camposParaAtualizar.join(', ')}, atualizado_em = NOW()
-      WHERE id = $${paramCount} AND usuario_id = $${paramCount + 1}
-    `;
-
-    await pool.query(query, valores);
   }
 
   // Mudar status do fornecedor

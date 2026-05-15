@@ -26,8 +26,8 @@ export const useFornecedores = () => {
   });
   const [filtros, setFiltros] = useState<FiltrosFornecedores>({});
   const [ordenacao, setOrdenacao] = useState<{ campo: string; ordem: 'ASC' | 'DESC' }>({
-    campo: 'criado_em',
-    ordem: 'DESC'
+    campo: 'nome',
+    ordem: 'ASC'
   });
 
   const fetchFornecedores = useCallback(async (
@@ -74,11 +74,13 @@ export const useFornecedores = () => {
         }
       }
 
-      let totalItems = payload?.total || resultado?.paginacao?.total || 0;
+      let totalItems = payload?.total || resultado?.paginacao?.total || dataArray.length || 0;
 
       setFornecedores(dataArray);
       setPaginacao(prev => ({
         ...prev,
+        pagina,
+        limite,
         current: pagina,
         pageSize: limite,
         total: totalItems

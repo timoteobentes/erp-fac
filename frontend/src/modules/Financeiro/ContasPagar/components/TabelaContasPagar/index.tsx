@@ -18,6 +18,14 @@ export interface ContaPagar {
   fornecedor_nome?: string;
   valor_total: number | string;
   data_vencimento: string;
+  plano_conta_nome?: string;
+  centro_custo_nome?: string;
+  forma_pagamento_nome?: string;
+  conta_bancaria_nome?: string;
+  pagamento_quitado?: boolean;
+  data_compensacao?: string;
+  parcelamento_recorrencia_ativo?: boolean;
+  possui_parcelas?: boolean;
   status: string;
 }
 
@@ -124,6 +132,53 @@ export const TabelaContasPagar: React.FC<TabelaContasPagarProps> = ({
       )
     },
     {
+      title: 'Plano de Contas',
+      dataIndex: 'plano_conta_nome',
+      key: 'plano_conta_nome',
+      render: (text: string) => text || <span className="text-gray-400">-</span>
+    },
+    {
+      title: 'Centro de Custos',
+      dataIndex: 'centro_custo_nome',
+      key: 'centro_custo_nome',
+      render: (text: string) => text || <span className="text-gray-400">-</span>
+    },
+    {
+      title: 'Forma Pag.',
+      dataIndex: 'forma_pagamento_nome',
+      key: 'forma_pagamento_nome',
+      render: (text: string) => text || <span className="text-gray-400">-</span>
+    },
+    {
+      title: 'Conta Bancária',
+      dataIndex: 'conta_bancaria_nome',
+      key: 'conta_bancaria_nome',
+      render: (text: string) => text || <span className="text-gray-400">-</span>
+    },
+    {
+      title: 'Quitado',
+      dataIndex: 'pagamento_quitado',
+      key: 'pagamento_quitado',
+      align: 'center' as const,
+      render: (value: boolean) => <Tag color={value ? 'success' : 'warning'}>{value ? 'Sim' : 'Não'}</Tag>
+    },
+    {
+      title: 'Compensação',
+      dataIndex: 'data_compensacao',
+      key: 'data_compensacao',
+      render: (text: string) => formatDate(text)
+    },
+    {
+      title: 'Parcelas',
+      key: 'parcelas',
+      align: 'center' as const,
+      render: (_: any, record: ContaPagar) => (
+        <Tag color={record.parcelamento_recorrencia_ativo || record.possui_parcelas ? 'blue' : 'default'}>
+          {record.parcelamento_recorrencia_ativo || record.possui_parcelas ? 'Sim' : 'Não'}
+        </Tag>
+      )
+    },
+    {
       title: 'Status',
       dataIndex: 'status',
       key: 'status',
@@ -187,7 +242,7 @@ export const TabelaContasPagar: React.FC<TabelaContasPagarProps> = ({
         rowKey="id"
         loading={isLoading}
         pagination={{ ...pagination, align: 'center' }}
-        scroll={{ x: 1000 }}
+        scroll={{ x: 1800 }}
         size="middle"
       />
 
@@ -196,7 +251,7 @@ export const TabelaContasPagar: React.FC<TabelaContasPagarProps> = ({
         onClose={() => setModalDeleteOpen(false)}
         onConfirm={confirmDelete}
         title="Excluir Despesa"
-        description="Tem certeza que deseja excluir permanentemente esta Conta a Pagar? Esta operação não pode ser desfeita nos registros do caixa."
+        description="Tem certeza que deseja excluir permanentemente esta Conta a Pagar? Se houver parcelas vinculadas, elas também serão removidas."
         confirmText="Sim, Excluir"
         confirmColor="danger"
       />

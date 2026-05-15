@@ -25,6 +25,7 @@ router.get('/financeiro/pagar/exportar', financeiroController.exportarContasPaga
 router.post('/financeiro/pagar', financeiroController.criarContaPagar);
 router.get('/financeiro/pagar', financeiroController.listarContasPagar);
 router.get('/financeiro/pagar/:id', financeiroController.buscarContaPagar);
+router.put('/financeiro/pagar/:id', financeiroController.atualizarContaPagar);
 router.patch('/financeiro/pagar/:id/baixa', financeiroController.baixarContaPagar);
 router.delete('/financeiro/pagar/:id', financeiroController.excluirContaPagar);
 

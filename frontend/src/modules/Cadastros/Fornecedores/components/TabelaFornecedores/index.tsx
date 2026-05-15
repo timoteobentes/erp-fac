@@ -27,7 +27,7 @@ interface TabelaFornecedoresProps {
   fornecedores: any;
   isLoading: boolean;
   onRefresh: () => void;
-  onChange: (e: any) => void;
+  onChange: TableProps<any>['onChange'];
   pagination?: any;
 }
 
@@ -84,15 +84,11 @@ export const TabelaFornecedores: React.FC<TabelaFornecedoresProps> = ({
   };
 
   const handleVisualizar = (fornecedorId: string) => {
-    navigate('/cadastros/fornecedores/visualizar', {
-      state: { fornecedorId }
-    });
+    navigate(`/cadastros/fornecedores/visualizar/${fornecedorId}`);
   };
 
   const handleEditar = (fornecedorId: string) => {
-    navigate('/cadastros/fornecedores/editar', {
-      state: { fornecedorId }
-    });
+    navigate(`/cadastros/fornecedores/editar/${fornecedorId}`);
   };
 
   const rowSelection: TableProps<any>['rowSelection'] = {
