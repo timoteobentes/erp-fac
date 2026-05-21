@@ -135,41 +135,42 @@ const EditarCliente: React.FC = () => {
         .then((response: any) => {
           const dados = response.cliente || response;
           const info = dados?.data;
+          const emptyIfNull = (value: any) => value ?? "";
 
           console.log(info);
 
           reset({
-            tipo_cliente: info?.tipo_cliente,
-            situacao: info?.situacao,
-            nome: info?.nome,
-            vendedor_responsavel: info?.vendedor_responsavel,
+            tipo_cliente: emptyIfNull(info?.tipo_cliente),
+            situacao: emptyIfNull(info?.situacao),
+            nome: emptyIfNull(info?.nome),
+            vendedor_responsavel: emptyIfNull(info?.vendedor_responsavel),
             foto: info?.foto || [],
             anexos: info?.anexos || [],
-            permitir_ultrapassar_limite: info?.permitir_ultrapassar_limite,
-            limite_credito: info?.limite_credito,
+            permitir_ultrapassar_limite: info?.permitir_ultrapassar_limite || false,
+            limite_credito: info?.limite_credito || 0,
             enderecos: info?.enderecos?.length > 0 
               ? info.enderecos.map((end: any) => ({
-                  tipo: end.tipo, cep: end.cep ? maskRegexCEP(end.cep) : end.cep, logradouro: end.logradouro,
-                  numero: end.numero, bairro: end.bairro, cidade: end.cidade, uf: end.uf, pais: end.pais, principal: end.principal
+                  tipo: emptyIfNull(end.tipo), cep: end.cep ? maskRegexCEP(end.cep) : "", logradouro: emptyIfNull(end.logradouro),
+                  numero: emptyIfNull(end.numero), bairro: emptyIfNull(end.bairro), cidade: emptyIfNull(end.cidade), uf: emptyIfNull(end.uf), pais: emptyIfNull(end.pais), principal: end.principal || false
                 }))
               : [],
             contatos: info?.contatos?.length > 0
               ? info.contatos.map((ctt: any) => ({
-                  tipo: ctt.tipo, nome: ctt.nome, valor: ctt.valor, cargo: ctt.cargo, principal: ctt.principal
+                  tipo: emptyIfNull(ctt.tipo), nome: emptyIfNull(ctt.nome), valor: emptyIfNull(ctt.valor), cargo: emptyIfNull(ctt.cargo), principal: ctt.principal || false
                 }))
               : [],
-            cnpj: info?.cnpj ? maskRegexCNPJ(info?.cnpj) : info?.cnpj,
-            razao_social: info?.nome,
-            nome_fantasia: info?.nome_fantasia,
+            cnpj: info?.cnpj ? maskRegexCNPJ(info?.cnpj) : "",
+            razao_social: emptyIfNull(info?.nome),
+            nome_fantasia: emptyIfNull(info?.nome_fantasia),
             inscricao_estadual: info?.inscricao_estadual || "",
             inscricao_municipal: info?.inscricao_municipal || "",
             inscricao_suframa: info?.inscricao_suframa || "",
-            cpf: info?.cpf ? maskRegexCPF(info?.cpf) : info?.cpf,
-            rg: info?.rg ? maskRegexRG(info?.rg) : info?.rg,
-            data_nascimento: dayjs(info?.data_nascimento).format('YYYY-MM-DD'),
-            documento: info?.documento,
-            pais_origem: info?.pais_origem,
-            observacoes: info?.observacoes
+            cpf: info?.cpf ? maskRegexCPF(info?.cpf) : "",
+            rg: info?.rg ? maskRegexRG(info?.rg) : "",
+            data_nascimento: info?.data_nascimento ? dayjs(info.data_nascimento).format('YYYY-MM-DD') : "",
+            documento: emptyIfNull(info?.documento),
+            pais_origem: emptyIfNull(info?.pais_origem),
+            observacoes: emptyIfNull(info?.observacoes)
           });
         })
         .catch((error) => console.error("Erro ao buscar cliente:", error))
@@ -233,7 +234,7 @@ const EditarCliente: React.FC = () => {
                   name="tipo_cliente"
                   control={control}
                   render={({ field }) => (
-                    <TextField {...field} select fullWidth required label="Tipo de Pessoa" sx={premiumInputStyles}>
+                    <TextField {...field} select fullWidth label="Tipo de Pessoa" sx={premiumInputStyles}>
                       <MenuItem value="PJ">PESSOA JURÍDICA</MenuItem>
                       <MenuItem value="PF">PESSOA FÍSICA</MenuItem>
                       <MenuItem value="estrangeiro">ESTRANGEIRO</MenuItem>
@@ -244,7 +245,7 @@ const EditarCliente: React.FC = () => {
                   name="situacao"
                   control={control}
                   render={({ field }) => (
-                    <TextField {...field} select fullWidth required label="Situação" sx={premiumInputStyles}>
+                    <TextField {...field} select fullWidth label="Situação" sx={premiumInputStyles}>
                       <MenuItem value="ativo">ATIVO</MenuItem>
                       <MenuItem value="inativo">INATIVO</MenuItem>
                       <MenuItem value="bloqueado">BLOQUEADO</MenuItem>
@@ -254,7 +255,7 @@ const EditarCliente: React.FC = () => {
                 <Controller
                   name="vendedor_responsavel"
                   control={control}
-                  render={({ field }) => <TextField {...field} fullWidth required disabled label="Vendedor Responsável" sx={premiumInputStyles} />}
+                  render={({ field }) => <TextField {...field} fullWidth disabled label="Vendedor Responsável" sx={premiumInputStyles} />}
                 />
 
                 {/* Renderização Condicional: PESSOA JURÍDICA */}
@@ -265,7 +266,7 @@ const EditarCliente: React.FC = () => {
                       control={control}
                       render={({ field }) => (
                         <TextField 
-                          {...field} fullWidth label="CNPJ" required sx={premiumInputStyles}
+                          {...field} fullWidth label="CNPJ" sx={premiumInputStyles}
                           onChange={(e) => field.onChange(maskRegexCNPJ(e.target.value))}
                           error={!!(errors as any).cnpj} helperText={(errors as any).cnpj?.message}
                           InputProps={{
@@ -286,7 +287,7 @@ const EditarCliente: React.FC = () => {
                         control={control}
                         render={({ field }) => (
                           <TextField
-                            {...field} fullWidth required label="Razão Social" sx={premiumInputStyles}
+                            {...field} fullWidth label="Razão Social" sx={premiumInputStyles}
                             error={!!(errors as any).razao_social} helperText={(errors as any).razao_social?.message}
                             disabled={loadingConsultaCNPJ}
                             InputProps={{ endAdornment: loadingConsultaCNPJ ? <InputAdornment position="end"><CircularProgress size={20} color="inherit" /></InputAdornment> : null }}
@@ -301,7 +302,7 @@ const EditarCliente: React.FC = () => {
                         control={control}
                         render={({ field }) => (
                           <TextField
-                            {...field} fullWidth required label="Nome Fantasia" sx={premiumInputStyles}
+                            {...field} fullWidth label="Nome Fantasia" sx={premiumInputStyles}
                             error={!!(errors as any).nome_fantasia} disabled={loadingConsultaCNPJ}
                             InputProps={{ endAdornment: loadingConsultaCNPJ ? <InputAdornment position="end"><CircularProgress size={20} color="inherit" /></InputAdornment> : null }}
                             InputLabelProps={{ shrink: !!field.value || loadingConsultaCNPJ }}
@@ -319,21 +320,21 @@ const EditarCliente: React.FC = () => {
                 {/* Renderização Condicional: PESSOA FÍSICA */}
                 {tipoCliente === 'PF' && (
                   <>
-                    <Controller name="cpf" control={control} render={({ field }) => <TextField {...field} fullWidth label="CPF" required onChange={(e) => field.onChange(maskRegexCPF(e.target.value))} error={!!(errors as any).cpf} helperText={(errors as any).cpf?.message} sx={premiumInputStyles} />} />
-                    <Controller name="rg" control={control} render={({ field }) => <TextField {...field} fullWidth required label="RG" onChange={(e) => field.onChange(maskRegexRG(e.target.value))} sx={premiumInputStyles} />} />
+                    <Controller name="cpf" control={control} render={({ field }) => <TextField {...field} fullWidth label="CPF" onChange={(e) => field.onChange(maskRegexCPF(e.target.value))} error={!!(errors as any).cpf} helperText={(errors as any).cpf?.message} sx={premiumInputStyles} />} />
+                    <Controller name="rg" control={control} render={({ field }) => <TextField {...field} fullWidth label="RG" onChange={(e) => field.onChange(maskRegexRG(e.target.value))} sx={premiumInputStyles} />} />
                     <div className="md:col-span-2">
-                      <Controller name="nome" control={control} render={({ field }) => <TextField {...field} fullWidth required label="Nome Completo" error={!!(errors as any).nome} helperText={(errors as any).nome?.message} sx={premiumInputStyles} />} />
+                      <Controller name="nome" control={control} render={({ field }) => <TextField {...field} fullWidth label="Nome Completo" error={!!(errors as any).nome} helperText={(errors as any).nome?.message} sx={premiumInputStyles} />} />
                     </div>
-                    <Controller name="data_nascimento" control={control} render={({ field }) => <TextField {...field} type="date" fullWidth required label="Data Nascimento" InputLabelProps={{ shrink: true }} sx={premiumInputStyles} />} />
+                    <Controller name="data_nascimento" control={control} render={({ field }) => <TextField {...field} type="date" fullWidth label="Data Nascimento" InputLabelProps={{ shrink: true }} sx={premiumInputStyles} />} />
                   </>
                 )}
 
                 {/* Renderização Condicional: ESTRANGEIRO */}
                 {tipoCliente === 'estrangeiro' && (
                   <>
-                    <Controller name="documento" control={control} render={({ field }) => <TextField {...field} fullWidth required label="Documento (Passport/ID)" error={!!(errors as any).documento} sx={premiumInputStyles} />} />
-                    <Controller name="nome" control={control} render={({ field }) => <TextField {...field} fullWidth required label="Nome Completo" error={!!(errors as any).nome} helperText={(errors as any).nome?.message} sx={premiumInputStyles} />} />
-                    <Controller name="pais_origem" control={control} render={({ field }) => <TextField {...field} fullWidth required label="País de Origem" sx={premiumInputStyles} />} />
+                    <Controller name="documento" control={control} render={({ field }) => <TextField {...field} fullWidth label="Documento (Passport/ID)" error={!!(errors as any).documento} sx={premiumInputStyles} />} />
+                    <Controller name="nome" control={control} render={({ field }) => <TextField {...field} fullWidth label="Nome Completo" error={!!(errors as any).nome} helperText={(errors as any).nome?.message} sx={premiumInputStyles} />} />
+                    <Controller name="pais_origem" control={control} render={({ field }) => <TextField {...field} fullWidth label="País de Origem" sx={premiumInputStyles} />} />
                   </>
                 )}
               </div>
@@ -368,7 +369,7 @@ const EditarCliente: React.FC = () => {
                   <div className="grid grid-cols-1 md:grid-cols-12 gap-4 mt-2">
                     <div className="md:col-span-2">
                       <Controller name={`enderecos.${index}.tipo`} control={control} render={({ field }) => (
-                          <TextField {...field} select fullWidth required label="Tipo" sx={premiumInputStyles}>
+                          <TextField {...field} select fullWidth label="Tipo" sx={premiumInputStyles}>
                             <MenuItem value="comercial">COMERCIAL</MenuItem>
                             <MenuItem value="cobranca">COBRANÇA</MenuItem>
                             <MenuItem value="entrega">ENTREGA</MenuItem>
@@ -379,26 +380,26 @@ const EditarCliente: React.FC = () => {
                     </div>
                     <div className="md:col-span-2">
                       <Controller name={`enderecos.${index}.cep`} control={control} render={({ field }) => (
-                          <TextField {...field} fullWidth required label="CEP" onChange={(e) => field.onChange(maskRegexCEP(e.target.value))} sx={premiumInputStyles}
+                          <TextField {...field} fullWidth label="CEP" onChange={(e) => field.onChange(maskRegexCEP(e.target.value))} sx={premiumInputStyles}
                             InputProps={{ endAdornment: ( <InputAdornment position="end"> <IconButton size="small" onClick={() => handleBuscarCep(index, field.value)}> <Search fontSize="small" sx={{ color: '#94A3B8' }}/> </IconButton> </InputAdornment> ) }}
                           />
                         )}
                       />
                     </div>
                     <div className="md:col-span-6">
-                      <Controller name={`enderecos.${index}.logradouro`} control={control} render={({ field }) => <TextField {...field} fullWidth required label="Logradouro" sx={premiumInputStyles} />} />
+                      <Controller name={`enderecos.${index}.logradouro`} control={control} render={({ field }) => <TextField {...field} fullWidth label="Logradouro" sx={premiumInputStyles} />} />
                     </div>
                     <div className="md:col-span-2">
-                      <Controller name={`enderecos.${index}.numero`} control={control} render={({ field }) => <TextField {...field} id={`numero-${index}`} fullWidth required label="Número" sx={premiumInputStyles} />} />
+                      <Controller name={`enderecos.${index}.numero`} control={control} render={({ field }) => <TextField {...field} id={`numero-${index}`} fullWidth label="Número" sx={premiumInputStyles} />} />
                     </div>
                     <div className="md:col-span-3">
-                      <Controller name={`enderecos.${index}.bairro`} control={control} render={({ field }) => <TextField {...field} fullWidth required label="Bairro" sx={premiumInputStyles} />} />
+                      <Controller name={`enderecos.${index}.bairro`} control={control} render={({ field }) => <TextField {...field} fullWidth label="Bairro" sx={premiumInputStyles} />} />
                     </div>
                     <div className="md:col-span-4">
-                      <Controller name={`enderecos.${index}.cidade`} control={control} render={({ field }) => <TextField {...field} fullWidth required label="Cidade" sx={premiumInputStyles} />} />
+                      <Controller name={`enderecos.${index}.cidade`} control={control} render={({ field }) => <TextField {...field} fullWidth label="Cidade" sx={premiumInputStyles} />} />
                     </div>
                     <div className="md:col-span-2">
-                      <Controller name={`enderecos.${index}.uf`} control={control} render={({ field }) => <TextField {...field} fullWidth required label="UF" sx={premiumInputStyles} />} />
+                      <Controller name={`enderecos.${index}.uf`} control={control} render={({ field }) => <TextField {...field} fullWidth label="UF" sx={premiumInputStyles} />} />
                     </div>
                     <div className="md:col-span-3">
                       <Controller name={`enderecos.${index}.complemento`} control={control} render={({ field }) => <TextField {...field} fullWidth label="Complemento" sx={premiumInputStyles} />} />
@@ -440,7 +441,7 @@ const EditarCliente: React.FC = () => {
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-start mt-2">
                     <Controller name={`contatos.${index}.tipo`} control={control} render={({ field }) => (
-                        <TextField {...field} select fullWidth required label="Tipo" sx={premiumInputStyles}>
+                        <TextField {...field} select fullWidth label="Tipo" sx={premiumInputStyles}>
                           <MenuItem value="email">E-MAIL</MenuItem>
                           <MenuItem value="telefone">TELEFONE</MenuItem>
                           <MenuItem value="celular">CELULAR</MenuItem>
@@ -448,9 +449,9 @@ const EditarCliente: React.FC = () => {
                         </TextField>
                       )}
                     />
-                    <Controller name={`contatos.${index}.nome`} control={control} render={({ field }) => <TextField {...field} fullWidth required label="Nome do Contato" sx={premiumInputStyles} />} />
-                    <Controller name={`contatos.${index}.valor`} control={control} render={({ field }) => <TextField {...field} fullWidth required label="Contato (Email/Tel)" sx={premiumInputStyles} />} />
-                    <Controller name={`contatos.${index}.cargo`} control={control} render={({ field }) => <TextField {...field} fullWidth required label="Cargo/Depto" sx={premiumInputStyles} />} />
+                    <Controller name={`contatos.${index}.nome`} control={control} render={({ field }) => <TextField {...field} fullWidth label="Nome do Contato" sx={premiumInputStyles} />} />
+                    <Controller name={`contatos.${index}.valor`} control={control} render={({ field }) => <TextField {...field} fullWidth label="Contato (Email/Tel)" sx={premiumInputStyles} />} />
+                    <Controller name={`contatos.${index}.cargo`} control={control} render={({ field }) => <TextField {...field} fullWidth label="Cargo/Depto" sx={premiumInputStyles} />} />
                     <div className="md:col-span-4">
                         <Controller name={`contatos.${index}.principal`} control={control} render={({ field }) => (
                             <FormControlLabel control={<Checkbox checked={field.value} onChange={field.onChange} sx={{ color: '#CBD5E1', '&.Mui-checked': { color: '#6366F1' } }} />} label={<Typography variant="body2" fontWeight={600} color="#475569">Definir como Contato Principal</Typography>} />

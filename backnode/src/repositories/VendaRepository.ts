@@ -1,5 +1,6 @@
 import pool from '../config/database';
 import { Venda, ItemVenda } from '../models/Venda';
+import { notificarEstoqueMinimoSeNecessario } from '../utils/estoqueNotificacao';
 
 export class VendaRepository {
 
@@ -11,7 +12,13 @@ export class VendaRepository {
    * 4. Registra Movimentação de Estoque.
    * 5. Insere no Contas a Receber.
    */
-  async processarVendaTransaction(venda: Venda, itens: ItemVenda[]): Promise<Venda> {
+  async processarVendaTransaction(venda: Venda, itens: ItemVenda[], pagamentos: Array<{
+    tipo: string;
+    valor: number;
+    observacao?: string | null;
+    vencimento?: string | null;
+    forma_pagamento_id?: number | null;
+  }> = []): Promise<Venda> {
     const client = await pool.connect();
 
     try {
@@ -51,6 +58,11 @@ export class VendaRepository {
       
       // 2. Ordenar os Itens por produto_id para manter ordem estável de lock e evitar Deadlock
       const itensOrdenados = [...itens].sort((a, b) => a.produto_id - b.produto_id);
+      const alertasEstoqueMinimo: Array<{
+        produto: any;
+        estoqueAnterior: number;
+        estoqueAtual: number;
+      }> = [];
 
       for (const item of itensOrdenados) {
         await client.query(itemQuery, [
@@ -63,18 +75,25 @@ export class VendaRepository {
 
         // 3. Atualizar Estoque (Transacional)
         const checkEstoque = await client.query(
-          `SELECT estoque_atual, movimenta_estoque FROM produtos WHERE id = $1 FOR UPDATE`,
-          [item.produto_id]
+          `SELECT id, nome, codigo_interno, estoque_atual, estoque_minimo, movimenta_estoque FROM produtos WHERE id = $1 AND usuario_id = $2 FOR UPDATE`,
+          [item.produto_id, venda.usuario_id]
         );
 
         if (checkEstoque.rows.length > 0 && checkEstoque.rows[0].movimenta_estoque) {
-          const estoqueAtual = Number(checkEstoque.rows[0].estoque_atual);
+          const produto = checkEstoque.rows[0];
+          const estoqueAtual = Number(produto.estoque_atual);
           const novoEstoque = estoqueAtual - Number(item.quantidade);
 
           await client.query(
             `UPDATE produtos SET estoque_atual = $1 WHERE id = $2`,
             [novoEstoque, item.produto_id]
           );
+
+          alertasEstoqueMinimo.push({
+            produto,
+            estoqueAnterior: estoqueAtual,
+            estoqueAtual: novoEstoque
+          });
 
           // 4. Registrar Movimentação de Estoque
           await client.query(
@@ -95,23 +114,52 @@ export class VendaRepository {
       const contaReceberQuery = `
         INSERT INTO contas_receber (
           usuario_id, cliente_id, venda_id, descricao, valor_total,
-          data_vencimento, data_recebimento, status, forma_pagamento
-        ) VALUES ($1, $2, $3, $4, $5, CURRENT_DATE, $6, $7, $8)
+          data_vencimento, data_recebimento, status, forma_pagamento,
+          forma_pagamento_id, recebimento_quitado, data_compensacao, observacao
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
       `;
-      
-      const descFinanceiro = `Venda PDV Cód. ${novaVenda.id} - Pgto ${venda.forma_pagamento}`;
-      await client.query(contaReceberQuery, [
-        venda.usuario_id,
-        venda.cliente_id || null,
-        novaVenda.id,
-        descFinanceiro,
-        venda.valor_total,
-        (venda as any).data_recebimento || null,
-        (venda as any).status_financeiro || 'recebido',
-        venda.forma_pagamento
-      ]);
+
+      const pagamentosFinanceiro = pagamentos.length > 0
+        ? this.ajustarPagamentosAoValorVenda(pagamentos, Number(venda.valor_total))
+        : [{ tipo: venda.forma_pagamento, valor: Number(venda.valor_total), observacao: null, vencimento: null, forma_pagamento_id: null }];
+
+      for (const [index, pagamento] of pagamentosFinanceiro.entries()) {
+        const pagamentoPrazo = this.isPagamentoPrazo(pagamento.tipo);
+        const statusConta = pagamentoPrazo ? 'pendente' : 'recebido';
+        const dataRecebimento = pagamentoPrazo ? null : ((venda as any).data_recebimento || new Date().toISOString().split('T')[0]);
+        const vencimento = pagamentoPrazo ? (pagamento.vencimento || new Date().toISOString().split('T')[0]) : new Date().toISOString().split('T')[0];
+        const descFinanceiro = `Venda Frente de Caixa Cod. ${novaVenda.id} - Pgto ${pagamento.tipo}${pagamentosFinanceiro.length > 1 ? ` (${index + 1}/${pagamentosFinanceiro.length})` : ''}`;
+
+        await client.query(contaReceberQuery, [
+          venda.usuario_id,
+          venda.cliente_id || null,
+          novaVenda.id,
+          descFinanceiro,
+          pagamento.valor,
+          vencimento,
+          dataRecebimento,
+          statusConta,
+          pagamento.tipo,
+          pagamento.forma_pagamento_id || null,
+          statusConta === 'recebido',
+          dataRecebimento,
+          pagamento.observacao || null
+        ]);
+      }
 
       await client.query('COMMIT'); // CONFIRMA A TRANSAÇÃO
+
+      for (const alerta of alertasEstoqueMinimo) {
+        await notificarEstoqueMinimoSeNecessario({
+          usuarioId: Number(venda.usuario_id),
+          produto: alerta.produto,
+          estoqueAnterior: alerta.estoqueAnterior,
+          estoqueAtual: alerta.estoqueAtual,
+          origem: 'pdv',
+          movimentoTipo: 'saida'
+        });
+      }
+
       return novaVenda;
 
     } catch (error: any) {
@@ -159,6 +207,25 @@ export class VendaRepository {
     venda.itens = resultItens.rows;
 
     return venda;
+  }
+
+  private ajustarPagamentosAoValorVenda(pagamentos: Array<{ tipo: string; valor: number; observacao?: string | null; vencimento?: string | null; forma_pagamento_id?: number | null }>, valorVenda: number) {
+    let restante = Number(valorVenda.toFixed(2));
+    const ajustados: Array<{ tipo: string; valor: number; observacao?: string | null; vencimento?: string | null; forma_pagamento_id?: number | null }> = [];
+
+    for (const pagamento of pagamentos) {
+      if (restante <= 0) break;
+      const valor = Math.min(Number(Number(pagamento.valor).toFixed(2)), restante);
+      if (valor > 0) ajustados.push({ ...pagamento, valor });
+      restante = Number((restante - valor).toFixed(2));
+    }
+
+    return ajustados;
+  }
+
+  private isPagamentoPrazo(tipo: string) {
+    const normalizado = tipo.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    return normalizado.includes('prazo') || normalizado.includes('boleto') || normalizado.includes('crediario');
   }
 
   async atualizarDadosSefaz(vendaId: number, dadosSefaz: any) {

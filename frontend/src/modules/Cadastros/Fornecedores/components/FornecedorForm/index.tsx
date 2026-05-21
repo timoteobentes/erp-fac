@@ -9,9 +9,7 @@ import {
   IconButton,
   CircularProgress,
   Typography,
-  Divider,
-  FormControlLabel,
-  Switch
+  Divider
 } from '@mui/material';
 import {
   // ArrowBack,
@@ -26,6 +24,7 @@ import {
 import dayjs from 'dayjs';
 import { message } from 'antd';
 import { useConsultaCnpj } from '../../../../Cadastro/hooks/useConsultaCnpj';
+import { maskRegexCEP, maskRegexCNPJ } from '../../../../../types/regex';
 
 interface FornecedorFormProps {
   initialData?: any;
@@ -69,10 +68,8 @@ const emptyFornecedor = {
   cnpj: '',
   razao_social: '',
   inscricao_estadual: '',
-  isento: false,
   tipo_contribuinte: '',
   inscricao_municipal: '',
-  inscricao_suframa: '',
   responsavel: '',
   ramo_atividade: '',
   documento: '',
@@ -148,7 +145,6 @@ export const FornecedorForm: React.FC<FornecedorFormProps> = ({
       ...prev,
       razao_social: consultaCNPJ.company?.name || '',
       nome: consultaCNPJ.alias || consultaCNPJ.company?.name || '',
-      inscricao_suframa: consultaCNPJ.suframa?.[0]?.number || '',
       enderecos: [{
         ...(prev.enderecos?.[0] || emptyFornecedor.enderecos[0]),
         cep: address.zip || prev.enderecos?.[0]?.cep || '',
@@ -166,6 +162,10 @@ export const FornecedorForm: React.FC<FornecedorFormProps> = ({
 
   const handleFieldChange = (field: string, value: any) => {
     setFormData((prev: any) => ({ ...prev, [field]: value }));
+  };
+
+  const handleCnpjChange = (value: string) => {
+    handleFieldChange('cnpj', maskRegexCNPJ(value || ''));
   };
 
   const handleEnderecoChange = (field: string, value: any) => {
@@ -239,26 +239,8 @@ export const FornecedorForm: React.FC<FornecedorFormProps> = ({
 
   const validate = () => {
     if (!formData.nome?.trim()) return 'Informe o nome do fornecedor';
-    if (formData.tipo_fornecedor === 'PJ') {
-      if (!formData.cnpj?.trim()) return 'Informe o CNPJ';
-      if (!formData.razao_social?.trim()) return 'Informe a razão social';
-      if (!formData.responsavel?.trim()) return 'Informe o responsável';
-    }
-    if (formData.tipo_fornecedor === 'PF') {
-      if (!formData.cpf?.trim()) return 'Informe o CPF';
-      if (!formData.rg?.trim()) return 'Informe o RG';
-    }
-    if (formData.tipo_fornecedor === 'estrangeiro' && !formData.documento?.trim()) {
-      return 'Informe o documento';
-    }
-
-    const endereco = formData.enderecos?.[0] || {};
-    if (!endereco.cep || !endereco.logradouro || !endereco.numero || !endereco.bairro || !endereco.cidade || !endereco.uf) {
-      return 'Preencha o endereço principal';
-    }
-
-    const contato = formData.contatos?.[0] || {};
-    if (!contato.nome || !contato.valor) return 'Preencha o contato principal';
+    if (!formData.tipo_fornecedor) return 'Informe o tipo de fornecedor';
+    if (!formData.situacao) return 'Informe a situação do fornecedor';
 
     return null;
   };
@@ -272,12 +254,31 @@ export const FornecedorForm: React.FC<FornecedorFormProps> = ({
       return;
     }
 
+    const enderecos = (formData.enderecos || []).filter((endereco: any) =>
+      endereco.cep ||
+      endereco.logradouro ||
+      endereco.numero ||
+      endereco.complemento ||
+      endereco.bairro ||
+      endereco.cidade ||
+      endereco.uf
+    );
+
+    const contatos = (formData.contatos || []).filter((contato: any) =>
+      contato.nome ||
+      contato.valor ||
+      contato.cargo ||
+      contato.observacao
+    );
+
+    const { isento, inscricao_suframa, ...payload } = formData;
+
     await onSubmit({
-      ...formData,
+      ...payload,
       prazo_entrega: formData.prazo_entrega === '' ? null : Number(formData.prazo_entrega),
       nascimento: formData.nascimento || null,
-      enderecos: formData.enderecos || [],
-      contatos: formData.contatos || [],
+      enderecos,
+      contatos,
       produtos_servicos: formData.produtos_servicos || [],
       anexos: formData.anexos || []
     });
@@ -336,10 +337,9 @@ export const FornecedorForm: React.FC<FornecedorFormProps> = ({
                 <>
                   <TextField
                     fullWidth
-                    required
                     label="CNPJ"
-                    value={formData.cnpj}
-                    onChange={(e) => handleFieldChange('cnpj', e.target.value)}
+                    value={maskRegexCNPJ(formData.cnpj || '')}
+                    onChange={(e) => handleCnpjChange(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleBuscarCnpj()}
                     sx={premiumInputStyles}
                     InputProps={{
@@ -355,7 +355,6 @@ export const FornecedorForm: React.FC<FornecedorFormProps> = ({
                   <div className="md:col-span-2">
                     <TextField
                       fullWidth
-                      required
                       label="Razão Social"
                       value={formData.razao_social}
                       onChange={(e) => handleFieldChange('razao_social', e.target.value)}
@@ -364,29 +363,18 @@ export const FornecedorForm: React.FC<FornecedorFormProps> = ({
                   </div>
                   <TextField
                     fullWidth
-                    required
                     label="Responsável"
                     value={formData.responsavel}
                     onChange={(e) => handleFieldChange('responsavel', e.target.value)}
                     sx={premiumInputStyles}
                   />
-                  <TextField fullWidth label="Inscrição Estadual" value={formData.inscricao_estadual || ''} onChange={(e) => handleFieldChange('inscricao_estadual', e.target.value)} sx={premiumInputStyles} />
-                  <TextField fullWidth label="Inscrição Municipal" value={formData.inscricao_municipal || ''} onChange={(e) => handleFieldChange('inscricao_municipal', e.target.value)} sx={premiumInputStyles} />
-                  <TextField fullWidth label="Inscrição Suframa" value={formData.inscricao_suframa || ''} onChange={(e) => handleFieldChange('inscricao_suframa', e.target.value)} sx={premiumInputStyles} />
-                  <TextField fullWidth label="Ramo de atividade" value={formData.ramo_atividade || ''} onChange={(e) => handleFieldChange('ramo_atividade', e.target.value)} sx={premiumInputStyles} />
-                  <div className="flex items-center">
-                    <FormControlLabel
-                      control={<Switch checked={!!formData.isento} onChange={(e) => handleFieldChange('isento', e.target.checked)} sx={{ '& .MuiSwitch-switchBase.Mui-checked': { color: '#5B21B6' } }} />}
-                      label={<Typography variant="body2" fontWeight={600} color="#475569">Isento</Typography>}
-                    />
-                  </div>
                 </>
               )}
 
               {formData.tipo_fornecedor === 'PF' && (
                 <>
-                  <TextField fullWidth required label="CPF" value={formData.cpf || ''} onChange={(e) => handleFieldChange('cpf', e.target.value)} sx={premiumInputStyles} />
-                  <TextField fullWidth required label="RG" value={formData.rg || ''} onChange={(e) => handleFieldChange('rg', e.target.value)} sx={premiumInputStyles} />
+                  <TextField fullWidth label="CPF" value={formData.cpf || ''} onChange={(e) => handleFieldChange('cpf', e.target.value)} sx={premiumInputStyles} />
+                  <TextField fullWidth label="RG" value={formData.rg || ''} onChange={(e) => handleFieldChange('rg', e.target.value)} sx={premiumInputStyles} />
                   <TextField fullWidth label="Nascimento" type="date" value={formData.nascimento || ''} onChange={(e) => handleFieldChange('nascimento', e.target.value)} InputLabelProps={{ shrink: true }} sx={premiumInputStyles} />
                   <TextField fullWidth label="Tipo de contribuinte" value={formData.tipo_contribuinte || ''} onChange={(e) => handleFieldChange('tipo_contribuinte', e.target.value)} sx={premiumInputStyles} />
                 </>
@@ -394,14 +382,11 @@ export const FornecedorForm: React.FC<FornecedorFormProps> = ({
 
               {formData.tipo_fornecedor === 'estrangeiro' && (
                 <>
-                  <TextField fullWidth required label="Documento" value={formData.documento || ''} onChange={(e) => handleFieldChange('documento', e.target.value)} sx={premiumInputStyles} />
+                  <TextField fullWidth label="Documento" value={formData.documento || ''} onChange={(e) => handleFieldChange('documento', e.target.value)} sx={premiumInputStyles} />
                   <TextField fullWidth label="País de origem" value={formData.pais_origem || ''} onChange={(e) => handleFieldChange('pais_origem', e.target.value)} sx={premiumInputStyles} />
                 </>
               )}
 
-              <TextField fullWidth label="E-mail" type="email" value={formData.email || ''} onChange={(e) => handleFieldChange('email', e.target.value)} sx={premiumInputStyles} />
-              <TextField fullWidth label="Telefone comercial" value={formData.telefone_comercial || ''} onChange={(e) => handleFieldChange('telefone_comercial', e.target.value)} sx={premiumInputStyles} />
-              <TextField fullWidth label="Celular" value={formData.telefone_celular || ''} onChange={(e) => handleFieldChange('telefone_celular', e.target.value)} sx={premiumInputStyles} />
               <TextField fullWidth label="Site" value={formData.site || ''} onChange={(e) => handleFieldChange('site', e.target.value)} sx={premiumInputStyles} />
             </div>
           </Box>
@@ -413,7 +398,7 @@ export const FornecedorForm: React.FC<FornecedorFormProps> = ({
             <Box className="p-5 rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] transition-all hover:border-[#CBD5E1]">
               <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
                 <div className="md:col-span-2">
-                  <TextField select fullWidth required label="Tipo" value={endereco.tipo || 'comercial'} onChange={(e) => handleEnderecoChange('tipo', e.target.value)} sx={premiumInputStyles}>
+                  <TextField select fullWidth label="Tipo" value={endereco.tipo || 'comercial'} onChange={(e) => handleEnderecoChange('tipo', e.target.value)} sx={premiumInputStyles}>
                     <MenuItem value="comercial">Comercial</MenuItem>
                     <MenuItem value="cobranca">Cobrança</MenuItem>
                     <MenuItem value="entrega">Entrega</MenuItem>
@@ -423,10 +408,9 @@ export const FornecedorForm: React.FC<FornecedorFormProps> = ({
                 <div className="md:col-span-2">
                   <TextField
                     fullWidth
-                    required
                     label="CEP"
-                    value={endereco.cep || ''}
-                    onChange={(e) => handleEnderecoChange('cep', e.target.value)}
+                    value={maskRegexCEP(endereco.cep || '')}
+                    onChange={(e) => handleEnderecoChange('cep', maskRegexCEP(e.target.value || ''))}
                     onKeyDown={(e) => e.key === 'Enter' && handleBuscarCep()}
                     sx={premiumInputStyles}
                     InputProps={{
@@ -441,19 +425,19 @@ export const FornecedorForm: React.FC<FornecedorFormProps> = ({
                   />
                 </div>
                 <div className="md:col-span-5">
-                  <TextField fullWidth required label="Logradouro" value={endereco.logradouro || ''} onChange={(e) => handleEnderecoChange('logradouro', e.target.value)} sx={premiumInputStyles} />
+                  <TextField fullWidth label="Logradouro" value={endereco.logradouro || ''} onChange={(e) => handleEnderecoChange('logradouro', e.target.value)} sx={premiumInputStyles} />
                 </div>
                 <div className="md:col-span-3">
-                  <TextField fullWidth required label="Número" value={endereco.numero || ''} onChange={(e) => handleEnderecoChange('numero', e.target.value)} sx={premiumInputStyles} />
+                  <TextField fullWidth label="Número" value={endereco.numero || ''} onChange={(e) => handleEnderecoChange('numero', e.target.value)} sx={premiumInputStyles} />
                 </div>
                 <div className="md:col-span-3">
-                  <TextField fullWidth required label="Bairro" value={endereco.bairro || ''} onChange={(e) => handleEnderecoChange('bairro', e.target.value)} sx={premiumInputStyles} />
+                  <TextField fullWidth label="Bairro" value={endereco.bairro || ''} onChange={(e) => handleEnderecoChange('bairro', e.target.value)} sx={premiumInputStyles} />
                 </div>
                 <div className="md:col-span-4">
-                  <TextField fullWidth required label="Cidade" value={endereco.cidade || ''} onChange={(e) => handleEnderecoChange('cidade', e.target.value)} sx={premiumInputStyles} />
+                  <TextField fullWidth label="Cidade" value={endereco.cidade || ''} onChange={(e) => handleEnderecoChange('cidade', e.target.value)} sx={premiumInputStyles} />
                 </div>
                 <div className="md:col-span-2">
-                  <TextField fullWidth required label="UF" value={endereco.uf || ''} onChange={(e) => handleEnderecoChange('uf', e.target.value.toUpperCase().slice(0, 2))} sx={premiumInputStyles} />
+                  <TextField fullWidth label="UF" value={endereco.uf || ''} onChange={(e) => handleEnderecoChange('uf', e.target.value.toUpperCase().slice(0, 2))} sx={premiumInputStyles} />
                 </div>
                 <div className="md:col-span-3">
                   <TextField fullWidth label="Complemento" value={endereco.complemento || ''} onChange={(e) => handleEnderecoChange('complemento', e.target.value)} sx={premiumInputStyles} />
@@ -468,14 +452,14 @@ export const FornecedorForm: React.FC<FornecedorFormProps> = ({
             <SectionTitle icon={<ContactsOutlined sx={{ color: '#5B21B6' }} />} title="Contato Principal" />
             <Box className="p-5 rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] transition-all hover:border-[#CBD5E1]">
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <TextField select fullWidth required label="Tipo" value={contato.tipo || 'comercial'} onChange={(e) => handleContatoChange('tipo', e.target.value)} sx={premiumInputStyles}>
+                <TextField select fullWidth label="Tipo" value={contato.tipo || 'comercial'} onChange={(e) => handleContatoChange('tipo', e.target.value)} sx={premiumInputStyles}>
                   <MenuItem value="comercial">Comercial</MenuItem>
                   <MenuItem value="financeiro">Financeiro</MenuItem>
                   <MenuItem value="tecnico">Técnico</MenuItem>
                   <MenuItem value="compras">Compras</MenuItem>
                 </TextField>
-                <TextField fullWidth required label="Nome do Contato" value={contato.nome || ''} onChange={(e) => handleContatoChange('nome', e.target.value)} sx={premiumInputStyles} />
-                <TextField fullWidth required label="Contato (Email/Tel)" value={contato.valor || ''} onChange={(e) => handleContatoChange('valor', e.target.value)} sx={premiumInputStyles} />
+                <TextField fullWidth label="Nome do Contato" value={contato.nome || ''} onChange={(e) => handleContatoChange('nome', e.target.value)} sx={premiumInputStyles} />
+                <TextField fullWidth label="Contato (Email/Tel)" value={contato.valor || ''} onChange={(e) => handleContatoChange('valor', e.target.value)} sx={premiumInputStyles} />
                 <TextField fullWidth label="Cargo/Depto" value={contato.cargo || ''} onChange={(e) => handleContatoChange('cargo', e.target.value)} sx={premiumInputStyles} />
                 <div className="md:col-span-4">
                   <TextField fullWidth multiline rows={2} label="Observação do contato" value={contato.observacao || ''} onChange={(e) => handleContatoChange('observacao', e.target.value)} sx={premiumInputStyles} />

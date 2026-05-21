@@ -61,9 +61,19 @@ const Perfil: React.FC = () => {
       reset({
         nome: perfil.usuario.nome_usuario || '',
         nome_completo: perfil.usuario.nome_completo || '',
-        cpf: perfil.usuario.cpf || '',
+        cpf: (() => {
+          let v = perfil.usuario?.cpf || '';
+          if (v) {
+            v = v.replace(/\D/g, '');
+            if (v.length > 11) v = v.slice(0, 11);
+            if (v.length === 11) {
+              v = v.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+            }
+          }
+          return v;
+        })(),
         cnpj: perfil.usuario.cnpj || '',
-        razao_social: perfil.usuario.razao_social || '',
+        razao_social: perfil.usuario?.razao_social || perfil.usuario?.nome_empresa || perfil.empresa?.razao_social || perfil.empresa?.nome_empresa || perfil.usuario?.empresa?.razao_social || '',
         telefone: perfil.usuario.telefone || '',
         cidade: perfil.usuario.cidade || '',
         estado: perfil.usuario.estado || '',
@@ -100,7 +110,9 @@ const Perfil: React.FC = () => {
   };
 
   const onSubmit = async (data: any) => {
-    await salvarPerfil(data);
+    const dataToSave = { ...data };
+    dataToSave.cpf = dataToSave.cpf?.replace(/\D/g, '');
+    await salvarPerfil(dataToSave);
   };
 
   // Renderização de Loading Premium B2B
@@ -169,7 +181,26 @@ const Perfil: React.FC = () => {
                       <div className="md:col-span-2">
                          <Controller name="nome_completo" control={control} render={({field}) => <TextField {...field} label="Nome Completo / Representante Legal" fullWidth sx={premiumInputStyles} />} />
                       </div>
-                      <Controller name="cpf" control={control} render={({field}) => <TextField {...field} label="CPF" fullWidth sx={premiumInputStyles} />} />
+                      <Controller 
+  name="cpf" 
+  control={control} 
+  render={({field: { onChange, ...field }}) => (
+    <TextField 
+      {...field} 
+      label="CPF" 
+      fullWidth 
+      sx={premiumInputStyles} 
+      onChange={(e) => {
+        let v = e.target.value.replace(/\D/g, '');
+        if (v.length > 11) v = v.slice(0, 11);
+        v = v.replace(/(\d{3})(\d)/, '$1.$2');
+        v = v.replace(/(\d{3})(\d)/, '$1.$2');
+        v = v.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+        onChange(v);
+      }}
+    />
+  )} 
+/>
                    </div>
                  </div>
               </TabPane>

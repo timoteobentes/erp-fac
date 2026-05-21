@@ -235,6 +235,120 @@ export class ContaReceberRepository extends BaseRepository {
     await pool.query(query, [status, dataRecebimento || null, id, usuarioId]);
   }
 
+  async baixarComValor(
+    id: number,
+    usuarioId: number,
+    valorRecebido: number,
+    dataRecebimento: string
+  ): Promise<{ contaRecebidaId: number; contaRestanteId?: number; valorRecebido: number; valorRestante: number }> {
+    const client = await pool.connect();
+
+    try {
+      await client.query('BEGIN');
+
+      const contaRes = await client.query(
+        `SELECT * FROM contas_receber WHERE id = $1 AND usuario_id = $2 FOR UPDATE`,
+        [id, usuarioId]
+      );
+
+      if (contaRes.rows.length === 0) {
+        throw new Error('Conta a receber não encontrada.');
+      }
+
+      const conta = contaRes.rows[0];
+      const valorTotal = Number(conta.valor_total);
+      const valorBaixa = Number(valorRecebido.toFixed(2));
+
+      if (conta.status === 'recebido') {
+        throw new Error('Esta conta já está baixada (recebida).');
+      }
+
+      if (conta.status === 'cancelado') {
+        throw new Error('Não é possível baixar uma conta cancelada.');
+      }
+
+      if (valorBaixa >= valorTotal) {
+        await client.query(
+          `UPDATE contas_receber
+           SET status = 'recebido',
+               data_recebimento = $1,
+               data_compensacao = COALESCE(data_compensacao, $1),
+               recebimento_quitado = true,
+               atualizado_em = NOW()
+           WHERE id = $2 AND usuario_id = $3`,
+          [dataRecebimento, id, usuarioId]
+        );
+
+        await client.query('COMMIT');
+        return { contaRecebidaId: id, valorRecebido: valorTotal, valorRestante: 0 };
+      }
+
+      const valorRestante = Number((valorTotal - valorBaixa).toFixed(2));
+
+      await client.query(
+        `UPDATE contas_receber
+         SET valor_total = $1,
+             status = 'recebido',
+             data_recebimento = $2,
+             data_compensacao = COALESCE(data_compensacao, $2),
+             recebimento_quitado = true,
+             atualizado_em = NOW()
+         WHERE id = $3 AND usuario_id = $4`,
+        [valorBaixa, dataRecebimento, id, usuarioId]
+      );
+
+      const restanteRes = await client.query(
+        `INSERT INTO contas_receber (
+          usuario_id, cliente_id, venda_id, descricao, valor_total,
+          data_vencimento, data_recebimento, status, forma_pagamento, observacao,
+          plano_conta_id, centro_custo_id, forma_pagamento_id, conta_bancaria_id,
+          recebimento_quitado, data_compensacao, entidade_tipo, entidade_id,
+          data_competencia, informacoes_complementares, anexos
+        ) VALUES (
+          $1, $2, $3, $4, $5,
+          $6, NULL, 'pendente', $7, $8,
+          $9, $10, $11, $12,
+          false, NULL, $13, $14,
+          $15, $16, $17
+        )
+        RETURNING id`,
+        [
+          conta.usuario_id,
+          conta.cliente_id,
+          conta.venda_id,
+          `${conta.descricao} - saldo restante`,
+          valorRestante,
+          conta.data_vencimento,
+          conta.forma_pagamento,
+          conta.observacao,
+          conta.plano_conta_id,
+          conta.centro_custo_id,
+          conta.forma_pagamento_id,
+          conta.conta_bancaria_id,
+          conta.entidade_tipo,
+          conta.entidade_id,
+          conta.data_competencia,
+          conta.informacoes_complementares,
+          conta.anexos
+        ]
+      );
+
+      await client.query('COMMIT');
+
+      return {
+        contaRecebidaId: id,
+        contaRestanteId: restanteRes.rows[0].id,
+        valorRecebido: valorBaixa,
+        valorRestante
+      };
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
   // ==========================================
   // 5. EXCLUIR
   // ==========================================

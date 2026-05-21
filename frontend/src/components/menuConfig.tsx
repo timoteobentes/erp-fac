@@ -40,6 +40,8 @@ export const getStaticMenuItems = (navigate: any, user: any, adm: boolean) => {
           label: 'Produtos',
           children: [
             { key: 'cadastros-produtos-gerenciar', label: 'Gerenciar produtos', onClick: () => navigate('/cadastros/produtos') },
+            { key: 'cadastros-produtos-categorias', label: 'Categorias', onClick: () => navigate('/cadastros/categorias') },
+            { key: 'cadastros-produtos-marcas', label: 'Marcas de Produto', onClick: () => navigate('/cadastros/marcas') },
           ]
         },
       ],

@@ -1,13 +1,31 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState } from 'react';
-import { Button, Dropdown, Input } from 'antd';
+import { Button, IconButton, Collapse, TextField, Menu, MenuItem, InputAdornment } from '@mui/material';
+import { styled, alpha } from '@mui/material/styles';
 import {
-  AddCircleOutline,
-  Download,
-  KeyboardArrowDown,
-  Refresh,
-  Search,
-  ZoomIn
+  AddCircleOutline, Download, KeyboardArrowDown, Refresh,
+  Search, ZoomIn
 } from '@mui/icons-material';
+
+const StyledMenu = styled((props: any) => (
+  <Menu
+    elevation={0}
+    anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+    transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+    {...props}
+  />
+))(({ theme }) => ({
+  '& .MuiPaper-root': {
+    borderRadius: 6,
+    marginTop: theme.spacing(1),
+    minWidth: 125,
+    boxShadow: 'rgb(255, 255, 255) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 0px 0px 1px, rgba(0, 0, 0, 0.1) 0px 10px 15px -3px',
+    '& .MuiMenuItem-root': {
+      '& .MuiSvgIcon-root': { fontSize: 18, marginRight: theme.spacing(1.5) },
+      '&:active': { backgroundColor: alpha(theme.palette.primary.main, theme.palette.action.selectedOpacity) },
+    },
+  },
+}));
 
 interface ContasReceberActionsProps {
   onAdd?: () => void;
@@ -21,11 +39,14 @@ interface ContasReceberActionsProps {
 export const ContasReceberActions: React.FC<ContasReceberActionsProps> = ({
   onAdd, onRefresh, onExport, onToggleFilters, onSearchSimple, mounted = true
 }) => {
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [showSearch, setShowSearch] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const open = Boolean(anchorEl);
 
   const handleExportClick = (formato: string) => {
     if (onExport) onExport(formato);
+    setAnchorEl(null);
   };
 
   const handleSimpleSearch = () => {
@@ -46,30 +67,41 @@ export const ContasReceberActions: React.FC<ContasReceberActionsProps> = ({
       <div className="flex gap-2 flex-wrap">
         {onAdd && (
           <div className={animClass(100)}>
-            <Button type="primary" icon={<AddCircleOutline fontSize="small" />} onClick={onAdd} style={{ background: '#16A34A', borderColor: '#16A34A', height: 40, borderRadius: 8, fontWeight: 600 }}>
+            <Button
+              variant="contained"
+              color="success"
+              startIcon={<AddCircleOutline />}
+              sx={{ color: "#FFFFFF" }}
+              onClick={onAdd}
+            >
               Novo Recebimento
             </Button>
           </div>
         )}
 
         <div className={animClass(150)}>
-          <Dropdown
-            menu={{
-              items: [
-                { key: 'csv', label: 'Exportar CSV', onClick: () => handleExportClick('csv') },
-                { key: 'pdf', label: 'Exportar PDF', onClick: () => handleExportClick('pdf') },
-              ]
-            }}
-            trigger={['click']}
+          <Button
+            id="export-receber-button"
+            variant="contained"
+            startIcon={<Download />}
+            endIcon={<KeyboardArrowDown />}
+            onClick={(e) => setAnchorEl(e.currentTarget)}
           >
-            <Button icon={<Download fontSize="small" />} style={{ height: 40, borderRadius: 8, fontWeight: 600 }}>
-              Exportar <KeyboardArrowDown fontSize="small" />
-            </Button>
-          </Dropdown>
+            Exportar
+          </Button>
+          <StyledMenu
+            id="export-receber-menu"
+            anchorEl={anchorEl}
+            open={open}
+            onClose={() => setAnchorEl(null)}
+          >
+            <MenuItem onClick={() => handleExportClick('csv')}>Exportar CSV</MenuItem>
+            <MenuItem onClick={() => handleExportClick('pdf')}>Exportar PDF</MenuItem>
+          </StyledMenu>
         </div>
 
         <div className={animClass(200)}>
-          <Button icon={<Refresh fontSize="small" />} onClick={onRefresh} style={{ height: 40, borderRadius: 8, fontWeight: 600 }}>
+          <Button variant="contained" startIcon={<Refresh />} onClick={onRefresh}>
             Atualizar
           </Button>
         </div>
@@ -77,25 +109,32 @@ export const ContasReceberActions: React.FC<ContasReceberActionsProps> = ({
 
       <div className="flex gap-2 items-center">
         <div className={animClass(250)}>
-          <Button type="text" shape="circle" icon={<Search />} onClick={() => setShowSearch(!showSearch)} style={{ color: '#6B00A1', width: 40, height: 40 }} />
+          <IconButton style={{ color: '#6B00A1' }} onClick={() => setShowSearch(!showSearch)}>
+            <Search />
+          </IconButton>
         </div>
 
-        {showSearch && (
-          <div className={animClass(275)}>
-            <Input
-              placeholder="Buscar descrição..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              onPressEnter={handleSimpleSearch}
-              allowClear={{ clearIcon: <span onClick={handleCleanSimpleSearch}>x</span> }}
-              style={{ width: 220, height: 40, borderRadius: 8 }}
-            />
-          </div>
-        )}
+        <Collapse in={showSearch} orientation="horizontal" timeout={300}>
+          <TextField
+            size="small"
+            placeholder="Buscar por descricao..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleSimpleSearch()}
+            sx={{ width: 200, backgroundColor: 'white' }}
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <button onClick={handleCleanSimpleSearch} className="cursor-pointer hover:font-bold">x</button>
+                </InputAdornment>
+              )
+            }}
+          />
+        </Collapse>
 
         <div className={animClass(300)}>
-          <Button type="primary" icon={<ZoomIn fontSize="small" />} onClick={onToggleFilters} style={{ background: '#6B00A1', borderColor: '#6B00A1', height: 40, borderRadius: 8, fontWeight: 600 }}>
-            Busca avançada
+          <Button startIcon={<ZoomIn />} variant="contained" onClick={onToggleFilters} sx={{ bgcolor: '#6B00A1', '&:hover': { bgcolor: '#3C0473' }, textTransform: 'none' }}>
+            Busca avancada
           </Button>
         </div>
       </div>

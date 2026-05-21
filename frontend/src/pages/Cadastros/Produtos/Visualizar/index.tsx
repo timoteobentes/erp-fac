@@ -105,7 +105,11 @@ const VisualizarProduto: React.FC = () => {
             comercializavel_pdv: Boolean(produtoDados.comercializavel_pdv),
             movimenta_estoque: Boolean(produtoDados.movimenta_estoque),
             composicao: produtoDados.composicao || [],
-            conversoes: produtoDados.conversoes || [],
+            conversoes: (produtoDados.conversoes || []).map((conversao: any) => ({
+              ...conversao,
+              quantidade_entrada: conversao.quantidade_entrada || 1,
+              unidade_saida_id: conversao.unidade_saida_id || produtoDados.unidade_id || 0
+            })),
             imagens: produtoDados.imagens || []
           };
           reset(formValues);
@@ -263,22 +267,33 @@ const VisualizarProduto: React.FC = () => {
                   </div>
 
                   {conversaoFields.map((item, index) => (
-                      <div key={item.id} className="grid grid-cols-12 gap-4 mt-4 items-center p-4 border border-[#F1F5F9] rounded-xl">
-                          <div className="col-span-1 text-center font-bold text-[#94A3B8]">1</div>
-                          <div className="col-span-3">
+                      <div key={item.id} className="grid grid-cols-1 lg:grid-cols-12 gap-4 mt-4 items-center p-4 border border-[#F1F5F9] rounded-xl">
+                          <div className="lg:col-span-1 text-center font-bold text-[#94A3B8]">{index + 1}</div>
+                          <div className="lg:col-span-2">
+                              <Controller name={`conversoes.${index}.quantidade_entrada` as any} control={control} render={({ field }) => (
+                                  <TextField {...field} type="number" fullWidth size="small" label="Qtd. Entrada" InputProps={{ readOnly: true }} sx={readOnlyInputStyles} />
+                              )} />
+                          </div>
+                          <div className="lg:col-span-3">
                               <Controller name={`conversoes.${index}.unidade_entrada_id` as any} control={control} render={({ field }) => (
                                   <TextField {...field} select fullWidth size="small" label="Unidade Entrada" InputProps={{ readOnly: true }} sx={readOnlyInputStyles}>
                                       {auxiliares.unidades.map(u => <MenuItem key={u.id} value={u.id}>{u.sigla}</MenuItem>)}
                                   </TextField>
                               )} />
                           </div>
-                          <div className="col-span-2 text-center text-sm font-bold text-[#5B21B6]">equivale a</div>
-                          <div className="col-span-2">
+                          <div className="lg:col-span-1 text-center text-sm font-bold text-[#5B21B6]">equivale a</div>
+                          <div className="lg:col-span-2">
                               <Controller name={`conversoes.${index}.fator_conversao` as any} control={control} render={({ field }) => (
-                                  <TextField {...field} type="number" fullWidth size="small" label="Fator" InputProps={{ readOnly: true }} sx={readOnlyInputStyles} />
+                                  <TextField {...field} type="number" fullWidth size="small" label="Qtd. Saída" InputProps={{ readOnly: true }} sx={readOnlyInputStyles} />
                               )} />
                           </div>
-                          <div className="col-span-4 text-sm text-[#64748B] font-medium">unidades de saída (Principal)</div>
+                          <div className="lg:col-span-3">
+                              <Controller name="unidade_id" control={control} render={({ field }) => (
+                                  <TextField {...field} select fullWidth size="small" label="Unidade Saída" InputProps={{ readOnly: true }} sx={readOnlyInputStyles}>
+                                      {auxiliares.unidades.map(u => <MenuItem key={u.id} value={u.id}>{u.sigla}</MenuItem>)}
+                                  </TextField>
+                              )} />
+                          </div>
                       </div>
                   ))}
                 </>

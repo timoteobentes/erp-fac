@@ -99,6 +99,23 @@ const DanfeCupom: React.FC<DanfeCupomProps> = ({ venda }) => {
 
       <div className="dashed-line"></div>
 
+      
+      <div className="dashed-line"></div>
+      
+      <div style={{ fontSize: '11px', margin: '8px 0' }}>
+        <div className="font-bold">CONSUMIDOR</div>
+        {venda.cliente_nome || venda.cliente_cpf ? (
+          <>
+            <div>CPF/CNPJ: {venda.cliente_cpf || 'Não informado'}</div>
+            <div>Nome: {venda.cliente_nome || 'Não informado'}</div>
+          </>
+        ) : (
+          <div>CONSUMIDOR NÃO IDENTIFICADO</div>
+        )}
+      </div>
+
+      <div className="dashed-line"></div>
+
       {/* MENSAGEM HOMOLOGACAO SE FOR O CASO */}
       {ambiente === 'HOMOLOGAÇÃO' && (
          <div className="text-center font-bold" style={{ margin: '8px 0', fontSize: '12px' }}>

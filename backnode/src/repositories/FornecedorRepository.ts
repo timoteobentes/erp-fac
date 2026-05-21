@@ -110,8 +110,15 @@ export class FornecedorRepository extends BaseRepository {
   }
 
   // Criar endereços
-  async criarEnderecos(fornecedorId: number, enderecos: EnderecoFornecedor[]): Promise<void> {
+  async criarEnderecos(fornecedorId: number, enderecos: EnderecoFornecedor[] = []): Promise<void> {
     for (const endereco of enderecos) {
+      const possuiDados = endereco.cep || endereco.logradouro || endereco.numero ||
+        endereco.complemento || endereco.bairro || endereco.cidade || endereco.uf;
+
+      if (!possuiDados) {
+        continue;
+      }
+
       const query = `
         INSERT INTO enderecos_fornecedor (
           fornecedor_id, tipo, cep, logradouro, numero, complemento,
@@ -121,15 +128,15 @@ export class FornecedorRepository extends BaseRepository {
       
       const values = [
         fornecedorId,
-        endereco.tipo,
-        endereco.cep,
-        endereco.logradouro,
-        endereco.numero,
-        endereco.complemento,
-        endereco.bairro,
-        endereco.cidade,
-        endereco.uf,
-        endereco.principal
+        endereco.tipo || 'comercial',
+        endereco.cep || null,
+        endereco.logradouro || null,
+        endereco.numero || null,
+        endereco.complemento || null,
+        endereco.bairro || null,
+        endereco.cidade || null,
+        endereco.uf || null,
+        endereco.principal || false
       ];
 
       await pool.query(query, values);
@@ -137,8 +144,15 @@ export class FornecedorRepository extends BaseRepository {
   }
 
   // Criar contatos
-  async criarContatos(fornecedorId: number, contatos: ContatoFornecedor[]): Promise<void> {
+  async criarContatos(fornecedorId: number, contatos: ContatoFornecedor[] = []): Promise<void> {
     for (const contato of contatos) {
+      const valorContato = contato.valor || (contato as any).contato;
+      const possuiDados = contato.nome || valorContato || contato.cargo || contato.observacao;
+
+      if (!possuiDados) {
+        continue;
+      }
+
       const query = `
         INSERT INTO contatos_fornecedor (
           fornecedor_id, tipo, nome, contato, cargo, observacao, principal
@@ -147,12 +161,12 @@ export class FornecedorRepository extends BaseRepository {
       
       const values = [
         fornecedorId,
-        contato.tipo,
-        contato.nome,
-        contato.valor,
-        contato.cargo,
-        contato.observacao,
-        contato.principal
+        contato.tipo || 'comercial',
+        contato.nome || null,
+        valorContato || null,
+        contato.cargo || null,
+        contato.observacao || null,
+        contato.principal || false
       ];
 
       await pool.query(query, values);
@@ -539,6 +553,70 @@ export class FornecedorRepository extends BaseRepository {
           `,
           [fornecedorId, fornecedorData.documento, fornecedorData.pais_origem]
         );
+      }
+
+      if (fornecedorData.enderecos !== undefined) {
+        await client.query('DELETE FROM enderecos_fornecedor WHERE fornecedor_id = $1', [fornecedorId]);
+
+        for (const endereco of fornecedorData.enderecos || []) {
+          const possuiDados = endereco.cep || endereco.logradouro || endereco.numero ||
+            endereco.complemento || endereco.bairro || endereco.cidade || endereco.uf;
+
+          if (!possuiDados) {
+            continue;
+          }
+
+          await client.query(
+            `
+              INSERT INTO enderecos_fornecedor (
+                fornecedor_id, tipo, cep, logradouro, numero, complemento,
+                bairro, cidade, uf, principal
+              ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+            `,
+            [
+              fornecedorId,
+              endereco.tipo || 'comercial',
+              endereco.cep || null,
+              endereco.logradouro || null,
+              endereco.numero || null,
+              endereco.complemento || null,
+              endereco.bairro || null,
+              endereco.cidade || null,
+              endereco.uf || null,
+              endereco.principal || false
+            ]
+          );
+        }
+      }
+
+      if (fornecedorData.contatos !== undefined) {
+        await client.query('DELETE FROM contatos_fornecedor WHERE fornecedor_id = $1', [fornecedorId]);
+
+        for (const contato of fornecedorData.contatos || []) {
+          const valorContato = contato.valor || contato.contato;
+          const possuiDados = contato.nome || valorContato || contato.cargo || contato.observacao;
+
+          if (!possuiDados) {
+            continue;
+          }
+
+          await client.query(
+            `
+              INSERT INTO contatos_fornecedor (
+                fornecedor_id, tipo, nome, contato, cargo, observacao, principal
+              ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+            `,
+            [
+              fornecedorId,
+              contato.tipo || 'comercial',
+              contato.nome || null,
+              valorContato || null,
+              contato.cargo || null,
+              contato.observacao || null,
+              contato.principal || false
+            ]
+          );
+        }
       }
 
       await client.query('COMMIT');

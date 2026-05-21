@@ -62,7 +62,12 @@ export class FinanceiroService {
     return conta;
   }
 
-  async baixarContaReceber(id: number, usuarioId: number, dataRecebimento?: string): Promise<void> {
+  async baixarContaReceber(
+    id: number,
+    usuarioId: number,
+    dataRecebimento?: string,
+    valorRecebido?: number
+  ): Promise<{ contaRecebidaId: number; contaRestanteId?: number; valorRecebido: number; valorRestante: number }> {
     const conta = await this.buscarContaReceber(id, usuarioId);
 
     if (conta.status === 'recebido') {
@@ -73,7 +78,19 @@ export class FinanceiroService {
     }
 
     const dataFinal = dataRecebimento || new Date().toISOString().split('T')[0];
-    await this.contaReceberRepository.atualizarStatus(id, usuarioId, 'recebido', dataFinal);
+    const valorBaixa = valorRecebido === undefined || valorRecebido === null
+      ? Number(conta.valor_total)
+      : Number(valorRecebido);
+
+    if (!Number.isFinite(valorBaixa) || valorBaixa <= 0) {
+      throw new Error('Informe um valor recebido maior que zero.');
+    }
+
+    if (valorBaixa > Number(conta.valor_total)) {
+      throw new Error('O valor recebido não pode ser maior que o valor em aberto.');
+    }
+
+    return this.contaReceberRepository.baixarComValor(id, usuarioId, valorBaixa, dataFinal);
   }
 
   async atualizarContaReceber(id: number, dados: Partial<ContaReceber>, usuarioId: number): Promise<ContaReceber> {

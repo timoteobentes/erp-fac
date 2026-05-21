@@ -2,7 +2,16 @@ import api from '../../../api/api';
 
 export const checkoutPDVService = async (vendaData: any) => {
   try {
-    const response = await api.post('/api/pdv/checkout', vendaData);
+    const response = await api.post('/api/frente-caixa/checkout', vendaData);
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const emitirNfceFrenteCaixaService = async (vendaId: number | string) => {
+  try {
+    const response = await api.post(`/api/frente-caixa/vendas/${vendaId}/emitir-nfce`);
     return response.data;
   } catch (error) {
     throw error;

@@ -1,84 +1,83 @@
 import { z } from 'zod';
 
-// Sub-schemas
+const optionalString = z.preprocess(
+  (value) => value === null ? undefined : value,
+  z.string().optional()
+);
+
 export const enderecoSchema = z.object({
-  tipo: z.string().min(1, "Tipo obrigatório"), // comercial, residencial
-  cep: z.string().min(8, "CEP inválido"),
-  logradouro: z.string().min(1, "Logradouro obrigatório"),
-  numero: z.string().min(1, "Número obrigatório"),
-  complemento: z.string().optional(),
-  bairro: z.string().min(1, "Bairro obrigatório"),
-  cidade: z.string().min(1, "Cidade obrigatória"),
-  uf: z.string().length(2, "UF deve ter 2 letras"),
+  tipo: optionalString,
+  cep: optionalString,
+  logradouro: optionalString,
+  numero: optionalString,
+  complemento: optionalString,
+  bairro: optionalString,
+  cidade: optionalString,
+  uf: optionalString,
   pais: z.string().default("Brasil"),
   principal: z.boolean().default(false)
 });
 
 export const contatoSchema = z.object({
-  tipo: z.string().min(1, "Tipo obrigatório"),
-  nome: z.string().min(1, "Nome obrigatório"),
-  valor: z.string().min(1, "Contato obrigatório"), // email ou telefone
-  cargo: z.string().optional(),
-  observacao: z.string().optional(),
+  tipo: optionalString,
+  nome: optionalString,
+  valor: optionalString,
+  cargo: optionalString,
+  observacao: optionalString,
   principal: z.boolean().default(false)
 });
 
 const anexoSchema = z.object({
-  id: z.number().optional(), // Importante para edição (saber se já existe)
+  id: z.number().optional(),
   nome: z.string(),
   url: z.string().optional(),
-  arquivo: z.any().optional(), // File ou base64
+  arquivo: z.any().optional(),
   tipo: z.string().optional()
 });
 
-// Schema Base
 const baseClienteSchema = z.object({
   tipo_cliente: z.enum(["PF", "PJ", "estrangeiro"]),
-  situacao: z.string().default("ativo"),
-  nome: z.string().min(3, "Nome deve ter no mínimo 3 caracteres"),
-  email: z.string().email("E-mail inválido").optional().or(z.literal('')),
-  telefone_comercial: z.string().optional(),
-  telefone_celular: z.string().optional(),
-  site: z.string().optional(),
-  vendedor_responsavel: z.string().optional(),
+  situacao: z.string().min(1, "Situacao e obrigatoria").default("ativo"),
+  nome: z.string().min(1, "Nome e obrigatorio"),
+  email: z.preprocess((value) => value === null ? '' : value, z.string().email("E-mail invalido").optional().or(z.literal(''))),
+  telefone_comercial: optionalString,
+  telefone_celular: optionalString,
+  site: optionalString,
+  vendedor_responsavel: optionalString,
   limite_credito: z.coerce.number().min(0),
   permitir_ultrapassar_limite: z.boolean().default(false),
-  foto: z.string().optional(),
-  observacoes: z.string().optional(),
-  
-  // Arrays
-  enderecos: z.array(enderecoSchema).min(1, "Adicione pelo menos um endereço"),
-  contatos: z.array(contatoSchema).optional(), // Opcional na edição para não travar
+  foto: optionalString,
+  observacoes: optionalString,
+  enderecos: z.array(enderecoSchema).optional(),
+  contatos: z.array(contatoSchema).optional(),
   anexos: z.array(anexoSchema).optional()
 });
 
-// Extensões
 const pfSchema = baseClienteSchema.extend({
   tipo_cliente: z.literal('PF'),
-  cpf: z.string().min(11, "CPF obrigatório"),
-  rg: z.string().optional(),
-  nascimento: z.string().optional(),
-  tipo_contribuinte: z.string().optional()
+  cpf: optionalString,
+  rg: optionalString,
+  nascimento: optionalString,
+  tipo_contribuinte: optionalString
 });
 
 const pjSchema = baseClienteSchema.extend({
   tipo_cliente: z.literal('PJ'),
-  cnpj: z.string().min(14, "CNPJ obrigatório"),
-  razao_social: z.string().min(1, "Razão Social obrigatória"),
-  inscricao_estadual: z.string().optional(),
-  inscricao_municipal: z.string().optional(),
-  inscricao_suframa: z.string().optional(),
+  cnpj: optionalString,
+  razao_social: z.string().min(1, "Nome e obrigatorio"),
+  inscricao_estadual: optionalString,
+  inscricao_municipal: optionalString,
+  inscricao_suframa: optionalString,
   isento: z.boolean().default(false),
-  responsavel: z.string().optional(),
-  tipo_contribuinte: z.string().optional()
+  responsavel: optionalString,
+  tipo_contribuinte: optionalString
 });
 
 const estrangeiroSchema = baseClienteSchema.extend({
   tipo_cliente: z.literal('estrangeiro'),
-  documento: z.string().min(1, "Documento obrigatório")
+  documento: optionalString
 });
 
-// Schema Principal (Discriminated Union)
 export const clienteSchema = z.discriminatedUnion('tipo_cliente', [
   pfSchema,
   pjSchema,

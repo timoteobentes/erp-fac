@@ -1,0 +1,40 @@
+import React, { useEffect } from "react";
+import { Box, Button, Skeleton, Typography } from "@mui/material";
+import { ArrowBack, EditOutlined } from "@mui/icons-material";
+import { useNavigate, useParams } from "react-router-dom";
+import Layout from "../../../../template/Layout";
+import { useCategorias } from "../../../../modules/Cadastros/Categorias/hooks/useCategorias";
+
+const VisualizarCategoria: React.FC = () => {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const { categoria, fetchCategoria, loading } = useCategorias();
+
+  useEffect(() => {
+    if (id) fetchCategoria(id);
+  }, [id]);
+
+  return (
+    <Layout>
+      <div className="flex justify-between items-start gap-4 mb-8">
+        <div>
+          <Typography variant="h4" fontWeight={800} color="#0F172A">Categoria</Typography>
+          <Typography variant="body2" color="#64748B">Detalhes do cadastro.</Typography>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outlined" startIcon={<ArrowBack />} onClick={() => navigate("/cadastros/categorias")} sx={{ textTransform: "none" }}>Voltar</Button>
+          <Button variant="contained" startIcon={<EditOutlined />} onClick={() => navigate(`/cadastros/categorias/editar/${id}`)} sx={{ textTransform: "none", backgroundColor: "#5B21B6" }}>Editar</Button>
+        </div>
+      </div>
+
+      {loading ? <Skeleton variant="rounded" height={180} /> : (
+        <Box sx={{ backgroundColor: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "16px", p: 4 }}>
+          <Typography variant="caption" color="#64748B" fontWeight={700} sx={{ textTransform: "uppercase" }}>Nome</Typography>
+          <Typography variant="h6" color="#0F172A" mt={1}>{categoria?.nome || "-"}</Typography>
+        </Box>
+      )}
+    </Layout>
+  );
+};
+
+export default VisualizarCategoria;

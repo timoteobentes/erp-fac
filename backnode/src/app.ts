@@ -10,6 +10,8 @@ import emailRoutes from './controllers/email.controller';
 import paymentRoutes from './routes/payment.routes';
 import subscriptionsRoutes from './routes/subscription.routes';
 import produtoRoutes from './routes/produto.routes';
+import categoriaRoutes from './routes/categoria.routes';
+import marcaRoutes from './routes/marca.routes';
 import estoqueRoutes from './routes/estoque.routes';
 import financeiroRoutes from './routes/financeiro.routes';
 import vendaRoutes from './routes/venda.routes';
@@ -17,6 +19,8 @@ import perfilRoutes from './routes/perfil.routes';
 import dashboardRoutes from './routes/dashboard.routes';
 import servicoRoutes from './routes/servico.routes';
 import nfseRoutes from './routes/nfse.routes';
+import notificacaoRoutes from './routes/notificacao.routes';
+import webhookRoutes from './routes/webhook.routes';
 import { loggerMiddleware } from './middleware/logger';
 import { authMiddleware } from './middleware/auth';
 import { isolamentoMiddleware } from './middleware/isolamento';
@@ -44,6 +48,7 @@ const apiLimiter = rateLimit({
 app.use('/api/auth', authRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/email', emailRoutes);
+app.use('/api/webhooks', webhookRoutes);
 
 // Proteção da borda e isolamento (Rate Limit + Autenticação + Multi-Tenant Core)
 app.use('/api', apiLimiter, authMiddleware, isolamentoMiddleware);
@@ -52,11 +57,14 @@ app.use('/api', subscriptionsRoutes);
 app.use('/api', clienteRoutes);
 app.use('/api', fornecedorRoutes);
 app.use('/api', produtoRoutes);
+app.use('/api', categoriaRoutes);
+app.use('/api', marcaRoutes);
 app.use('/api', estoqueRoutes);
 app.use('/api', financeiroRoutes);
 app.use('/api', vendaRoutes);
 app.use('/api', perfilRoutes);
 app.use('/api', dashboardRoutes);
+app.use('/api', notificacaoRoutes);
 app.use('/api/servicos', servicoRoutes);
 app.use('/api/nfse', nfseRoutes);
 

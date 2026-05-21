@@ -19,6 +19,10 @@ export interface PaginacaoDTO {
 
 // Helper para limpar caracteres não numéricos (CPF, CNPJ, Tel)
 const removeNonNumeric = (value?: string) => value ? value.replace(/\D/g, '') : undefined;
+const trimOrUndefined = (value?: string) => {
+  const trimmed = value?.trim();
+  return trimmed || undefined;
+};
 
 export class ClienteService {
   private clienteRepository: ClienteRepository;
@@ -38,19 +42,20 @@ export class ClienteService {
     const erros: string[] = [];
     const dadosLimpos = this.higienizarDados(dados);
 
-    // 1. Validação de E-mail
-    if (dadosLimpos.email && !this.validarEmail(dadosLimpos.email)) {
-      erros.push('E-mail inválido.');
+    if (!dadosLimpos.tipo_cliente) {
+      erros.push('Tipo de pessoa e obrigatorio.');
     }
 
-    // 2. Validação de Documentos Obrigatórios por Tipo
-    if (dadosLimpos.tipo_cliente === 'PF') {
-      if (!dadosLimpos.cpf) erros.push('CPF é obrigatório para Pessoa Física.');
-    } else if (dadosLimpos.tipo_cliente === 'PJ') {
-      if (!dadosLimpos.cnpj) erros.push('CNPJ é obrigatório para Pessoa Jurídica.');
-      if (!dadosLimpos.nome) erros.push('Razão Social é obrigatória.');
-    } else if (dadosLimpos.tipo_cliente === 'estrangeiro') {
-      if (!dadosLimpos.documento) erros.push('Documento/Passaporte é obrigatório.');
+    if (!dadosLimpos.situacao) {
+      erros.push('Situacao e obrigatoria.');
+    }
+
+    if (!dadosLimpos.nome) {
+      erros.push('Nome e obrigatorio.');
+    }
+
+    if (dadosLimpos.email && !this.validarEmail(dadosLimpos.email)) {
+      erros.push('E-mail invalido.');
     }
 
     // 3. Verificar Duplicidade de Documento no Banco (Regra de Ouro)
@@ -86,6 +91,10 @@ export class ClienteService {
 
   async criarCliente(dados: NovoClienteDTO, usuarioId: number): Promise<number> {
     const dadosLimpos = this.higienizarDados(dados);
+    const erros = await this.validarDadosCliente(dadosLimpos);
+    if (erros.length > 0) {
+      throw new Error(erros.join(' '));
+    }
 
     // Validação de Duplicidade antes de gravar
     const docPrincipal = dadosLimpos.cpf || dadosLimpos.cnpj || dadosLimpos.documento;
@@ -101,6 +110,10 @@ export class ClienteService {
 
   async atualizarCliente(id: number, dados: NovoClienteDTO, usuarioId: number): Promise<void> {
     const dadosLimpos = this.higienizarDados(dados);
+    const erros = await this.validarDadosCliente(dadosLimpos);
+    if (erros.length > 0) {
+      throw new Error(erros.join(' '));
+    }
 
     // Verifica se o cliente existe
     const clienteAtual = await this.clienteRepository.buscarClientePorId(id, usuarioId);
@@ -306,27 +319,52 @@ export class ClienteService {
   // =========================================================================
   
   private higienizarDados(dados: NovoClienteDTO): NovoClienteDTO {
+    const nome = trimOrUndefined(dados.nome) || trimOrUndefined(dados.razao_social) || '';
+
     return {
       ...dados,
+      nome,
+      razao_social: trimOrUndefined(dados.razao_social),
+      nome_fantasia: trimOrUndefined(dados.nome_fantasia),
+      documento: trimOrUndefined(dados.documento),
+      pais_origem: trimOrUndefined(dados.pais_origem),
+      email: trimOrUndefined(dados.email),
       cpf: removeNonNumeric(dados.cpf),
       cnpj: removeNonNumeric(dados.cnpj),
       rg: removeNonNumeric(dados.rg),
+      data_nascimento: trimOrUndefined(String(dados.data_nascimento || '')),
       telefone_comercial: removeNonNumeric(dados.telefone_comercial),
       telefone_celular: removeNonNumeric(dados.telefone_celular),
       
       enderecos: dados.enderecos?.map(end => ({
         ...end,
-        cep: removeNonNumeric(end.cep) || ''
+        tipo: trimOrUndefined(end.tipo),
+        cep: removeNonNumeric(end.cep),
+        logradouro: trimOrUndefined(end.logradouro),
+        numero: trimOrUndefined(end.numero),
+        complemento: trimOrUndefined(end.complemento),
+        bairro: trimOrUndefined(end.bairro),
+        cidade: trimOrUndefined(end.cidade),
+        uf: trimOrUndefined(end.uf),
+        pais: trimOrUndefined(end.pais)
       })) || [],
       
       contatos: dados.contatos?.map(contato => {
-        if (['telefone', 'celular', 'whatsapp'].includes(contato.tipo.toLowerCase())) {
-          return { ...contato, valor: removeNonNumeric(contato.valor) || contato.valor };
-        }
-        return contato;
+        const tipo = trimOrUndefined(contato.tipo);
+        const valor = tipo && ['telefone', 'celular', 'whatsapp'].includes(tipo.toLowerCase())
+          ? removeNonNumeric(contato.valor) || trimOrUndefined(contato.valor)
+          : trimOrUndefined(contato.valor);
+
+        return {
+          ...contato,
+          tipo,
+          nome: trimOrUndefined(contato.nome),
+          valor,
+          cargo: trimOrUndefined(contato.cargo),
+          observacao: trimOrUndefined(contato.observacao)
+        };
       }) || [],
       
-      // Defaults
       situacao: dados.situacao || 'ativo',
       permitir_ultrapassar_limite: dados.permitir_ultrapassar_limite || false,
       limite_credito: dados.limite_credito || 0

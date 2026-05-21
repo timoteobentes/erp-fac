@@ -5,7 +5,7 @@ import { toast } from 'react-toastify';
 export const usePerfil = () => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [perfil, setPerfil] = useState<{ usuario: any, fiscal: any, fiscal_nfse: any }>({ usuario: {}, fiscal: {}, fiscal_nfse: {} });
+  const [perfil, setPerfil] = useState<{ usuario: any, fiscal: any, fiscal_nfse: any, empresa?: any }>({ usuario: {}, fiscal: {}, fiscal_nfse: {}, empresa: {} });
 
   const fetchPerfil = async () => {
     try {
@@ -15,7 +15,8 @@ export const usePerfil = () => {
         setPerfil({
            usuario: data.data.usuario,
            fiscal: data.data.fiscal,
-           fiscal_nfse: data.data.fiscal_nfse
+           fiscal_nfse: data.data.fiscal_nfse,
+           empresa: data.data.empresa || data.data.usuario?.empresa || {}
         });
       }
     } catch (error: any) {
@@ -40,10 +41,15 @@ export const usePerfil = () => {
            cpf: dadosMistos.cpf,
            cnpj: dadosMistos.cnpj,
            razao_social: dadosMistos.razao_social,
+           nome_empresa: dadosMistos.razao_social,
            telefone: dadosMistos.telefone,
            cidade: dadosMistos.cidade,
            estado: dadosMistos.estado,
            senha: dadosMistos.senha
+        },
+        empresa: {
+           razao_social: dadosMistos.razao_social,
+           nome_empresa: dadosMistos.razao_social,
         },
         fiscal: {
            inscricao_estadual: dadosMistos.inscricao_estadual,

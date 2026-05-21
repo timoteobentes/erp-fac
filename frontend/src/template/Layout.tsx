@@ -7,6 +7,7 @@ import { useLogin } from '../modules/Login/hooks/useLogin';
 import fac_logo_branco from '../assets/FAC_logo_branco.svg';
 import { useNavigate, useLocation } from 'react-router';
 import { getStaticMenuItems } from '../components/menuConfig';
+import { marcarNotificacoesService, resumoNotificacoesService } from '../modules/Notificacoes/services/notificacoesService';
 import dayjs from 'dayjs';
 import relativeTime from "dayjs/plugin/relativeTime";
 import ptBR from 'antd/locale/pt_BR';
@@ -31,10 +32,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [currentNav, setCurrentNav] = useState('inicio');
   const [openKeys, setOpenKeys] = useState<string[]>([]);
   
-  const [notifications] = useState<any[]>([
-    { id: 1, titulo: 'Bem-vindo', mensagem: 'Obrigado por usar a plataforma Faço a Conta! Explore os menus ao lado.', criado_em: new Date(), lido_em: null },
-    { id: 2, titulo: 'Atualização do Sistema', mensagem: 'O Frente de Caixa agora possui integração nativa.', criado_em: new Date(Date.now() - 86400000), lido_em: new Date() }
-  ]);
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [totalNaoLidas, setTotalNaoLidas] = useState(0);
 
   // 1. CONFIG PROVIDER BLINDADO: Matando o Azul do AntD
   const layoutTheme = useMemo(() => ({
@@ -64,6 +63,25 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const usuarioNome = user?.nome_usuario;
   const userInitial = useMemo(() => usuarioNome ? usuarioNome.charAt(0).toUpperCase() : 'U', [usuarioNome]);
   const hasPermission = Boolean(user?.status == "ativo" && adm);
+
+  const carregarNotificacoes = async () => {
+    try {
+      const data = await resumoNotificacoesService(5);
+      setNotifications(data.notificacoes || []);
+      setTotalNaoLidas(data.nao_lidas || 0);
+    } catch (error) {
+      console.error('Erro ao carregar notificações', error);
+    }
+  };
+
+  useEffect(() => {
+    if (hasPermission) carregarNotificacoes();
+  }, [hasPermission]);
+
+  const marcarTodasNotificacoes = async () => {
+    await marcarNotificacoesService([], true, true);
+    await carregarNotificacoes();
+  };
 
   // 2. MENU ITEMS (Com o Avatar Fixo)
   const menuItems = useMemo(() => {
@@ -189,7 +207,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                   <Button
                     variant='contained'
                     startIcon={<PersonalVideoOutlined />}
-                    onClick={() => navigate('/pdv')}
+                    onClick={() => navigate('/frente-caixa')}
                     sx={{ 
                       borderRadius: '8px', 
                       background: 'linear-gradient(90deg, #3C0473 0%, #5B21B6 100%)',
@@ -218,7 +236,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                     '&:hover': { color: '#3C0473', backgroundColor: '#F8FAFC' }
                   }}
                 >
-                  <Badge count={notifications.filter(n => !n.lido_em).length} size="small" style={{ backgroundColor: '#EF4444' }}>
+                  <Badge count={totalNaoLidas} size="small" style={{ backgroundColor: '#EF4444' }}>
                     <NotificationsOutlined />
                   </Badge>
                 </IconButton>
@@ -235,13 +253,19 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                   <Box sx={{ width: 380, maxHeight: 500, display: 'flex', flexDirection: 'column' }}>
                     <Box sx={{ p: 3, pb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #F1F5F9' }}>
                       <Typography variant="h6" fontWeight={700} color="#0F172A">Notificações</Typography>
-                      <Button size="small" sx={{ textTransform: 'none', color: '#5B21B6', fontWeight: 600 }}>Marcar todas como lidas</Button>
+                      <Button size="small" onClick={marcarTodasNotificacoes} sx={{ textTransform: 'none', color: '#5B21B6', fontWeight: 600 }}>Marcar todas como lidas</Button>
                     </Box>
                     
                     <Box sx={{ p: 0, overflowY: 'auto', flex: 1 }}>
+                      {notifications.length === 0 && (
+                        <Box sx={{ p: 3 }}>
+                          <Typography variant="body2" color="#64748B">Nenhuma notificação encontrada.</Typography>
+                        </Box>
+                      )}
                       {notifications.map((item, index) => (
                         <Box key={item.id}>
                           <Box 
+                            onClick={() => item.link ? navigate(item.link) : navigate('/notificacoes')}
                             sx={{ 
                               p: 3, 
                               cursor: 'pointer', 
@@ -269,7 +293,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                     </Box>
                     
                     <Box sx={{ p: 2, borderTop: '1px solid #F1F5F9', textAlign: 'center' }}>
-                      <Button fullWidth onClick={() => navigate('/simples/notificacoes')} sx={{ textTransform: 'none', color: '#64748B', fontWeight: 600, '&:hover': { color: '#3C0473', backgroundColor: 'transparent' } }}>
+                      <Button fullWidth onClick={() => navigate('/notificacoes')} sx={{ textTransform: 'none', color: '#64748B', fontWeight: 600, '&:hover': { color: '#3C0473', backgroundColor: 'transparent' } }}>
                         Ver todas as notificações
                       </Button>
                     </Box>

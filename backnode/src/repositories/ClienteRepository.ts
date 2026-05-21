@@ -242,7 +242,8 @@ export class ClienteRepository extends BaseRepository {
 
     const rows = clientes.map(c => {
       const doc = c.cpf || c.cnpj || c.documento_estrangeiro || '';
-      const tel = c.telefone_celular || c.telefone_comercial || '';
+      const tel = c.telefone_principal || c.telefone_celular || c.telefone_comercial || '';
+      const email = c.email || c.email_contato || '';
       
       // Tratamento para evitar quebra de CSV se houver ponto e vírgula no texto
       const clean = (val: any) => `"${String(val || '').replace(/"/g, '""')}"`;
@@ -253,7 +254,7 @@ export class ClienteRepository extends BaseRepository {
         clean(c.nome_fantasia),
         c.tipo_cliente,
         clean(doc),
-        clean(c.email),
+        clean(email),
         clean(tel),
         c.situacao,
         c.criado_em ? new Date(c.criado_em).toLocaleDateString('pt-BR') : ''
@@ -281,7 +282,22 @@ export class ClienteRepository extends BaseRepository {
         c.*, 
         -- Pega a cidade do endereço principal ou o primeiro que achar
         (SELECT cidade || '/' || uf FROM enderecos e WHERE e.cliente_id = c.id LIMIT 1) as localizacao,
-        (SELECT valor FROM contatos ct WHERE ct.cliente_id = c.id AND ct.principal = true LIMIT 1) as telefone_principal
+        (
+          SELECT valor
+          FROM contatos ct
+          WHERE ct.cliente_id = c.id
+            AND LOWER(COALESCE(ct.tipo, '')) IN ('telefone', 'celular', 'whatsapp')
+          ORDER BY ct.principal DESC, ct.id ASC
+          LIMIT 1
+        ) as telefone_principal,
+        (
+          SELECT valor
+          FROM contatos ct
+          WHERE ct.cliente_id = c.id
+            AND LOWER(COALESCE(ct.tipo, '')) = 'email'
+          ORDER BY ct.principal DESC, ct.id ASC
+          LIMIT 1
+        ) as email_contato
       FROM clientes c
       WHERE c.usuario_id = $1
     `;
@@ -295,7 +311,16 @@ export class ClienteRepository extends BaseRepository {
     }
 
     if (filtros.email) {
-      query += ` AND c.email ILIKE $${count}`;
+      query += ` AND (
+        c.email ILIKE $${count}
+        OR EXISTS (
+          SELECT 1
+          FROM contatos ct
+          WHERE ct.cliente_id = c.id
+            AND LOWER(COALESCE(ct.tipo, '')) = 'email'
+            AND ct.valor ILIKE $${count}
+        )
+      )`;
       values.push(`%${filtros.email}%`);
       count++;
     }
@@ -332,23 +357,44 @@ export class ClienteRepository extends BaseRepository {
    * Salva as tabelas filhas (Endereços, Contatos, Anexos) dentro da transação
    */
   private async _salvarFilhos(client: PoolClient, clienteId: number, dados: NovoClienteDTO, salvarAnexos = true) {
-    // Endereços
+    // Enderecos
     if (dados.enderecos?.length) {
       for (const end of dados.enderecos) {
+        const hasEnderecoData = [
+          end.cep,
+          end.logradouro,
+          end.numero,
+          end.complemento,
+          end.bairro,
+          end.cidade,
+          end.uf
+        ].some((value) => Boolean(String(value || '').trim()));
+
+        if (!hasEnderecoData) continue;
+
         await client.query(`
           INSERT INTO enderecos (cliente_id, tipo, cep, logradouro, numero, complemento, bairro, cidade, uf, pais, principal)
           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-        `, [clienteId, end.tipo, end.cep, end.logradouro, end.numero, end.complemento, end.bairro, end.cidade, end.uf, end.pais || 'Brasil', end.principal || false]);
+        `, [clienteId, end.tipo || null, end.cep || null, end.logradouro || null, end.numero || null, end.complemento || null, end.bairro || null, end.cidade || null, end.uf || null, end.pais || 'Brasil', end.principal || false]);
       }
     }
 
     // Contatos
     if (dados.contatos?.length) {
       for (const ctt of dados.contatos) {
+        const hasContatoData = [
+          ctt.nome,
+          ctt.valor,
+          ctt.cargo,
+          ctt.observacao
+        ].some((value) => Boolean(String(value || '').trim()));
+
+        if (!hasContatoData) continue;
+
         await client.query(`
           INSERT INTO contatos (cliente_id, tipo, nome, valor, cargo, observacao, principal)
           VALUES ($1, $2, $3, $4, $5, $6, $7)
-        `, [clienteId, ctt.tipo, ctt.nome, ctt.valor, ctt.cargo, ctt.observacao, ctt.principal || false]);
+        `, [clienteId, ctt.tipo || null, ctt.nome || null, ctt.valor || null, ctt.cargo || null, ctt.observacao || null, ctt.principal || false]);
       }
     }
 

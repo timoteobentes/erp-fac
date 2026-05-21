@@ -3,6 +3,14 @@ import { Venda, ItemVenda } from '../models/Venda';
 import { NfceService } from './nfce.service';
 import { EstoqueService } from './estoque.service';
 
+type PagamentoFrenteCaixa = {
+  tipo: string;
+  valor: number;
+  observacao?: string | null;
+  vencimento?: string | null;
+  forma_pagamento_id?: number | null;
+};
+
 export class VendaService {
   private vendaRepository: VendaRepository;
   private nfceService: NfceService;
@@ -15,45 +23,39 @@ export class VendaService {
   }
 
   async realizarCheckout(usuario_id: number, vendaData: any) {
-    // Validar payload básico
     if (!vendaData.itens || vendaData.itens.length === 0) {
-      throw new Error("A venda precisa ter pelo menos um item.");
-    }
-    
-    if (!vendaData.forma_pagamento) {
-        throw new Error("Forma de pagamento é obrigatória.");
+      throw new Error('A venda precisa ter pelo menos um item.');
     }
 
     let valorLiquido = Number(vendaData.valor_total) || 0;
     const desconto = Number(vendaData.desconto_total) || 0;
-    
+
     if (valorLiquido <= 0) {
-        // Recalcular com base nos itens por segurança
-        valorLiquido = vendaData.itens.reduce((acc: number, item: any) => acc + (Number(item.subtotal) || 0), 0);
-        valorLiquido -= desconto;
-        
-        if (valorLiquido <= 0) {
-             throw new Error("Valor da venda inválido.");
-        }
+      valorLiquido = vendaData.itens.reduce((acc: number, item: any) => acc + (Number(item.subtotal) || 0), 0);
+      valorLiquido -= desconto;
+
+      if (valorLiquido <= 0) {
+        throw new Error('Valor da venda invalido.');
+      }
     }
 
-    // Regra de Negócio: Liquidez do Pagamento
-    const formaPagamentoStr = vendaData.forma_pagamento.toLowerCase();
-    const isPagamentoImediato = ['dinheiro', 'pix'].includes(formaPagamentoStr);
-    
-    const statusFinanceiro = isPagamentoImediato ? 'recebido' : 'pendente';
-    const dataRecebimento = isPagamentoImediato ? new Date().toISOString().split('T')[0] : null;
+    const pagamentos = this.normalizarPagamentos(vendaData, valorLiquido);
+    const totalRecebido = pagamentos.reduce((acc, pagamento) => acc + pagamento.valor, 0);
+    const possuiPagamentoPrazo = pagamentos.some((pagamento) => this.isPagamentoPrazo(pagamento.tipo));
+    const formaPagamentoResumo = pagamentos.map((pagamento) => pagamento.tipo).join(' + ');
+    const statusFinanceiro = !possuiPagamentoPrazo && totalRecebido >= valorLiquido ? 'recebido' : 'pendente';
+    const dataRecebimento = statusFinanceiro === 'recebido' ? new Date().toISOString().split('T')[0] : null;
 
     const novaVenda: Venda & { status_financeiro?: string; data_recebimento?: string | null } = {
       usuario_id,
       cliente_id: vendaData.cliente_id || null,
       valor_bruto: valorLiquido + desconto,
-      desconto: desconto,
+      desconto,
       valor_total: valorLiquido,
-      forma_pagamento: vendaData.forma_pagamento,
+      forma_pagamento: formaPagamentoResumo,
       status: 'concluida',
-      status_financeiro: statusFinanceiro, // Passando para o Repositório
-      data_recebimento: dataRecebimento    // Passando para o Repositório
+      status_financeiro: statusFinanceiro,
+      data_recebimento: dataRecebimento
     };
 
     const itensMap: ItemVenda[] = vendaData.itens.map((i: any) => ({
@@ -63,44 +65,69 @@ export class VendaService {
       valor_total: Number(i.subtotal)
     }));
 
-    // Aciona a transação que salva a venda, os itens, baixa estoque e lança no contas a receber
-    const novaVendaSalva = await this.vendaRepository.processarVendaTransaction(novaVenda, itensMap);
-    
-    // O Estoque e as Movimentações já foram processados na transação principal ACID acima.
+    const novaVendaSalva = await this.vendaRepository.processarVendaTransaction(novaVenda, itensMap, pagamentos);
 
-    // Motor Sefaz: Tenta emitir NFC-e
-    try {
-        const nfceResult = await this.nfceService.emitir(novaVendaSalva.id!, usuario_id);
-        
-        // Atualiza a venda com os dados retornados da Sefaz
-        await this.vendaRepository.atualizarDadosSefaz(novaVendaSalva.id!, nfceResult);
-
-        // Retorna a venda original enriquecida com o resultado Sefaz
-        return {
-            ...novaVendaSalva,
-            ...nfceResult
-        };
-    } catch (error: any) {
-        console.error("Erro ao emitir NFC-e:", error.message);
-        
-        // Em caso de falha na emissão Sefaz, a venda interna ainda existe como contingência off-line.
-        await this.vendaRepository.atualizarDadosSefaz(novaVendaSalva.id!, {
-             status_sefaz: 'rejeitado',
-             chave_acesso: null,
-             numero_nfe: null,
-             protocolo: null,
-             xml_autorizado: null
-        });
-
-        return {
-             ...novaVendaSalva,
-             status_sefaz: 'rejeitado',
-             erro_sefaz: error.message
-        };
-    }
+    return {
+      ...novaVendaSalva,
+      pagamentos,
+      valor_recebido: totalRecebido,
+      troco: Math.max(0, Number((totalRecebido - valorLiquido).toFixed(2))),
+      status_sefaz: novaVendaSalva.status_sefaz || 'pendente'
+    };
   }
 
   async listarVendas(filtros?: any, paginacao?: { limit: number, offset: number }) {
     return await this.vendaRepository.listar(filtros, paginacao);
+  }
+
+  async emitirNfce(vendaId: number, usuarioId: number) {
+    const venda = await this.vendaRepository.getVendaCompleta(vendaId);
+    if (!venda || Number(venda.usuario_id) !== Number(usuarioId)) {
+      throw new Error('Venda nao encontrada para o usuario.');
+    }
+
+    const resultado = await this.nfceService.emitir(vendaId, usuarioId);
+    return {
+      ...venda,
+      ...resultado
+    };
+  }
+
+  private normalizarPagamentos(vendaData: any, valorLiquido: number): PagamentoFrenteCaixa[] {
+    const pagamentosInformados = Array.isArray(vendaData.pagamentos) ? vendaData.pagamentos : [];
+    const pagamentosBase = pagamentosInformados.length > 0
+      ? pagamentosInformados
+      : [{
+          tipo: vendaData.forma_pagamento,
+          valor: vendaData.valor_recebido || valorLiquido,
+          vencimento: vendaData.vencimento || null,
+          forma_pagamento_id: vendaData.forma_pagamento_id || null
+        }];
+
+    const pagamentos: PagamentoFrenteCaixa[] = pagamentosBase
+      .map((pagamento: any) => ({
+        tipo: String(pagamento.tipo || pagamento.forma_pagamento || '').trim(),
+        valor: Number(pagamento.valor || pagamento.valor_recebido || 0),
+        observacao: pagamento.observacao || null,
+        vencimento: pagamento.vencimento || null,
+        forma_pagamento_id: pagamento.forma_pagamento_id ? Number(pagamento.forma_pagamento_id) : null
+      }))
+      .filter((pagamento: PagamentoFrenteCaixa) => pagamento.tipo && pagamento.valor > 0);
+
+    if (pagamentos.length === 0) {
+      throw new Error('Informe pelo menos uma forma de pagamento.');
+    }
+
+    const totalInformado = pagamentos.reduce((acc: number, pagamento: PagamentoFrenteCaixa) => acc + pagamento.valor, 0);
+    if (totalInformado + 0.001 < valorLiquido) {
+      throw new Error('O total informado nos pagamentos nao cobre o valor da venda.');
+    }
+
+    return pagamentos;
+  }
+
+  private isPagamentoPrazo(tipo: string) {
+    const normalizado = tipo.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    return normalizado.includes('prazo') || normalizado.includes('boleto') || normalizado.includes('crediario');
   }
 }

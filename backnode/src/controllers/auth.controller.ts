@@ -1,8 +1,11 @@
 import { Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
-import { query } from '../config/database';
+import pool, { query } from '../config/database';
 import { hashPassword, comparePassword } from '../utils/passwordUtils';
 import { emailService } from '../services/email.service';
+import { DadosPadraoUsuarioService } from '../services/dadosPadraoUsuario.service';
+
+const dadosPadraoUsuarioService = new DadosPadraoUsuarioService();
 
 export const registrar = async (req: Request, res: Response) => {
   try {
@@ -45,7 +48,13 @@ export const registrar = async (req: Request, res: Response) => {
     const senhaHash = await hashPassword(senha);
 
     // Inserir usuário
-    const result = await query(
+    const client = await pool.connect();
+    let usuario;
+
+    try {
+      await client.query('BEGIN');
+
+      const result = await client.query(
       `INSERT INTO usuarios (
         email, senha, nome_empresa, grupo_acesso_id, cnpj, telefone, 
         cidade, estado, nome_usuario, termos_aceitos, status
@@ -64,9 +73,18 @@ export const registrar = async (req: Request, res: Response) => {
         termos_aceitos || false,
         'pendente'
       ]
-    );
+      );
 
-    const usuario = result.rows[0];
+      usuario = result.rows[0];
+      await dadosPadraoUsuarioService.inicializar(client, Number(usuario.id));
+
+      await client.query('COMMIT');
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
 
     // Enviar email de boas-vindas
     emailService.sendWelcomeEmail(usuario.email, usuario.nome_usuario || usuario.nome_empresa)

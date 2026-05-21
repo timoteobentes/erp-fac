@@ -129,6 +129,7 @@ export interface ProdutoServico {
 export interface NovoFornecedorRequest {
   tipo_fornecedor: TipoFornecedor;
   nome: string;
+  situacao?: 'ativo' | 'inativo';
   email?: string;
   telefone_comercial?: string;
   telefone_celular?: string;

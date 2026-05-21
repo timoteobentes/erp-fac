@@ -326,12 +326,125 @@ export class ProdutoRepository extends BaseRepository {
   }
 
   async listarMarcas(usuarioId: number) {
-    const res = await pool.query(`SELECT id, nome FROM marcas WHERE usuario_id = $1 ORDER BY nome`, [usuarioId]);
+    const res = await pool.query(`SELECT id, nome FROM marcas WHERE usuario_id = $1 AND COALESCE(ativa, true) = true ORDER BY nome`, [usuarioId]);
     return res.rows;
   }
 
   async listarUnidades(usuarioId: number) {
     const res = await pool.query(`SELECT id, sigla, descricao FROM unidades_medida WHERE usuario_id = $1 OR usuario_id IS NULL ORDER BY sigla`, [usuarioId]);
     return res.rows;
+  }
+
+  async listarNcms(termo?: string, limit = 50) {
+    const safeLimit = Math.min(Number(limit) || 50, 100);
+    const termoLimpo = termo?.trim();
+    const values: any[] = [];
+    let where = '';
+
+    if (termoLimpo) {
+      values.push(`%${termoLimpo}%`);
+      where = `WHERE codigo ILIKE $1 OR descricao ILIKE $1`;
+    }
+
+    values.push(safeLimit);
+    const limitParam = values.length;
+
+    const res = await pool.query(
+      `SELECT codigo, descricao, "CEST" as cest
+       FROM public."NCM"
+       ${where}
+       ORDER BY codigo
+       LIMIT $${limitParam}`,
+      values
+    );
+
+    return res.rows;
+  }
+
+  async listarCests(termo?: string, limit = 50) {
+    const safeLimit = Math.min(Number(limit) || 50, 100);
+    const termoLimpo = termo?.trim();
+    const values: any[] = [];
+    let where = '';
+
+    if (termoLimpo) {
+      values.push(`%${termoLimpo}%`);
+      where = `WHERE codigo ILIKE $1 OR COALESCE(descricao, '') ILIKE $1`;
+    }
+
+    values.push(safeLimit);
+    const limitParam = values.length;
+
+    const res = await pool.query(
+      `SELECT codigo, descricao
+       FROM public.cest
+       ${where}
+       ORDER BY codigo
+       LIMIT $${limitParam}`,
+      values
+    );
+
+    return res.rows;
+  }
+
+  async listarCfops(termo?: string, limit = 50) {
+    const safeLimit = Math.min(Number(limit) || 50, 100);
+    const termoLimpo = termo?.trim();
+    const values: any[] = [];
+    let where = '';
+
+    if (termoLimpo) {
+      values.push(`%${termoLimpo}%`);
+      where = `WHERE codigo ILIKE $1 OR descricao ILIKE $1 OR categoria ILIKE $1`;
+    }
+
+    values.push(safeLimit);
+    const limitParam = values.length;
+
+    const res = await pool.query(
+      `SELECT codigo, descricao, categoria
+       FROM public.cfop
+       ${where}
+       ORDER BY codigo
+       LIMIT $${limitParam}`,
+      values
+    );
+
+    return res.rows;
+  }
+
+  async recomendarNcmPorNome(tokens: string[]) {
+    if (tokens.length === 0) return null;
+
+    const values = tokens.map((token) => `%${token}%`);
+    const where = tokens.map((_, index) => `descricao ILIKE $${index + 1}`).join(' OR ');
+
+    const res = await pool.query(
+      `SELECT codigo, descricao, "CEST" as cest
+       FROM public."NCM"
+       WHERE ${where}
+       LIMIT 100`,
+      values
+    );
+
+    if (res.rows.length === 0) return null;
+
+    const pontuar = (descricao: string) => {
+      const texto = descricao.toLowerCase();
+      return tokens.reduce((score, token) => score + (texto.includes(token) ? 1 : 0), 0);
+    };
+
+    return res.rows
+      .map((row) => ({ ...row, score: pontuar(row.descricao || '') }))
+      .sort((a, b) => b.score - a.score || String(a.codigo).length - String(b.codigo).length)[0];
+  }
+
+  async buscarCfopPorCodigo(codigo: string) {
+    const res = await pool.query(
+      `SELECT codigo, descricao, categoria FROM public.cfop WHERE codigo = $1 LIMIT 1`,
+      [codigo]
+    );
+
+    return res.rows[0] || null;
   }
 }

@@ -8,6 +8,7 @@ export class VendaController {
     this.vendaService = new VendaService();
     this.checkout = this.checkout.bind(this);
     this.listar = this.listar.bind(this);
+    this.emitirNfce = this.emitirNfce.bind(this);
   }
 
   async checkout(req: Request, res: Response) {
@@ -49,6 +50,27 @@ export class VendaController {
     } catch (error: any) {
       console.error('Erro ao listar vendas:', error);
       return res.status(500).json({ success: false, message: 'Erro interno do servidor' });
+    }
+  }
+
+  async emitirNfce(req: Request, res: Response) {
+    try {
+      const usuario_id = (req as any).usuario?.id || (req as any).usuarioId;
+      const vendaId = Number(req.params.id);
+
+      if (!usuario_id) return res.status(401).json({ success: false, message: 'NÃ£o autorizado' });
+      if (!Number.isFinite(vendaId)) return res.status(400).json({ success: false, message: 'Venda invÃ¡lida' });
+
+      const resultado = await this.vendaService.emitirNfce(vendaId, usuario_id);
+
+      return res.status(200).json({
+        success: resultado.status_sefaz === 'autorizado',
+        message: resultado.status_sefaz === 'autorizado' ? 'NFC-e autorizada com sucesso' : 'NFC-e rejeitada pela Sefaz',
+        data: resultado
+      });
+    } catch (error: any) {
+      console.error('Erro ao emitir NFC-e da Frente de Caixa:', error);
+      return res.status(400).json({ success: false, message: error.message || 'Erro ao emitir NFC-e' });
     }
   }
 }

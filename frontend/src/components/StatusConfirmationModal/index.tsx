@@ -9,6 +9,7 @@ interface StatusConfirmationModalProps {
   onClose: () => void;
   onConfirm: () => void;
   isLoading?: boolean;
+  confirmDisabled?: boolean;
 
   // Conteúdo Personalizável
   title: string;
@@ -25,6 +26,7 @@ export const StatusConfirmationModal: React.FC<StatusConfirmationModalProps> = (
   onClose,
   onConfirm,
   isLoading = false,
+  confirmDisabled = false,
   title,
   description,
   confirmText = "Confirmar",
@@ -64,6 +66,7 @@ export const StatusConfirmationModal: React.FC<StatusConfirmationModalProps> = (
         <Button
           key="submit"
           loading={isLoading}
+          disabled={confirmDisabled}
           onClick={onConfirm}
           {...getButtonProps()}
         >

@@ -202,7 +202,7 @@ const NovoCliente: React.FC = () => {
                   name="tipo_cliente"
                   control={control}
                   render={({ field }) => (
-                    <TextField {...field} select fullWidth required label="Tipo de Pessoa" sx={premiumInputStyles}>
+                    <TextField {...field} select fullWidth label="Tipo de Pessoa" sx={premiumInputStyles}>
                       <MenuItem value="PJ">Pessoa Jurídica</MenuItem>
                       <MenuItem value="PF">Pessoa Física</MenuItem>
                       <MenuItem value="estrangeiro">Estrangeiro</MenuItem>
@@ -213,7 +213,7 @@ const NovoCliente: React.FC = () => {
                   name="situacao"
                   control={control}
                   render={({ field }) => (
-                    <TextField {...field} select fullWidth required label="Situação" sx={premiumInputStyles}>
+                    <TextField {...field} select fullWidth label="Situação" sx={premiumInputStyles}>
                       <MenuItem value="ativo">Ativo</MenuItem>
                       <MenuItem value="inativo">Inativo</MenuItem>
                       <MenuItem value="bloqueado">Bloqueado</MenuItem>
@@ -223,7 +223,7 @@ const NovoCliente: React.FC = () => {
                 <Controller
                   name="vendedor_responsavel"
                   control={control}
-                  render={({ field }) => <TextField {...field} fullWidth required disabled label="Vendedor Responsável" sx={premiumInputStyles} />}
+                  render={({ field }) => <TextField {...field} fullWidth disabled label="Vendedor Responsável" sx={premiumInputStyles} />}
                 />
 
                 {/* Renderização Condicional: PESSOA JURÍDICA */}
@@ -234,7 +234,7 @@ const NovoCliente: React.FC = () => {
                       control={control}
                       render={({ field }) => (
                         <TextField 
-                          {...field} fullWidth label="CNPJ" required sx={premiumInputStyles}
+                          {...field} fullWidth label="CNPJ" sx={premiumInputStyles}
                           onChange={(e) => field.onChange(maskRegexCNPJ(e.target.value))}
                           error={!!(errors as any).cnpj} helperText={(errors as any).cnpj?.message}
                           InputProps={{
@@ -255,7 +255,7 @@ const NovoCliente: React.FC = () => {
                         control={control}
                         render={({ field }) => (
                           <TextField
-                            {...field} fullWidth required label="Razão Social" sx={premiumInputStyles}
+                            {...field} fullWidth label="Razão Social" sx={premiumInputStyles}
                             error={!!(errors as any).razao_social} helperText={(errors as any).razao_social?.message}
                             disabled={loadingConsultaCNPJ}
                             InputProps={{ endAdornment: loadingConsultaCNPJ ? <InputAdornment position="end"><CircularProgress size={20} color="inherit" /></InputAdornment> : null }}
@@ -270,7 +270,7 @@ const NovoCliente: React.FC = () => {
                         control={control}
                         render={({ field }) => (
                           <TextField
-                            {...field} fullWidth required label="Nome Fantasia" sx={premiumInputStyles}
+                            {...field} fullWidth label="Nome Fantasia" sx={premiumInputStyles}
                             error={!!(errors as any).nome_fantasia} disabled={loadingConsultaCNPJ}
                             InputProps={{ endAdornment: loadingConsultaCNPJ ? <InputAdornment position="end"><CircularProgress size={20} color="inherit" /></InputAdornment> : null }}
                             InputLabelProps={{ shrink: !!field.value || loadingConsultaCNPJ }}
@@ -288,21 +288,21 @@ const NovoCliente: React.FC = () => {
                 {/* Renderização Condicional: PESSOA FÍSICA */}
                 {tipoCliente === 'PF' && (
                   <>
-                    <Controller name="cpf" control={control} render={({ field }) => <TextField {...field} fullWidth label="CPF" required onChange={(e) => field.onChange(maskRegexCPF(e.target.value))} error={!!(errors as any).cpf} helperText={(errors as any).cpf?.message} sx={premiumInputStyles} />} />
-                    <Controller name="rg" control={control} render={({ field }) => <TextField {...field} fullWidth required label="RG" onChange={(e) => field.onChange(maskRegexRG(e.target.value))} sx={premiumInputStyles} />} />
+                    <Controller name="cpf" control={control} render={({ field }) => <TextField {...field} fullWidth label="CPF" onChange={(e) => field.onChange(maskRegexCPF(e.target.value))} error={!!(errors as any).cpf} helperText={(errors as any).cpf?.message} sx={premiumInputStyles} />} />
+                    <Controller name="rg" control={control} render={({ field }) => <TextField {...field} fullWidth label="RG" onChange={(e) => field.onChange(maskRegexRG(e.target.value))} sx={premiumInputStyles} />} />
                     <div className="md:col-span-2">
-                      <Controller name="nome" control={control} render={({ field }) => <TextField {...field} fullWidth required label="Nome Completo" error={!!(errors as any).nome} helperText={(errors as any).nome?.message} sx={premiumInputStyles} />} />
+                      <Controller name="nome" control={control} render={({ field }) => <TextField {...field} fullWidth label="Nome Completo" error={!!(errors as any).nome} helperText={(errors as any).nome?.message} sx={premiumInputStyles} />} />
                     </div>
-                    <Controller name="data_nascimento" control={control} render={({ field }) => <TextField {...field} type="date" fullWidth required label="Data Nascimento" InputLabelProps={{ shrink: true }} sx={premiumInputStyles} />} />
+                    <Controller name="data_nascimento" control={control} render={({ field }) => <TextField {...field} type="date" fullWidth label="Data Nascimento" InputLabelProps={{ shrink: true }} sx={premiumInputStyles} />} />
                   </>
                 )}
 
                 {/* Renderização Condicional: ESTRANGEIRO */}
                 {tipoCliente === 'estrangeiro' && (
                   <>
-                    <Controller name="documento" control={control} render={({ field }) => <TextField {...field} fullWidth required label="Documento (Passport/ID)" error={!!(errors as any).documento} sx={premiumInputStyles} />} />
-                    <Controller name="nome" control={control} render={({ field }) => <TextField {...field} fullWidth required label="Nome Completo" error={!!(errors as any).nome} helperText={(errors as any).nome?.message} sx={premiumInputStyles} />} />
-                    <Controller name="pais_origem" control={control} render={({ field }) => <TextField {...field} fullWidth required label="País de Origem" sx={premiumInputStyles} />} />
+                    <Controller name="documento" control={control} render={({ field }) => <TextField {...field} fullWidth label="Documento (Passport/ID)" error={!!(errors as any).documento} sx={premiumInputStyles} />} />
+                    <Controller name="nome" control={control} render={({ field }) => <TextField {...field} fullWidth label="Nome Completo" error={!!(errors as any).nome} helperText={(errors as any).nome?.message} sx={premiumInputStyles} />} />
+                    <Controller name="pais_origem" control={control} render={({ field }) => <TextField {...field} fullWidth label="País de Origem" sx={premiumInputStyles} />} />
                   </>
                 )}
               </div>
@@ -339,7 +339,7 @@ const NovoCliente: React.FC = () => {
                   <div className="grid grid-cols-1 md:grid-cols-12 gap-4 mt-2">
                     <div className="md:col-span-2">
                       <Controller name={`enderecos.${index}.tipo`} control={control} render={({ field }) => (
-                          <TextField {...field} select fullWidth required label="Tipo" sx={premiumInputStyles}>
+                          <TextField {...field} select fullWidth label="Tipo" sx={premiumInputStyles}>
                             <MenuItem value="comercial">Comercial</MenuItem>
                             <MenuItem value="cobranca">Cobrança</MenuItem>
                             <MenuItem value="entrega">Entrega</MenuItem>
@@ -350,26 +350,26 @@ const NovoCliente: React.FC = () => {
                     </div>
                     <div className="md:col-span-2">
                       <Controller name={`enderecos.${index}.cep`} control={control} render={({ field }) => (
-                          <TextField {...field} fullWidth required label="CEP" onChange={(e) => field.onChange(maskRegexCEP(e.target.value))} sx={premiumInputStyles}
+                          <TextField {...field} fullWidth label="CEP" onChange={(e) => field.onChange(maskRegexCEP(e.target.value))} sx={premiumInputStyles}
                             InputProps={{ endAdornment: ( <InputAdornment position="end"> <IconButton size="small" onClick={() => handleBuscarCep(index, field.value)}> <Search fontSize="small" sx={{ color: '#94A3B8' }}/> </IconButton> </InputAdornment> ) }}
                           />
                         )}
                       />
                     </div>
                     <div className="md:col-span-6">
-                      <Controller name={`enderecos.${index}.logradouro`} control={control} render={({ field }) => <TextField {...field} fullWidth required label="Logradouro" sx={premiumInputStyles} />} />
+                      <Controller name={`enderecos.${index}.logradouro`} control={control} render={({ field }) => <TextField {...field} fullWidth label="Logradouro" sx={premiumInputStyles} />} />
                     </div>
                     <div className="md:col-span-2">
-                      <Controller name={`enderecos.${index}.numero`} control={control} render={({ field }) => <TextField {...field} id={`numero-${index}`} fullWidth required label="Número" sx={premiumInputStyles} />} />
+                      <Controller name={`enderecos.${index}.numero`} control={control} render={({ field }) => <TextField {...field} id={`numero-${index}`} fullWidth label="Número" sx={premiumInputStyles} />} />
                     </div>
                     <div className="md:col-span-3">
-                      <Controller name={`enderecos.${index}.bairro`} control={control} render={({ field }) => <TextField {...field} fullWidth required label="Bairro" sx={premiumInputStyles} />} />
+                      <Controller name={`enderecos.${index}.bairro`} control={control} render={({ field }) => <TextField {...field} fullWidth label="Bairro" sx={premiumInputStyles} />} />
                     </div>
                     <div className="md:col-span-4">
-                      <Controller name={`enderecos.${index}.cidade`} control={control} render={({ field }) => <TextField {...field} fullWidth required label="Cidade" sx={premiumInputStyles} />} />
+                      <Controller name={`enderecos.${index}.cidade`} control={control} render={({ field }) => <TextField {...field} fullWidth label="Cidade" sx={premiumInputStyles} />} />
                     </div>
                     <div className="md:col-span-2">
-                      <Controller name={`enderecos.${index}.uf`} control={control} render={({ field }) => <TextField {...field} fullWidth required label="UF" sx={premiumInputStyles} />} />
+                      <Controller name={`enderecos.${index}.uf`} control={control} render={({ field }) => <TextField {...field} fullWidth label="UF" sx={premiumInputStyles} />} />
                     </div>
                     <div className="md:col-span-3">
                       <Controller name={`enderecos.${index}.complemento`} control={control} render={({ field }) => <TextField {...field} fullWidth label="Complemento" sx={premiumInputStyles} />} />
@@ -413,7 +413,7 @@ const NovoCliente: React.FC = () => {
                   )}
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-start mt-2">
                     <Controller name={`contatos.${index}.tipo`} control={control} render={({ field }) => (
-                        <TextField {...field} select fullWidth required label="Tipo" sx={premiumInputStyles}>
+                        <TextField {...field} select fullWidth label="Tipo" sx={premiumInputStyles}>
                           <MenuItem value="email">E-mail</MenuItem>
                           <MenuItem value="telefone">Telefone</MenuItem>
                           <MenuItem value="celular">Celular</MenuItem>
@@ -421,9 +421,9 @@ const NovoCliente: React.FC = () => {
                         </TextField>
                       )}
                     />
-                    <Controller name={`contatos.${index}.nome`} control={control} render={({ field }) => <TextField {...field} fullWidth required label="Nome do Contato" sx={premiumInputStyles} />} />
-                    <Controller name={`contatos.${index}.valor`} control={control} render={({ field }) => <TextField {...field} fullWidth required label="Contato (Email/Tel/URL)" sx={premiumInputStyles} />} />
-                    <Controller name={`contatos.${index}.cargo`} control={control} render={({ field }) => <TextField {...field} fullWidth required label="Cargo/Depto" sx={premiumInputStyles} />} />
+                    <Controller name={`contatos.${index}.nome`} control={control} render={({ field }) => <TextField {...field} fullWidth label="Nome do Contato" sx={premiumInputStyles} />} />
+                    <Controller name={`contatos.${index}.valor`} control={control} render={({ field }) => <TextField {...field} fullWidth label="Contato (Email/Tel/URL)" sx={premiumInputStyles} />} />
+                    <Controller name={`contatos.${index}.cargo`} control={control} render={({ field }) => <TextField {...field} fullWidth label="Cargo/Depto" sx={premiumInputStyles} />} />
                     <div className="md:col-span-4">
                         <Controller name={`contatos.${index}.principal`} control={control} render={({ field }) => (
                             <FormControlLabel control={<Checkbox checked={field.value} onChange={field.onChange} sx={{ color: '#CBD5E1', '&.Mui-checked': { color: '#6366F1' } }} />} label={<Typography variant="body2" fontWeight={600} color="#475569">Definir como Contato Principal</Typography>} />

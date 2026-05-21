@@ -87,7 +87,13 @@ export const usePDV = () => {
     }
   };
 
-  const finalizarVenda = async (formaPagamento: string, valorRecebido?: number, clienteId?: number) => {
+  const finalizarVenda = async (
+    formaPagamento: string,
+    valorRecebido?: number,
+    clienteId?: number | null,
+    pagamentos?: Array<{ tipo: string; valor: number; observacao?: string; vencimento?: string; forma_pagamento_id?: number | null }>,
+    cliente?: any
+  ) => {
     if (carrinho.length === 0) {
       toast.warning('O carrinho está vazio.');
       return false;
@@ -101,15 +107,20 @@ export const usePDV = () => {
 
       const payload = {
         cliente_id: clienteId || null,
+        cliente_nome: cliente?.nome || null,
+        cliente_cpf: cliente?.cpf || null,
+        cliente_email: cliente?.email || null,
+        cliente_telefone: cliente?.celular || cliente?.telefone || null,
         forma_pagamento: formaPagamento, // 'dinheiro' | 'pix' | 'cartao_credito' | 'cartao_debito'
         valor_total: totalCarrinho,
         desconto_total: 0,
         valor_recebido: valorRecebido || totalCarrinho,
+        pagamentos,
         itens: carrinho
       };
 
       const response = await checkoutPDVService(payload);
-      toast.success('Venda finalizada com sucesso! Verifique a nota fiscal.');
+      toast.success('Venda finalizada com sucesso.');
       
       limparCarrinho(); // Limpa a tela, mas nós já salvamos a foto
       
@@ -118,12 +129,16 @@ export const usePDV = () => {
         dadosVenda: {
           ...response.data,
           itens: itensVendidos, // Injeta os itens para o cupom ler
-          valor_total: valorTotalVendido
+          valor_total: valorTotalVendido,
+          cliente_nome: payload.cliente_nome,
+          cliente_cpf: payload.cliente_cpf,
+          cliente_email: payload.cliente_email,
+          cliente_telefone: payload.cliente_telefone
         } 
       };
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Erro ao finalizar venda.');
-      return { sucesso: false };
+      return { sucesso: false, mensagem: error.response?.data?.message || 'Erro ao finalizar venda.' };
     } finally {
       setIsSubmitting(false);
     }

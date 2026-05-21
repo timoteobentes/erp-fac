@@ -12,6 +12,8 @@ produtoRoutes.use(isolamentoMiddleware);
 produtoRoutes.use(loggerMiddleware);
 
 produtoRoutes.get('/produtos/auxiliares', produtoController.obterDadosAuxiliares);
+produtoRoutes.get('/produtos/fiscal/recomendacao', produtoController.recomendarDadosFiscais);
+produtoRoutes.get('/produtos/fiscal/:tipo', produtoController.listarDadosFiscais);
 produtoRoutes.get('/produtos/exportar', produtoController.exportar);
 produtoRoutes.get('/produtos', produtoController.listar);
 produtoRoutes.post('/produtos', produtoController.criar);

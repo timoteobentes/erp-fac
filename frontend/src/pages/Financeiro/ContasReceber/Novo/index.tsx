@@ -19,6 +19,8 @@ import {
   InfoOutlined,
   NotesOutlined,
 } from "@mui/icons-material";
+import { DatePicker } from "antd";
+import dayjs from "dayjs";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import Layout from "../../../../template/Layout";
@@ -338,17 +340,15 @@ const NovoRecebimento: React.FC = () => {
                   />
                 </div>
                 <div className="md:col-span-1">
-                  <TextField
-                    fullWidth
-                    label="Vencimento *"
-                    type="date"
-                    InputLabelProps={{ shrink: true }}
-                    value={formData.data_vencimento}
-                    onChange={(e) => setFormData((current) => ({ ...current, data_vencimento: e.target.value }))}
-                    error={!!errors.data_vencimento}
-                    helperText={errors.data_vencimento}
-                    sx={premiumInputStyles}
+                  <label className="text-xs font-semibold text-[#475569] mb-1 block">Vencimento *</label>
+                  <DatePicker
+                    format="DD/MM/YYYY"
+                    value={formData.data_vencimento ? dayjs(formData.data_vencimento) : null}
+                    onChange={(date) => setFormData((current) => ({ ...current, data_vencimento: date ? date.format('YYYY-MM-DD') : '' }))}
+                    status={errors.data_vencimento ? 'error' : undefined}
+                    style={{ width: '100%', height: 56, borderRadius: 8, backgroundColor: '#F8FAFC', borderColor: errors.data_vencimento ? '#d32f2f' : '#E2E8F0' }}
                   />
+                  {errors.data_vencimento && <div className="text-[#d32f2f] text-xs mt-1">{errors.data_vencimento}</div>}
                 </div>
 
                 <div className="md:col-span-2">
@@ -419,17 +419,15 @@ const NovoRecebimento: React.FC = () => {
                   </TextField>
                 </div>
                 <div className="md:col-span-2">
-                  <TextField
-                    fullWidth
-                    label="Data de compensação"
-                    type="date"
-                    InputLabelProps={{ shrink: true }}
-                    value={formData.data_compensacao}
-                    onChange={(e) => setFormData((current) => ({ ...current, data_compensacao: e.target.value }))}
-                    error={!!errors.data_compensacao}
-                    helperText={errors.data_compensacao}
-                    sx={premiumInputStyles}
+                  <label className="text-xs font-semibold text-[#475569] mb-1 block">Data de compensacao</label>
+                  <DatePicker
+                    format="DD/MM/YYYY"
+                    value={formData.data_compensacao ? dayjs(formData.data_compensacao) : null}
+                    onChange={(date) => setFormData((current) => ({ ...current, data_compensacao: date ? date.format('YYYY-MM-DD') : '' }))}
+                    status={errors.data_compensacao ? 'error' : undefined}
+                    style={{ width: '100%', height: 56, borderRadius: 8, backgroundColor: '#F8FAFC', borderColor: errors.data_compensacao ? '#d32f2f' : '#E2E8F0' }}
                   />
+                  {errors.data_compensacao && <div className="text-[#d32f2f] text-xs mt-1">{errors.data_compensacao}</div>}
                 </div>
               </div>
             </Box>
@@ -485,17 +483,15 @@ const NovoRecebimento: React.FC = () => {
                 </div>
 
                 <div className="md:col-span-2">
-                  <TextField
-                    fullWidth
-                    label="Data de competência *"
-                    type="date"
-                    InputLabelProps={{ shrink: true }}
-                    value={formData.data_competencia}
-                    onChange={(e) => setFormData((current) => ({ ...current, data_competencia: e.target.value }))}
-                    error={!!errors.data_competencia}
-                    helperText={errors.data_competencia}
-                    sx={premiumInputStyles}
+                  <label className="text-xs font-semibold text-[#475569] mb-1 block">Data de competencia *</label>
+                  <DatePicker
+                    format="DD/MM/YYYY"
+                    value={formData.data_competencia ? dayjs(formData.data_competencia) : null}
+                    onChange={(date) => setFormData((current) => ({ ...current, data_competencia: date ? date.format('YYYY-MM-DD') : '' }))}
+                    status={errors.data_competencia ? 'error' : undefined}
+                    style={{ width: '100%', height: 56, borderRadius: 8, backgroundColor: '#F8FAFC', borderColor: errors.data_competencia ? '#d32f2f' : '#E2E8F0' }}
                   />
+                  {errors.data_competencia && <div className="text-[#d32f2f] text-xs mt-1">{errors.data_competencia}</div>}
                 </div>
                 <div className="md:col-span-2">
                   <TextField

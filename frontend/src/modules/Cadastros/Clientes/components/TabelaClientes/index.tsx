@@ -233,7 +233,7 @@ export const TabelaClientes: React.FC<TabelaClientesProps> = ({
     tipo_cliente: cliente.tipo_cliente,
     cpf_cnpj: cliente.cpf || cliente.cnpj || '',
     telefone: cliente.telefone_principal,
-    email: cliente.email,
+    email: cliente.email || cliente.email_contato,
     data_cadastro: cliente.criado_em,
     situacao: cliente.situacao,
     localizacao: cliente.localizacao || "-"

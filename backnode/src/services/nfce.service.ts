@@ -298,14 +298,38 @@ export class NfceService {
     }
   }
 
+  private validarSchemaParaEmissao(venda: any): void {
+    const pendencias: string[] = [];
+
+    if (!venda.emitente_cnpj) pendencias.push('CNPJ do emitente');
+    if (!venda.nome_empresa) pendencias.push('nome/razao social do emitente');
+    if (!venda.itens || venda.itens.length === 0) pendencias.push('itens da venda');
+
+    for (const [index, item] of (venda.itens || []).entries()) {
+      if (!item.produto_nome) pendencias.push(`nome do produto no item ${index + 1}`);
+      if (!item.ncm) pendencias.push(`NCM do item ${index + 1}`);
+      if (!item.cfop && !item.cfop_padrao) pendencias.push(`CFOP do item ${index + 1}`);
+      if (!Number(item.quantidade)) pendencias.push(`quantidade do item ${index + 1}`);
+      if (!Number(item.valor_unitario)) pendencias.push(`valor unitario do item ${index + 1}`);
+    }
+
+    if (pendencias.length > 0) {
+      throw new Error(`Nao foi possivel emitir a NFC-e. Revise os dados fiscais obrigatorios: ${pendencias.join(', ')}.`);
+    }
+  }
+
   async emitir(vendaId: number, usuarioId: number) {
     console.log(`[NfceService] Iniciando emissão real para Sefaz. Venda ${vendaId}...`);
 
     // 1. Carga de Dados
     const venda = await this.vendaRepository.getVendaCompleta(vendaId);
+    if (venda && Number(venda.usuario_id) !== Number(usuarioId)) {
+      throw new Error("Venda nao encontrada para o usuario.");
+    }
+    if (venda) this.validarSchemaParaEmissao(venda);
     if (!venda) throw new Error("Venda não encontrada.");
     if (!venda.certificado_base64 || !venda.certificado_senha) {
-      throw new Error("Certificado digital não configurado para o usuário.");
+      throw new Error("Certificado digital nao configurado. Salve o certificado em Meu Perfil antes de emitir a NFC-e.");
     }
 
     const { privateKeyPem, certPem } = this.extractPemFromPfx(

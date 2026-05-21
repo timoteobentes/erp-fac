@@ -89,6 +89,53 @@ export class ProdutoService {
     return { categorias, marcas, unidades };
   }
 
+  async listarDadosFiscais(tipo: string, termo?: string, limit?: number) {
+    switch (tipo) {
+      case 'ncm':
+        return this.produtoRepository.listarNcms(termo, limit);
+      case 'cest':
+        return this.produtoRepository.listarCests(termo, limit);
+      case 'cfop':
+        return this.produtoRepository.listarCfops(termo, limit);
+      default:
+        throw new Error('Tipo de dado fiscal invalido.');
+    }
+  }
+
+  async recomendarDadosFiscais(nomeProduto: string, tipoItem?: string) {
+    const tokens = this.extrairTokens(nomeProduto);
+    if (tokens.length === 0) {
+      return { ncm: null, cest: null, cfop: null };
+    }
+
+    const [ncm, cfop] = await Promise.all([
+      this.produtoRepository.recomendarNcmPorNome(tokens),
+      this.produtoRepository.buscarCfopPorCodigo(tipoItem === 'servico' ? '5933' : '5102')
+    ]);
+
+    return {
+      ncm: ncm ? { codigo: ncm.codigo, descricao: ncm.descricao, cest: ncm.cest || null } : null,
+      cest: ncm?.cest ? { codigo: ncm.cest } : null,
+      cfop
+    };
+  }
+
+  private extrairTokens(texto: string): string[] {
+    const stopwords = new Set([
+      'para', 'com', 'sem', 'dos', 'das', 'de', 'do', 'da', 'em', 'no', 'na',
+      'por', 'um', 'uma', 'tipo', 'produto', 'servico', 'serviço'
+    ]);
+
+    return String(texto || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .replace(/[^a-z0-9\s]/g, ' ')
+      .split(/\s+/)
+      .filter((token) => token.length >= 3 && !stopwords.has(token))
+      .slice(0, 6);
+  }
+
   // =========================================================================
   // 3. EXPORTAÇÃO (CSV, EXCEL, PDF)
   // =========================================================================

@@ -37,8 +37,8 @@ export const contasReceberService = {
   criar: async (dados: Partial<ContaReceber>): Promise<void> => {
     await api.post('/api/financeiro/receber', dados);
   },
-  baixar: async (id: number): Promise<void> => {
-    await api.patch(`/api/financeiro/receber/${id}/baixa`);
+  baixar: async (id: number, dados?: { valor_recebido?: number; data_recebimento?: string }): Promise<void> => {
+    await api.patch(`/api/financeiro/receber/${id}/baixa`, dados || {});
   },
   excluir: async (id: number): Promise<void> => {
     await api.delete(`/api/financeiro/receber/${id}`);

@@ -4,6 +4,7 @@ export interface NovoClienteDTO {
   nome: string; // Nome (PF) ou Razão Social (PJ)
   
   // Opcionais (PJ)
+  razao_social?: string;
   nome_fantasia?: string;
   cnpj?: string;
   inscricao_estadual?: string;
@@ -23,7 +24,7 @@ export interface NovoClienteDTO {
   pais_origem?: string;
   
   // Contato Principal e Config
-  email: string;
+  email?: string;
   telefone_comercial?: string;
   telefone_celular?: string;
   site?: string;
@@ -38,27 +39,27 @@ export interface NovoClienteDTO {
   foto?: any; // URL da foto se já tiver feito upload
 
   // Arrays
-  enderecos: Array<{
-    tipo: string;
-    cep: string;
-    logradouro: string;
-    numero: string;
+  enderecos?: Array<{
+    tipo?: string;
+    cep?: string;
+    logradouro?: string;
+    numero?: string;
     complemento?: string;
-    bairro: string;
-    cidade: string;
-    uf: string;
+    bairro?: string;
+    cidade?: string;
+    uf?: string;
     pais?: string;
     principal?: boolean;
   }>;
-  contatos: Array<{
-    tipo: string;
-    nome: string;
-    valor: string;
+  contatos?: Array<{
+    tipo?: string;
+    nome?: string;
+    valor?: string;
     cargo?: string;
     observacao?: string;
     principal?: boolean;
   }>;
-  anexos: Array<{
+  anexos?: Array<{
     nome: string;
     url?: string;
     tipo?: string;

@@ -67,6 +67,38 @@ export class EmailService {
   }
 
   // Método helper para enviar email de reset de senha
+  async sendNotificationEmail(email: string, nomeUsuario: string, notificacoes: Array<{ titulo: string; mensagem: string; criado_em?: string }>): Promise<void> {
+    const itens = notificacoes.map((notificacao) => `
+      <tr>
+        <td style="padding:16px;border-bottom:1px solid #e5e7eb;">
+          <strong style="display:block;color:#2a003f;margin-bottom:6px;">${notificacao.titulo}</strong>
+          <span style="color:#475569;line-height:1.5;">${notificacao.mensagem}</span>
+        </td>
+      </tr>
+    `).join('');
+
+    await this.sendEmail({
+      to: email,
+      subject: notificacoes.length === 1 ? notificacoes[0].titulo : `Você tem ${notificacoes.length} notificações`,
+      htmlContent: `
+        <div style="font-family:Arial,Helvetica,sans-serif;background:#f8fafc;padding:32px;">
+          <div style="max-width:640px;margin:0 auto;background:#ffffff;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;">
+            <div style="background:#3C0473;color:#ffffff;padding:24px;">
+              <h2 style="margin:0;">Notificações</h2>
+            </div>
+            <div style="padding:24px;color:#0f172a;">
+              <p>Olá <strong>${nomeUsuario || 'usuário'}</strong>,</p>
+              <p>Confira as notificações selecionadas no Faço a Conta:</p>
+              <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;">
+                ${itens}
+              </table>
+            </div>
+          </div>
+        </div>
+      `
+    });
+  }
+
   async sendPasswordResetEmail(email: string, nomeUsuario: string, resetLink: string): Promise<void> {
     const subject = 'Redefinição de Senha - Faço a Conta';
     

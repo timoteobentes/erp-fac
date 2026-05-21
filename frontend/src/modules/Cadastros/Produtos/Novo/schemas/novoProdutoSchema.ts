@@ -16,8 +16,10 @@ const composicaoSchema = z.object({
 });
 
 const conversaoSchema = z.object({
+  quantidade_entrada: z.coerce.number().min(0.001, "Quantidade de entrada deve ser maior que zero").optional().default(1),
   unidade_entrada_id: z.coerce.number().min(1, "Selecione a unidade"),
-  fator_conversao: z.coerce.number().min(0.001, "Fator deve ser maior que zero"),
+  fator_conversao: z.coerce.number().min(0.001, "Quantidade de saída deve ser maior que zero"),
+  unidade_saida_id: z.coerce.number().optional(),
   codigo_barras_entrada: z.string().optional()
 });
 

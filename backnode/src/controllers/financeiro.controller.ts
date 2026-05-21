@@ -79,9 +79,14 @@ export class FinanceiroController {
       const id = parseInt(req.params.id);
       if (!usuarioId || isNaN(id)) { res.status(400).json({ message: 'Dados invÃƒÂ¡lidos.' }); return; }
 
-      const { data_recebimento } = req.body;
-      await this.financeiroService.baixarContaReceber(id, usuarioId, data_recebimento);
-      res.status(200).json({ success: true, message: 'Conta baixada com sucesso.' });
+      const { data_recebimento, valor_recebido } = req.body || {};
+      const resultado = await this.financeiroService.baixarContaReceber(
+        id,
+        usuarioId,
+        data_recebimento,
+        valor_recebido !== undefined ? Number(valor_recebido) : undefined
+      );
+      res.status(200).json({ success: true, message: 'Conta baixada com sucesso.', data: resultado });
     } catch (error: any) {
       res.status(400).json({ success: false, message: error.message });
     }

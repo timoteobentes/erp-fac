@@ -56,6 +56,11 @@ export class ClienteController {
         return;
       }
 
+      if (error.message.includes('obrigatorio') || error.message.includes('invalido')) {
+        res.status(400).json({ success: false, message: error.message });
+        return;
+      }
+
       console.error('Erro ao criar cliente:', error);
       res.status(500).json({ success: false, message: 'Erro interno ao cadastrar cliente.' });
     }
@@ -165,6 +170,8 @@ export class ClienteController {
         res.status(404).json({ success: false, message: error.message });
       } else if (error.message.includes('Já existe')) {
         res.status(409).json({ success: false, message: error.message });
+      } else if (error.message.includes('obrigatorio') || error.message.includes('invalido')) {
+        res.status(400).json({ success: false, message: error.message });
       } else {
         console.error('Erro ao atualizar:', error);
         res.status(500).json({ success: false, message: 'Erro ao atualizar cliente.' });

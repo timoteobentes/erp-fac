@@ -50,13 +50,14 @@ export const useContasReceber = () => {
     carregarContas();
   }, [carregarContas]);
 
-  const baixarConta = async (id: number) => {
+  const baixarConta = async (id: number, dados?: { valor_recebido?: number; data_recebimento?: string }) => {
     try {
-      await contasReceberService.baixar(id);
-      alert('Conta baixada com sucesso!');
+      await contasReceberService.baixar(id, dados);
+      toast.success('Conta baixada com sucesso!');
       carregarContas();
     } catch (error: any) {
-      alert(error.response?.data?.error || 'Erro ao baixar conta.');
+      toast.error(error.response?.data?.message || error.response?.data?.error || 'Erro ao baixar conta.');
+      throw error;
     }
   };
 

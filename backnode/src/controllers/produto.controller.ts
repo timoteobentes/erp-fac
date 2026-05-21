@@ -205,6 +205,44 @@ export class ProdutoController {
     }
   }
 
+  listarDadosFiscais = async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const usuarioId = req.usuario?.id;
+      if (!usuarioId) {
+        res.status(401).json({ message: 'Acesso negado.' });
+        return;
+      }
+
+      const tipo = req.params.tipo;
+      const termo = req.query.termo as string | undefined;
+      const limit = req.query.limit ? Number(req.query.limit) : undefined;
+      const data = await this.produtoService.listarDadosFiscais(tipo, termo, limit);
+
+      res.status(200).json({ success: true, data });
+    } catch (error: any) {
+      const status = error.message?.includes('invalido') ? 400 : 500;
+      res.status(status).json({ success: false, message: error.message || 'Erro ao listar dados fiscais.' });
+    }
+  }
+
+  recomendarDadosFiscais = async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const usuarioId = req.usuario?.id;
+      if (!usuarioId) {
+        res.status(401).json({ message: 'Acesso negado.' });
+        return;
+      }
+
+      const nome = req.query.nome as string;
+      const tipoItem = req.query.tipo_item as string | undefined;
+
+      const data = await this.produtoService.recomendarDadosFiscais(nome, tipoItem);
+      res.status(200).json({ success: true, data });
+    } catch (error: any) {
+      res.status(500).json({ success: false, message: error.message || 'Erro ao recomendar dados fiscais.' });
+    }
+  }
+
   // =========================================================================
   // 7. EXPORTAÇÃO DE PRODUTOS
   // =========================================================================

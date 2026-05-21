@@ -42,6 +42,7 @@ export const useNovoProduto = () => {
     try {
       const dados = await listarProdutosComposicaoService();
       setProdutosComposicao(dados);
+      return dados;
     } catch (error) {
       console.error("Erro ao carregar produtos para composição:", error);
       toast.warning("Não foi possível carregar a lista de produtos para composição.");
@@ -52,6 +53,7 @@ export const useNovoProduto = () => {
     try {
       const dados = await listarFornecedoresService();
       setFornecedores(dados);
+      return dados;
     } catch (error) {
       console.error("Erro ao carregar fornecedores:", error);
       toast.warning("Não foi possível carregar a lista de fornecedores.");

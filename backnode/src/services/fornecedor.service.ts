@@ -111,10 +111,14 @@ export class FornecedorService {
       }
 
       // Criar endereços
-      await this.fornecedorRepository.criarEnderecos(fornecedorId, fornecedorData.enderecos);
+      if (fornecedorData.enderecos?.length) {
+        await this.fornecedorRepository.criarEnderecos(fornecedorId, fornecedorData.enderecos);
+      }
 
       // Criar contatos
-      await this.fornecedorRepository.criarContatos(fornecedorId, fornecedorData.contatos);
+      if (fornecedorData.contatos?.length) {
+        await this.fornecedorRepository.criarContatos(fornecedorId, fornecedorData.contatos);
+      }
 
       // Criar produtos/serviços se existirem
       if (fornecedorData.produtos_servicos && fornecedorData.produtos_servicos.length > 0) {
@@ -261,34 +265,20 @@ export class FornecedorService {
   async validarDadosFornecedor(fornecedorData: NovoFornecedorRequest): Promise<string[]> {
     const errors: string[] = [];
 
-    // Validações básicas
     if (!fornecedorData.nome || fornecedorData.nome.trim().length < 2) {
       errors.push('Nome é obrigatório e deve ter pelo menos 2 caracteres');
     }
 
-    if (!fornecedorData.enderecos || fornecedorData.enderecos.length === 0) {
-      errors.push('Pelo menos um endereço é obrigatório');
+    if (!['PF', 'PJ', 'estrangeiro'].includes(fornecedorData.tipo_fornecedor)) {
+      errors.push('Tipo de fornecedor é obrigatório');
     }
 
-    if (!fornecedorData.contatos || fornecedorData.contatos.length === 0) {
-      errors.push('Pelo menos um contato é obrigatório');
-    }
-
-    // Validações específicas por tipo
-    if (fornecedorData.tipo_fornecedor === 'PF') {
-      if (!fornecedorData.cpf) errors.push('CPF é obrigatório para pessoa física');
-      if (!fornecedorData.rg) errors.push('RG é obrigatório para pessoa física');
-    } else if (fornecedorData.tipo_fornecedor === 'PJ') {
-      if (!fornecedorData.cnpj) errors.push('CNPJ é obrigatório para pessoa jurídica');
-      if (!fornecedorData.razao_social) errors.push('Razão social é obrigatória para pessoa jurídica');
-      if (!fornecedorData.responsavel) errors.push('Responsável é obrigatório para pessoa jurídica');
-    } else if (fornecedorData.tipo_fornecedor === 'estrangeiro') {
-      if (!fornecedorData.documento) errors.push('Documento é obrigatório para estrangeiro');
+    if (fornecedorData.situacao && !['ativo', 'inativo'].includes(fornecedorData.situacao)) {
+      errors.push('Situação do fornecedor inválida');
     }
 
     return errors;
   }
-
   // Métodos para produtos/serviços
   async adicionarProdutoServico(fornecedorId: number, usuarioId: number, produtoData: any): Promise<number> {
     const fornecedorExistente = await this.buscarFornecedor(fornecedorId, usuarioId);

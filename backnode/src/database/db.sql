@@ -1,6 +1,16 @@
 -- WARNING: This schema is for context only and is not meant to be run.
 -- Table order and constraints may not be valid for execution.
 
+CREATE TABLE public.NCM (
+  codigo character varying NOT NULL,
+  CEST character varying,
+  descricao character varying,
+  monofasico boolean NOT NULL DEFAULT false,
+  substituicaoTributariaICMS boolean NOT NULL DEFAULT false,
+  criado_em timestamp with time zone DEFAULT now(),
+  atualizado_em timestamp with time zone DEFAULT now(),
+  CONSTRAINT NCM_pkey PRIMARY KEY (codigo)
+);
 CREATE TABLE public.acoes (
   id bigint NOT NULL DEFAULT nextval('acoes_id_seq'::regclass),
   nome character varying NOT NULL UNIQUE,
@@ -17,6 +27,17 @@ CREATE TABLE public.anexos (
   criado_em timestamp with time zone DEFAULT now(),
   CONSTRAINT anexos_pkey PRIMARY KEY (id),
   CONSTRAINT fk_anexo_cliente FOREIGN KEY (cliente_id) REFERENCES public.clientes(id)
+);
+CREATE TABLE public.anexos_fornecedor (
+  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
+  fornecedor_id bigint NOT NULL,
+  nome_arquivo character varying NOT NULL,
+  caminho_arquivo text NOT NULL,
+  tipo character varying,
+  tamanho bigint,
+  criado_em timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT anexos_fornecedor_pkey PRIMARY KEY (id),
+  CONSTRAINT anexos_fornecedor_fornecedor_id_fkey FOREIGN KEY (fornecedor_id) REFERENCES public.fornecedores(id)
 );
 CREATE TABLE public.auditoria_dados (
   id bigint NOT NULL DEFAULT nextval('auditoria_dados_id_seq'::regclass),
@@ -38,6 +59,8 @@ CREATE TABLE public.categorias (
   nome character varying NOT NULL,
   categoria_pai_id bigint,
   ativa boolean DEFAULT true,
+  criado_em timestamp with time zone DEFAULT now(),
+  atualizado_em timestamp with time zone DEFAULT now(),
   CONSTRAINT categorias_pkey PRIMARY KEY (id),
   CONSTRAINT fk_categorias_usuario FOREIGN KEY (usuario_id) REFERENCES public.usuarios(id),
   CONSTRAINT fk_categorias_pai FOREIGN KEY (categoria_pai_id) REFERENCES public.categorias(id)
@@ -73,10 +96,25 @@ CREATE TABLE public.centro_custos (
   CONSTRAINT centro_custos_pkey PRIMARY KEY (id),
   CONSTRAINT fk_centro_custos_usuario FOREIGN KEY (usuario_id) REFERENCES public.usuarios(id)
 );
+CREATE TABLE public.cest (
+  codigo character varying NOT NULL,
+  descricao character varying,
+  criado_em timestamp with time zone DEFAULT now(),
+  atualizado_em timestamp with time zone DEFAULT now(),
+  CONSTRAINT cest_pkey PRIMARY KEY (codigo)
+);
+CREATE TABLE public.cfop (
+  codigo character varying NOT NULL,
+  descricao character varying NOT NULL,
+  categoria character varying NOT NULL,
+  criado_em timestamp with time zone DEFAULT now(),
+  atualizado_em timestamp with time zone DEFAULT now(),
+  CONSTRAINT cfop_pkey PRIMARY KEY (codigo)
+);
 CREATE TABLE public.clientes (
   id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
   tipo_cliente character varying NOT NULL CHECK (tipo_cliente::text = ANY (ARRAY['PF'::character varying, 'PJ'::character varying, 'estrangeiro'::character varying]::text[])),
-  situacao character varying DEFAULT 'ativo'::character varying,
+  situacao character varying NOT NULL DEFAULT 'ativo'::character varying,
   nome character varying NOT NULL,
   nome_fantasia character varying,
   cpf character varying,
@@ -260,8 +298,8 @@ CREATE TABLE public.contatos (
   id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
   cliente_id bigint NOT NULL,
   tipo character varying,
-  nome character varying NOT NULL,
-  valor character varying NOT NULL,
+  nome character varying,
+  valor character varying,
   cargo character varying,
   observacao character varying,
   principal boolean DEFAULT false,
@@ -273,8 +311,8 @@ CREATE TABLE public.contatos_fornecedor (
   id bigint NOT NULL DEFAULT nextval('contatos_fornecedor_id_seq'::regclass),
   fornecedor_id bigint NOT NULL,
   tipo USER-DEFINED DEFAULT 'comercial'::contato_tipo_fornecedor,
-  nome character varying NOT NULL,
-  contato character varying NOT NULL,
+  nome character varying,
+  contato character varying,
   cargo character varying,
   observacao text,
   principal boolean DEFAULT false,
@@ -286,11 +324,11 @@ CREATE TABLE public.enderecos (
   cliente_id bigint NOT NULL,
   tipo character varying,
   cep character varying,
-  logradouro character varying NOT NULL,
-  numero character varying NOT NULL,
+  logradouro character varying,
+  numero character varying,
   complemento character varying,
   bairro character varying,
-  cidade character varying NOT NULL,
+  cidade character varying,
   uf character varying,
   pais character varying DEFAULT 'Brasil'::character varying,
   principal boolean DEFAULT false,
@@ -303,12 +341,12 @@ CREATE TABLE public.enderecos_fornecedor (
   fornecedor_id bigint NOT NULL,
   tipo USER-DEFINED DEFAULT 'comercial'::endereco_tipo_fornecedor,
   cep character varying,
-  logradouro character varying NOT NULL,
-  numero character varying NOT NULL,
+  logradouro character varying,
+  numero character varying,
   complemento character varying,
-  bairro character varying NOT NULL,
-  cidade character varying NOT NULL,
-  uf character NOT NULL,
+  bairro character varying,
+  cidade character varying,
+  uf character,
   principal boolean DEFAULT false,
   criado_em timestamp with time zone DEFAULT now(),
   CONSTRAINT enderecos_fornecedor_pkey PRIMARY KEY (id)
@@ -343,6 +381,25 @@ CREATE TABLE public.formas_pagamento (
   CONSTRAINT formas_pagamento_pkey PRIMARY KEY (id),
   CONSTRAINT fk_formas_pagamento_usuario FOREIGN KEY (usuario_id) REFERENCES public.usuarios(id),
   CONSTRAINT fk_formas_pagamento_conta_bancaria FOREIGN KEY (conta_bancaria_id) REFERENCES public.contas_bancarias(id)
+);
+CREATE TABLE public.fornecedores (
+  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
+  usuario_id bigint NOT NULL,
+  tipo_fornecedor character varying NOT NULL CHECK (tipo_fornecedor::text = ANY (ARRAY['PF'::character varying, 'PJ'::character varying, 'estrangeiro'::character varying]::text[])),
+  situacao character varying NOT NULL DEFAULT 'ativo'::character varying CHECK (situacao::text = ANY (ARRAY['ativo'::character varying, 'inativo'::character varying]::text[])),
+  nome character varying NOT NULL,
+  email character varying,
+  telefone_comercial character varying,
+  telefone_celular character varying,
+  site character varying,
+  responsavel_compras character varying,
+  prazo_entrega integer,
+  condicao_pagamento character varying,
+  observacoes text,
+  criado_em timestamp with time zone NOT NULL DEFAULT now(),
+  atualizado_em timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT fornecedores_pkey PRIMARY KEY (id),
+  CONSTRAINT fornecedores_usuario_id_fkey FOREIGN KEY (usuario_id) REFERENCES public.usuarios(id)
 );
 CREATE TABLE public.fornecedores_estrangeiro (
   id bigint NOT NULL DEFAULT nextval('fornecedores_estrangeiro_id_seq'::regclass),
@@ -421,6 +478,9 @@ CREATE TABLE public.marcas (
   id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
   usuario_id bigint NOT NULL,
   nome character varying NOT NULL,
+  ativa boolean DEFAULT true,
+  criado_em timestamp with time zone DEFAULT now(),
+  atualizado_em timestamp with time zone DEFAULT now(),
   CONSTRAINT marcas_pkey PRIMARY KEY (id),
   CONSTRAINT fk_marcas_usuario FOREIGN KEY (usuario_id) REFERENCES public.usuarios(id)
 );
@@ -447,6 +507,14 @@ CREATE TABLE public.movimentacoes_estoque (
   CONSTRAINT fk_mov_estoque_usuario FOREIGN KEY (usuario_id) REFERENCES public.usuarios(id),
   CONSTRAINT fk_mov_estoque_produto FOREIGN KEY (produto_id) REFERENCES public.produtos(id)
 );
+CREATE TABLE public.ncm_cest (
+  ncm_codigo character varying NOT NULL,
+  cest_codigo character varying NOT NULL,
+  criado_em timestamp with time zone DEFAULT now(),
+  CONSTRAINT ncm_cest_pkey PRIMARY KEY (ncm_codigo, cest_codigo),
+  CONSTRAINT ncm_cest_ncm_fkey FOREIGN KEY (ncm_codigo) REFERENCES public.NCM(codigo),
+  CONSTRAINT ncm_cest_cest_fkey FOREIGN KEY (cest_codigo) REFERENCES public.cest(codigo)
+);
 CREATE TABLE public.nfse (
   id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
   usuario_id bigint NOT NULL,
@@ -469,6 +537,22 @@ CREATE TABLE public.nfse (
   CONSTRAINT fk_nfse_usuario FOREIGN KEY (usuario_id) REFERENCES public.usuarios(id),
   CONSTRAINT fk_nfse_cliente FOREIGN KEY (cliente_id) REFERENCES public.clientes(id),
   CONSTRAINT fk_nfse_servico FOREIGN KEY (servico_id) REFERENCES public.servicos(id)
+);
+CREATE TABLE public.notificacoes (
+  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
+  usuario_id bigint NOT NULL,
+  titulo character varying NOT NULL,
+  mensagem text NOT NULL,
+  tipo character varying DEFAULT 'sistema'::character varying,
+  origem character varying DEFAULT 'sistema'::character varying,
+  link character varying,
+  metadados jsonb DEFAULT '{}'::jsonb,
+  lido_em timestamp with time zone,
+  email_enviado_em timestamp with time zone,
+  criado_em timestamp with time zone DEFAULT now(),
+  atualizado_em timestamp with time zone DEFAULT now(),
+  CONSTRAINT notificacoes_pkey PRIMARY KEY (id),
+  CONSTRAINT notificacoes_usuario_id_fkey FOREIGN KEY (usuario_id) REFERENCES public.usuarios(id)
 );
 CREATE TABLE public.pagamentos (
   id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
@@ -604,6 +688,23 @@ CREATE TABLE public.produtos_imagens (
   principal boolean DEFAULT false,
   CONSTRAINT produtos_imagens_pkey PRIMARY KEY (id)
 );
+CREATE TABLE public.produtos_servicos (
+  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
+  fornecedor_id bigint NOT NULL,
+  tipo character varying NOT NULL DEFAULT 'produto'::character varying CHECK (tipo::text = ANY (ARRAY['produto'::character varying, 'servico'::character varying]::text[])),
+  nome character varying NOT NULL,
+  descricao text,
+  unidade_medida character varying,
+  preco_unitario numeric NOT NULL DEFAULT 0,
+  moeda character varying NOT NULL DEFAULT 'BRL'::character varying,
+  estoque_minimo numeric DEFAULT 0,
+  estoque_atual numeric DEFAULT 0,
+  ativo boolean NOT NULL DEFAULT true,
+  criado_em timestamp with time zone NOT NULL DEFAULT now(),
+  atualizado_em timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT produtos_servicos_pkey PRIMARY KEY (id),
+  CONSTRAINT produtos_servicos_fornecedor_id_fkey FOREIGN KEY (fornecedor_id) REFERENCES public.fornecedores(id)
+);
 CREATE TABLE public.servicos (
   id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
   usuario_id bigint NOT NULL,
@@ -674,4 +775,17 @@ CREATE TABLE public.vendas (
   CONSTRAINT vendas_pkey PRIMARY KEY (id),
   CONSTRAINT fk_vendas_usuario FOREIGN KEY (usuario_id) REFERENCES public.usuarios(id),
   CONSTRAINT fk_vendas_cliente FOREIGN KEY (cliente_id) REFERENCES public.clientes(id)
+);
+CREATE TABLE public.webhook_eventos (
+  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
+  usuario_id bigint,
+  origem character varying NOT NULL,
+  evento character varying NOT NULL,
+  payload jsonb NOT NULL DEFAULT '{}'::jsonb,
+  status character varying DEFAULT 'recebido'::character varying,
+  erro text,
+  processado_em timestamp with time zone,
+  criado_em timestamp with time zone DEFAULT now(),
+  CONSTRAINT webhook_eventos_pkey PRIMARY KEY (id),
+  CONSTRAINT webhook_eventos_usuario_id_fkey FOREIGN KEY (usuario_id) REFERENCES public.usuarios(id)
 );

@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { Box, Button, TextField, IconButton, Skeleton, Typography, CircularProgress, Alert, Divider, InputAdornment } from "@mui/material";
 import { ArrowBack, Check, InfoOutlined, MonetizationOnOutlined, StorefrontOutlined } from '@mui/icons-material';
+import { DatePicker } from "antd";
+import dayjs from "dayjs";
 import Layout from "../../../../template/Layout";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
@@ -144,14 +146,15 @@ const EditarRecebimento: React.FC = () => {
                 <Typography variant="h6" fontWeight={700} color="#0F172A">Valores e Prazos</Typography>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <TextField 
-                    fullWidth label="Data de Vencimento *" type="date" 
-                    InputLabelProps={{ shrink: true }} 
-                    required
-                    value={formData.data_vencimento}
-                    onChange={e => setFormData(f => ({...f, data_vencimento: e.target.value}))}
-                    sx={premiumInputStyles}
-                />
+                <div>
+                  <label className="text-xs font-semibold text-[#475569] mb-1 block">Data de Vencimento *</label>
+                  <DatePicker
+                    format="DD/MM/YYYY"
+                    value={formData.data_vencimento ? dayjs(formData.data_vencimento) : null}
+                    onChange={(date) => setFormData(f => ({ ...f, data_vencimento: date ? date.format('YYYY-MM-DD') : '' }))}
+                    style={{ width: '100%', height: 56, borderRadius: 8, backgroundColor: '#F8FAFC', borderColor: '#E2E8F0' }}
+                  />
+                </div>
                 <TextField 
                     fullWidth label="Valor Total a Receber *" type="number" 
                     InputLabelProps={{ shrink: true }}

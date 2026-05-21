@@ -1,6 +1,7 @@
 import pool from '../config/database';
 import { EstoqueRepository } from '../repositories/EstoqueRepository';
 import { MovimentacaoEstoque } from '../models/MovimentacaoEstoque';
+import { notificarEstoqueMinimoSeNecessario } from '../utils/estoqueNotificacao';
 import * as ExcelJS from 'exceljs';
 import PDFDocument from 'pdfkit';
 
@@ -31,7 +32,7 @@ export class EstoqueService {
       // O "FOR UPDATE" bloqueia o registro de produto especifico para outras transações simultâneas
       // Mas para não complicar, mantemos o check simples:
       const resProduto = await client.query(
-        'SELECT id, estoque_atual, movimenta_estoque FROM produtos WHERE id = $1 AND usuario_id = $2 FOR UPDATE',
+        'SELECT id, nome, codigo_interno, estoque_atual, estoque_minimo, movimenta_estoque FROM produtos WHERE id = $1 AND usuario_id = $2 FOR UPDATE',
         [dados.produto_id, usuarioId]
       );
 
@@ -82,6 +83,15 @@ export class EstoqueService {
       await this.estoqueRepository.registrarMovimentacaoTransaction(client, dados);
 
       await client.query('COMMIT'); // 5. Confirma Transação
+
+      await notificarEstoqueMinimoSeNecessario({
+        usuarioId,
+        produto,
+        estoqueAnterior: estoqueAtual,
+        estoqueAtual: novoSaldo,
+        origem: dados.origem || 'estoque',
+        movimentoTipo: dados.tipo
+      });
     } catch (error) {
       await client.query('ROLLBACK'); // Desfaz se houver erro
       console.error('Erro ao movimentar estoque:', error);

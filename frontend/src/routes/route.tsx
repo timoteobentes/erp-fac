@@ -1,5 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
-import { Routes, Route, Outlet } from 'react-router-dom';
+import { Routes, Route, Outlet, Navigate } from 'react-router-dom';
 import { lazy, Suspense } from 'react';
 import ProtectedRoute from './ProtectedRoute';
 import PublicRoute from './PublicRoute';
@@ -27,6 +27,14 @@ const Produtos = lazy(() => import('../pages/Cadastros/Produtos'));
 const NovoProduto = lazy(() => import('../pages/Cadastros/Produtos/Novo'));
 const EditarProduto = lazy(() => import('../pages/Cadastros/Produtos/Editar'));
 const VisualizarProduto = lazy(() => import('../pages/Cadastros/Produtos/Visualizar'));
+const Categorias = lazy(() => import('../pages/Cadastros/Categorias'));
+const NovaCategoria = lazy(() => import('../pages/Cadastros/Categorias/Novo'));
+const EditarCategoria = lazy(() => import('../pages/Cadastros/Categorias/Editar'));
+const VisualizarCategoria = lazy(() => import('../pages/Cadastros/Categorias/Visualizar'));
+const Marcas = lazy(() => import('../pages/Cadastros/Marcas'));
+const NovaMarca = lazy(() => import('../pages/Cadastros/Marcas/Novo'));
+const EditarMarca = lazy(() => import('../pages/Cadastros/Marcas/Editar'));
+const VisualizarMarca = lazy(() => import('../pages/Cadastros/Marcas/Visualizar'));
 const Fornecedores = lazy(() => import('../pages/Cadastros/Fornecedores'));
 const NovoFornecedor = lazy(() => import('../pages/Cadastros/Fornecedores/Novo'));
 const EditarFornecedor = lazy(() => import('../pages/Cadastros/Fornecedores/Editar'));
@@ -82,6 +90,7 @@ const PDV = lazy(() => import('../pages/PDV'));
 
 // Módulo: Perfil
 const Perfil = lazy(() => import('../pages/Perfil'));
+const Notificacoes = lazy(() => import('../pages/Notificacoes'));
 
 // Componente de Loading Centralizado
 const Loading = () => (
@@ -126,6 +135,8 @@ const AppRoutes = () => {
           <Route path="/" element={<Inicio />} />
           <Route path="/inicio" element={<Inicio />} />
           <Route path="/contratar-plano" element={<ContratarPlano />} />
+          <Route path="/notificacoes" element={<Notificacoes />} />
+          <Route path="/simples/notificacoes" element={<Notificacoes />} />
 
           {/* Módulo: Cadastros -> Clientes */}
           <Route path="/cadastros/clientes">
@@ -142,6 +153,20 @@ const AppRoutes = () => {
              <Route path="novo" element={<NovoProduto />} />
              <Route path="editar/:id" element={<EditarProduto />} />
              <Route path="visualizar/:id" element={<VisualizarProduto />} />
+          </Route>
+
+          <Route path="/cadastros/categorias">
+             <Route index element={<Categorias />} />
+             <Route path="novo" element={<NovaCategoria />} />
+             <Route path="editar/:id" element={<EditarCategoria />} />
+             <Route path="visualizar/:id" element={<VisualizarCategoria />} />
+          </Route>
+
+          <Route path="/cadastros/marcas">
+             <Route index element={<Marcas />} />
+             <Route path="novo" element={<NovaMarca />} />
+             <Route path="editar/:id" element={<EditarMarca />} />
+             <Route path="visualizar/:id" element={<VisualizarMarca />} />
           </Route>
 
           <Route path="/cadastros/fornecedores">
@@ -215,7 +240,8 @@ const AppRoutes = () => {
             <Route path="visualizar/:id" element={<VisualizarFormaPagamento />} />
             <Route path="editar/:id" element={<EditarFormaPagamento />} />
           </Route>
-          <Route path="/pdv" element={<PDV />} />
+          <Route path="/frente-caixa" element={<PDV />} />
+          <Route path="/pdv" element={<Navigate to="/frente-caixa" replace />} />
 
           {/* Módulo: Perfil e Configurações */}
           <Route path="/perfil" element={<Perfil />} />

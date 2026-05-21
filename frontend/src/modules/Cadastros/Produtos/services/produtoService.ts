@@ -29,6 +29,19 @@ export interface DadosAuxiliares {
   unidades: any[];
 }
 
+export interface OpcaoFiscal {
+  codigo: string;
+  descricao?: string;
+  categoria?: string;
+  cest?: string;
+}
+
+export interface RecomendacaoFiscal {
+  ncm?: OpcaoFiscal | null;
+  cest?: OpcaoFiscal | null;
+  cfop?: OpcaoFiscal | null;
+}
+
 // --- Funções do Service ---
 
 /**
@@ -68,8 +81,44 @@ export const listarProdutosService = async (
  */
 export const obterDadosAuxiliaresService = async (): Promise<DadosAuxiliares> => {
   try {
-    const response = await api.get("/api/produtos/auxiliares");
-    return response.data.data;
+    const [auxiliaresResponse, categoriasResponse, marcasResponse] = await Promise.all([
+      api.get("/api/produtos/auxiliares"),
+      api.get("/api/categorias", { params: { limit: 99999 } }),
+      api.get("/api/marcas", { params: { limit: 99999 } })
+    ]);
+
+    return {
+      ...auxiliaresResponse.data.data,
+      categorias: categoriasResponse.data.data || [],
+      marcas: marcasResponse.data.data || []
+    };
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const listarDadosFiscaisService = async (
+  tipo: 'ncm' | 'cest' | 'cfop',
+  termo = '',
+  limit = 50
+): Promise<OpcaoFiscal[]> => {
+  try {
+    const response = await api.get(`/api/produtos/fiscal/${tipo}`, { params: { termo, limit } });
+    return response.data.data || [];
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const recomendarDadosFiscaisService = async (
+  nome: string,
+  tipoItem?: string
+): Promise<RecomendacaoFiscal> => {
+  try {
+    const response = await api.get('/api/produtos/fiscal/recomendacao', {
+      params: { nome, tipo_item: tipoItem }
+    });
+    return response.data.data || {};
   } catch (error) {
     throw error;
   }
@@ -93,8 +142,8 @@ export const listarProdutosComposicaoService = async (): Promise<any[]> => {
  */
 export const listarFornecedoresService = async (): Promise<any[]> => {
   try {
-    const response = await api.get("/api/clientes", { params: { tipo: 'fornecedor', limit: 99999 } });
-    return response.data.data;
+    const response = await api.get("/api/fornecedores", { params: { pagina: 1, limite: 99999, situacao: 'ativo' } });
+    return response.data.fornecedores || response.data.data || [];
   } catch (error) {
     throw error;
   }

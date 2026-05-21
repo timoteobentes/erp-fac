@@ -12,6 +12,10 @@ router.use(authMiddleware);
 router.use(isolamentoMiddleware);
 router.use(loggerMiddleware);
 
+router.post('/frente-caixa/checkout', vendaController.checkout);
+router.post('/frente-caixa/vendas/:id/emitir-nfce', vendaController.emitirNfce);
+
+// Compatibilidade com integrações antigas do PDV.
 router.post('/pdv/checkout', vendaController.checkout);
 router.get('/vendas', vendaController.listar);
 

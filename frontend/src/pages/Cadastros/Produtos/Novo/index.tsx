@@ -1,21 +1,25 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useState, useEffect, type SyntheticEvent } from "react";
+import React, { useState, useEffect, useRef, type SyntheticEvent } from "react";
 import { useForm, Controller, useFieldArray } from "react-hook-form";
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ConfigProvider, Table } from 'antd';
 import { 
+  Autocomplete,
   Button, Box, TextField, MenuItem, CircularProgress, Skeleton, 
   InputAdornment, Switch, FormControlLabel, Divider, Typography, Tabs, Tab, IconButton, Alert
 } from "@mui/material";
 import { 
-  Check, DeleteOutline, Add, Search, ArrowBack,
+  Check, DeleteOutline, Add, ArrowBack,
   CategoryOutlined, StraightenOutlined, MonetizationOnOutlined, 
-  Inventory2Outlined, LayersOutlined, LocalShippingOutlined, ReceiptLongOutlined
+  Inventory2Outlined, LayersOutlined, LocalShippingOutlined, ReceiptLongOutlined, AutoAwesome
 } from "@mui/icons-material";
 import Layout from "../../../../template/Layout";
 import { useNavigate } from "react-router-dom";
 import { novoProdutoSchema, type NovoProdutoFormData } from "../../../../modules/Cadastros/Produtos/Novo/schemas/novoProdutoSchema";
 import { useNovoProduto } from "../../../../modules/Cadastros/Produtos/Novo/hooks/useNovoProduto";
+import { calcularCustoFinal, calcularLucroSugerido, calcularMargemAplicada, calcularPrecoVenda } from "../../../../modules/Cadastros/Produtos/utils/precificacao";
+import FiscalAutocomplete from "../../../../modules/Cadastros/Produtos/components/FiscalAutocomplete";
+import { listarDadosFiscaisService, recomendarDadosFiscaisService, type OpcaoFiscal } from "../../../../modules/Cadastros/Produtos/services/produtoService";
 import { toast } from "react-toastify";
 
 // Estilo Premium B2B para os Inputs do MUI
@@ -54,6 +58,7 @@ const NovoProduto: React.FC = () => {
   const [loadingSave, setLoadingSave] = useState(false);
   const [loadingDados, setLoadingDados] = useState(true);
   const [tabValue, setTabValue] = useState(0);
+  const [origemPreco, setOrigemPreco] = useState<'margem' | 'preco'>('margem');
 
   // Listas Auxiliares
   const [categorias, setCategorias] = useState<any[]>([]);
@@ -61,6 +66,10 @@ const NovoProduto: React.FC = () => {
   const [unidades, setUnidades] = useState<any[]>([]);
   const [fornecedores, setFornecedores] = useState<any[]>([]);
   const [listaProdutos, setListaProdutos] = useState<any[]>([]); 
+  const [opcoesNcm, setOpcoesNcm] = useState<OpcaoFiscal[]>([]);
+  const [opcoesCest, setOpcoesCest] = useState<OpcaoFiscal[]>([]);
+  const [opcoesCfop, setOpcoesCfop] = useState<OpcaoFiscal[]>([]);
+  const ultimaRecomendacaoFiscal = useRef("");
 
   const { 
     control, handleSubmit, watch, setValue, getValues, formState: { errors } 
@@ -78,13 +87,27 @@ const NovoProduto: React.FC = () => {
   const { fields: conversaoFields, append: appendConversao, remove: removeConversao } = useFieldArray({ control, name: "conversoes" });
   const { fields: composicaoFields, append: appendComposicao, remove: removeComposicao } = useFieldArray({ control, name: "composicao" });
 
+  const carregarFiscal = async (tipo: 'ncm' | 'cest' | 'cfop', termo = '') => {
+    try {
+      const data = await listarDadosFiscaisService(tipo, termo);
+      if (tipo === 'ncm') setOpcoesNcm(data);
+      if (tipo === 'cest') setOpcoesCest(data);
+      if (tipo === 'cfop') setOpcoesCfop(data);
+    } catch (error) {
+      console.error(`Erro ao carregar ${tipo}`, error);
+    }
+  };
+
   useEffect(() => {
     const fetchData = async () => {
       try {
         const [auxData, compData, fornData]: any = await Promise.all([
           carregarAuxiliares(),
           carregarProdutosComposicao(),
-          carregarFornecedores()
+          carregarFornecedores(),
+          carregarFiscal('ncm'),
+          carregarFiscal('cest'),
+          carregarFiscal('cfop')
         ]);
         if (auxData) {
           setCategorias(auxData.categorias);
@@ -108,18 +131,78 @@ const NovoProduto: React.FC = () => {
   const despesas = watch('despesas_acessorias');
   const outras = watch('outras_despesas');
   const lucroUtilizado = watch('margem_lucro');
+  const precoVenda = watch('preco_venda');
   const tipoItem = watch('tipo_item');
+  const nomeProduto = watch('nome');
+  const unidadeSaidaId = watch('unidade_id');
   
-  const custoFinal = Number(custo || 0) + Number(despesas || 0) + Number(outras || 0);
+  const custoFinal = calcularCustoFinal(custo, despesas, outras);
+  const lucroSugerido = calcularLucroSugerido(custo, despesas, outras);
 
   useEffect(() => {
-    if (custoFinal > 0) {
-        const valorVenda = custoFinal + (custoFinal * (Number(lucroUtilizado || 0) / 100));
-        if (getValues('preco_venda') !== parseFloat(valorVenda.toFixed(2))) {
-            setValue('preco_venda', parseFloat(valorVenda.toFixed(2)));
-        }
+    if (getValues('lucro_sugerido') !== lucroSugerido) {
+      setValue('lucro_sugerido', lucroSugerido, { shouldDirty: false, shouldValidate: false });
     }
-  }, [custoFinal, lucroUtilizado, setValue, getValues]);
+  }, [lucroSugerido, setValue, getValues]);
+
+  useEffect(() => {
+    if (origemPreco !== 'margem') return;
+
+    const valorVenda = calcularPrecoVenda(custoFinal, lucroUtilizado);
+    if (getValues('preco_venda') !== valorVenda) {
+      setValue('preco_venda', valorVenda, { shouldDirty: true, shouldValidate: true });
+    }
+  }, [custoFinal, lucroUtilizado, origemPreco, setValue, getValues]);
+
+  useEffect(() => {
+    if (origemPreco !== 'preco') return;
+
+    const margemAplicada = calcularMargemAplicada(custoFinal, precoVenda);
+    if (getValues('margem_lucro') !== margemAplicada) {
+      setValue('margem_lucro', margemAplicada, { shouldDirty: true, shouldValidate: true });
+    }
+  }, [custoFinal, precoVenda, origemPreco, setValue, getValues]);
+
+  useEffect(() => {
+    const nome = String(nomeProduto || '').trim();
+    if (loadingDados || nome.length < 3) return;
+    if (getValues('ncm') && getValues('cest') && getValues('cfop_padrao')) return;
+
+    const chave = `${nome}|${tipoItem}`;
+    if (ultimaRecomendacaoFiscal.current === chave) return;
+
+    const timer = setTimeout(async () => {
+      try {
+        const recomendacao = await recomendarDadosFiscaisService(nome, tipoItem);
+        const aplicados: string[] = [];
+
+        if (recomendacao.ncm?.codigo && !getValues('ncm')) {
+          setValue('ncm', recomendacao.ncm.codigo, { shouldDirty: true, shouldValidate: true });
+          setOpcoesNcm((atuais) => [recomendacao.ncm!, ...atuais.filter((item) => item.codigo !== recomendacao.ncm!.codigo)]);
+          aplicados.push('NCM');
+        }
+
+        if (recomendacao.cest?.codigo && !getValues('cest')) {
+          setValue('cest', recomendacao.cest.codigo, { shouldDirty: true, shouldValidate: true });
+          setOpcoesCest((atuais) => [recomendacao.cest!, ...atuais.filter((item) => item.codigo !== recomendacao.cest!.codigo)]);
+          aplicados.push('CEST');
+        }
+
+        if (recomendacao.cfop?.codigo && !getValues('cfop_padrao')) {
+          setValue('cfop_padrao', recomendacao.cfop.codigo, { shouldDirty: true, shouldValidate: true });
+          setOpcoesCfop((atuais) => [recomendacao.cfop!, ...atuais.filter((item) => item.codigo !== recomendacao.cfop!.codigo)]);
+          aplicados.push('CFOP');
+        }
+
+        ultimaRecomendacaoFiscal.current = chave;
+        if (aplicados.length > 0) toast.info(`Recomendação fiscal aplicada: ${aplicados.join(', ')}.`);
+      } catch (error) {
+        console.error('Erro ao recomendar dados fiscais', error);
+      }
+    }, 700);
+
+    return () => clearTimeout(timer);
+  }, [nomeProduto, tipoItem, loadingDados, setValue, getValues]);
 
   const handleAddComposicao = () => {
     appendComposicao({ produto_filho_id: 0, quantidade: 1, custo_unitario: 0, unidade_nome: '' });
@@ -129,10 +212,26 @@ const NovoProduto: React.FC = () => {
     setTabValue(newValue);
   };
 
+  const handleGerarCodigoInterno = () => {
+    const codigo = Array.from({ length: 13 }, () => Math.floor(Math.random() * 10)).join('');
+    setValue("codigo_interno", codigo, { shouldDirty: true, shouldValidate: true });
+  };
+
+  const normalizarConversoes = (conversoes: any[] = []) => conversoes.map((conversao) => {
+    const quantidadeEntrada = Number(conversao.quantidade_entrada || 1);
+    const quantidadeSaida = Number(conversao.fator_conversao || 0);
+
+    return {
+      ...conversao,
+      unidade_saida_id: Number(getValues('unidade_id') || conversao.unidade_saida_id || 0),
+      fator_conversao: quantidadeEntrada > 0 ? quantidadeSaida / quantidadeEntrada : quantidadeSaida
+    };
+  });
+
   const onSubmit = async (data: NovoProdutoFormData) => {
     setLoadingSave(true);
     try {
-      const payload = { ...data, situacao: data.produto_ativo ? 'ativo' : 'inativo' };
+      const payload = { ...data, situacao: data.produto_ativo ? 'ativo' : 'inativo', conversoes: normalizarConversoes(data.conversoes) };
       await handleCadastrarProduto(payload);
       navigate("/cadastros/produtos");
     } catch (error: any) {
@@ -218,7 +317,21 @@ const NovoProduto: React.FC = () => {
                         <TextField {...field} fullWidth label="Nome do Produto *" error={!!errors.nome} helperText={errors.nome?.message as string} sx={premiumInputStyles} />
                     )} />
                     <Controller name="codigo_interno" control={control} render={({ field }) => (
-                        <TextField {...field} fullWidth label="Código Interno" sx={premiumInputStyles} />
+                        <TextField
+                          {...field}
+                          fullWidth
+                          label="Código Interno"
+                          sx={premiumInputStyles}
+                          InputProps={{
+                            endAdornment: (
+                              <InputAdornment position="end">
+                                <IconButton edge="end" title="Gerar código" onClick={handleGerarCodigoInterno}>
+                                  <AutoAwesome sx={{ color: '#94A3B8' }} />
+                                </IconButton>
+                              </InputAdornment>
+                            )
+                          }}
+                        />
                     )} />
                     <Controller name="codigo_barras" control={control} render={({ field }) => (
                         <TextField {...field} fullWidth label="Código de Barras (EAN)" sx={premiumInputStyles} />
@@ -259,7 +372,7 @@ const NovoProduto: React.FC = () => {
                     <Button 
                         size="small" 
                         startIcon={<Add />} 
-                        onClick={() => appendConversao({ unidade_entrada_id: 0, fator_conversao: 1, codigo_barras_entrada: '' })}
+                        onClick={() => appendConversao({ quantidade_entrada: 1, unidade_entrada_id: 0, fator_conversao: 1, unidade_saida_id: getValues('unidade_id') || 0, codigo_barras_entrada: '' })}
                         sx={{ textTransform: 'none', fontWeight: 600, color: '#5B21B6', backgroundColor: '#F3E8FF', '&:hover': { backgroundColor: '#E9D5FF' }, borderRadius: '8px' }}
                     >
                         Adicionar Conversão
@@ -267,9 +380,14 @@ const NovoProduto: React.FC = () => {
                 </div>
 
                 {conversaoFields.map((item, index) => (
-                    <div key={item.id} className="grid grid-cols-12 gap-4 mt-4 items-center p-4 border border-[#E2E8F0] rounded-xl relative transition-all hover:border-[#CBD5E1]">
-                        <div className="col-span-1 text-center font-bold text-[#94A3B8]">{index + 1}</div>
-                        <div className="col-span-3">
+                    <div key={item.id} className="grid grid-cols-1 lg:grid-cols-12 gap-4 mt-4 items-center p-4 border border-[#E2E8F0] rounded-xl relative transition-all hover:border-[#CBD5E1]">
+                        <div className="lg:col-span-1 text-center font-bold text-[#94A3B8]">{index + 1}</div>
+                        <div className="lg:col-span-2">
+                            <Controller name={`conversoes.${index}.quantidade_entrada` as any} control={control} render={({ field }) => (
+                                <TextField {...field} type="number" fullWidth size="small" label="Qtd. Entrada" sx={premiumInputStyles} />
+                            )} />
+                        </div>
+                        <div className="lg:col-span-3">
                             <Controller name={`conversoes.${index}.unidade_entrada_id` as any} control={control} render={({ field }) => (
                                 <TextField {...field} select fullWidth size="small" label="Unidade de Entrada" sx={premiumInputStyles}>
                                     <MenuItem value={0}><em>Selecione...</em></MenuItem>
@@ -277,14 +395,27 @@ const NovoProduto: React.FC = () => {
                                 </TextField>
                             )} />
                         </div>
-                        <div className="col-span-2 text-center text-sm font-bold text-[#5B21B6]">equivale a</div>
-                        <div className="col-span-2">
+                        <div className="lg:col-span-1 text-center text-sm font-bold text-[#5B21B6]">equivale a</div>
+                        <div className="lg:col-span-2">
                             <Controller name={`conversoes.${index}.fator_conversao` as any} control={control} render={({ field }) => (
                                 <TextField {...field} type="number" fullWidth size="small" label="Qtd. Saída" sx={premiumInputStyles} />
                             )} />
                         </div>
-                        <div className="col-span-3 text-sm text-[#64748B] font-medium">da unidade base</div>
-                        <div className="col-span-1 text-right">
+                        <div className="lg:col-span-2">
+                            <TextField
+                                select
+                                fullWidth
+                                size="small"
+                                label="Unidade de SaÃ­da"
+                                value={unidadeSaidaId || 0}
+                                onChange={(event) => setValue('unidade_id', Number(event.target.value), { shouldDirty: true, shouldValidate: true })}
+                                sx={premiumInputStyles}
+                            >
+                                <MenuItem value={0}><em>Selecione...</em></MenuItem>
+                                {unidades.map(u => <MenuItem key={u.id} value={u.id}>{u.sigla}</MenuItem>)}
+                            </TextField>
+                        </div>
+                        <div className="lg:col-span-1 text-right">
                             <IconButton size="small" onClick={() => removeConversao(index)} sx={{ color: '#94A3B8', '&:hover': { color: '#EF4444', backgroundColor: '#FEF2F2' } }}>
                                 <DeleteOutline fontSize="small" />
                             </IconButton>
@@ -364,11 +495,33 @@ const NovoProduto: React.FC = () => {
                                     <TextField {...field} label="Lucro Sugerido" type="number" disabled InputProps={{ endAdornment: <InputAdornment position="end">%</InputAdornment> }} placeholder="30" sx={premiumInputStyles} />
                                 )} />
                                 <Controller name="margem_lucro" control={control} render={({ field }) => (
-                                    <TextField {...field} label="Margem de Lucro Desejada" type="number" InputProps={{ endAdornment: <InputAdornment position="end">%</InputAdornment> }} sx={premiumInputStyles} />
+                                    <TextField
+                                      {...field}
+                                      label="Margem de Lucro Desejada"
+                                      type="number"
+                                      onChange={(event) => {
+                                        setOrigemPreco('margem');
+                                        field.onChange(event);
+                                      }}
+                                      InputProps={{ endAdornment: <InputAdornment position="end">%</InputAdornment> }}
+                                      sx={premiumInputStyles}
+                                    />
                                 )} />
                             </div>
                             <Controller name="preco_venda" control={control} render={({ field }) => (
-                                <TextField {...field} fullWidth label="Valor Final de Venda" type="number" InputProps={{ startAdornment: <InputAdornment position="start">R$</InputAdornment> }} error={!!errors.preco_venda} sx={premiumInputStyles} />
+                                <TextField
+                                  {...field}
+                                  fullWidth
+                                  label="Valor Final de Venda"
+                                  type="number"
+                                  onChange={(event) => {
+                                    setOrigemPreco('preco');
+                                    field.onChange(event);
+                                  }}
+                                  InputProps={{ startAdornment: <InputAdornment position="start">R$</InputAdornment> }}
+                                  error={!!errors.preco_venda}
+                                  sx={premiumInputStyles}
+                                />
                             )} />
                             <Controller name="preco_promocional" control={control} render={({ field }) => (
                                 <TextField {...field} fullWidth label="Preço Promocional (Opcional)" type="number" InputProps={{ startAdornment: <InputAdornment position="start">R$</InputAdornment> }} sx={premiumInputStyles} />
@@ -470,10 +623,23 @@ const NovoProduto: React.FC = () => {
                 <Typography variant="h6" fontWeight={700} color="#0F172A" mb={4}>Fornecedor Padrão</Typography>
                 <div className="grid grid-cols-1 md:grid-cols-2">
                     <Controller name="fornecedor_padrao_id" control={control} render={({ field }) => (
-                        <TextField {...field} select fullWidth label="Selecione o Fornecedor" InputProps={{ startAdornment: <Search color="action" sx={{ mr: 1 }}/> }} sx={premiumInputStyles}>
-                            <MenuItem value={0}><em>Sem fornecedor padrão</em></MenuItem>
-                            {fornecedores.map(f => <MenuItem key={f.id} value={f.id}>{f.nome || f.razao_social}</MenuItem>)}
-                        </TextField>
+                        <Autocomplete
+                            options={fornecedores}
+                            value={fornecedores.find((fornecedor) => Number(fornecedor.id) === Number(field.value)) || null}
+                            onChange={(_, fornecedor) => field.onChange(fornecedor?.id || 0)}
+                            getOptionLabel={(fornecedor) => fornecedor?.nome || fornecedor?.razao_social || ''}
+                            isOptionEqualToValue={(option, value) => Number(option.id) === Number(value.id)}
+                            noOptionsText="Nenhum fornecedor encontrado"
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    fullWidth
+                                    label="Selecione o Fornecedor"
+                                    placeholder="Digite para buscar"
+                                    sx={premiumInputStyles}
+                                />
+                            )}
+                        />
                     )} />
                 </div>
             </CustomTabPanel>
@@ -483,13 +649,40 @@ const NovoProduto: React.FC = () => {
                 <Typography variant="h6" fontWeight={700} color="#0F172A" mb={4}>Classificação e Tributação (NF-e/NFC-e)</Typography>
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4 bg-[#F8FAFC] p-6 rounded-2xl border border-[#E2E8F0] mb-4">
                     <Controller name="ncm" control={control} render={({ field }) => (
-                        <TextField {...field} fullWidth label="NCM" placeholder="Ex: 61051000" sx={premiumInputStyles} />
+                        <FiscalAutocomplete
+                          label="NCM"
+                          placeholder="Digite código ou descrição"
+                          value={field.value}
+                          options={opcoesNcm}
+                          sx={premiumInputStyles}
+                          onChange={field.onChange}
+                          onSearch={(termo) => carregarFiscal('ncm', termo)}
+                          onSelectOption={(option) => {
+                            if (option.cest) setValue('cest', option.cest, { shouldDirty: true, shouldValidate: true });
+                          }}
+                        />
                     )} />
                     <Controller name="cest" control={control} render={({ field }) => (
-                        <TextField {...field} fullWidth label="CEST" placeholder="Ex: 0100100" sx={premiumInputStyles} />
+                        <FiscalAutocomplete
+                          label="CEST"
+                          placeholder="Digite código ou descrição"
+                          value={field.value}
+                          options={opcoesCest}
+                          sx={premiumInputStyles}
+                          onChange={field.onChange}
+                          onSearch={(termo) => carregarFiscal('cest', termo)}
+                        />
                     )} />
                     <Controller name="cfop_padrao" control={control} render={({ field }) => (
-                        <TextField {...field} fullWidth label="CFOP Padrão de Venda" placeholder="Ex: 5102" sx={premiumInputStyles} />
+                        <FiscalAutocomplete
+                          label="CFOP Padrão de Venda"
+                          placeholder="Digite código, descrição ou categoria"
+                          value={field.value}
+                          options={opcoesCfop}
+                          sx={premiumInputStyles}
+                          onChange={field.onChange}
+                          onSearch={(termo) => carregarFiscal('cfop', termo)}
+                        />
                     )} />
                     <Controller name="origem_mercadoria" control={control} render={({ field }) => (
                         <TextField {...field} select fullWidth label="Origem da Mercadoria" sx={premiumInputStyles}>
