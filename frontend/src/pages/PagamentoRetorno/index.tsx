@@ -3,12 +3,14 @@ import { Box, Button, CircularProgress, Typography } from '@mui/material';
 import { CheckCircle, HourglassBottom, ErrorOutline } from '@mui/icons-material';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { checkPaymentStatus } from '../../modules/Inicio/services/infinitypayService';
+import { useAuth } from '../../modules/Login/context/AuthContext';
 
 type PageState = 'loading' | 'success' | 'pending' | 'error';
 
 const PagamentoRetorno: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { refreshUser } = useAuth();
   const [state, setState] = useState<PageState>('loading');
   const [receiptUrl, setReceiptUrl] = useState<string | null>(null);
 
@@ -29,12 +31,9 @@ const PagamentoRetorno: React.FC = () => {
         const status = await checkPaymentStatus({ orderNsu, transactionNsu, slug });
 
         if (status?.paid) {
-          // Atualiza dados do usuário no localStorage
-          const stored = localStorage.getItem('user');
-          if (stored) {
-            const parsed = JSON.parse(stored);
-            localStorage.setItem('user', JSON.stringify({ ...parsed, status: 'ativo' }));
-          }
+          // Busca dados atualizados do backend (status, plano, validade_assinatura)
+          // e sincroniza o estado React + localStorage
+          await refreshUser();
           setReceiptUrl(receiptParam || status?.receipt_url || null);
           setState('success');
         } else {

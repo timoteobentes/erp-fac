@@ -320,6 +320,87 @@ export class EmailService {
     });
   }
 
+  async sendSubscriptionWarningEmail(
+    email: string,
+    nome: string,
+    plano: string,
+    diasRestantes: number,
+    validadeDate: Date
+  ): Promise<void> {
+    const dataVencimento = validadeDate.toLocaleDateString('pt-BR', {
+      day: '2-digit', month: '2-digit', year: 'numeric',
+    });
+    const renewUrl = 'https://app.facoaconta.com.br/inicio';
+    const subject = `Sua assinatura vence em ${diasRestantes} dia${diasRestantes !== 1 ? 's' : ''} — Faço a Conta`;
+
+    const htmlContent = `
+      <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+      <html xmlns="http://www.w3.org/1999/xhtml">
+      <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>${subject}</title>
+      </head>
+      <body style="margin:0;padding:0;font-family:Arial,sans-serif;background-color:#f9f9f9;">
+        <center>
+          <table border="0" cellpadding="0" cellspacing="0" width="100%" bgcolor="#f9f9f9">
+            <tr><td align="center" style="padding:40px 0;">
+              <table border="0" cellpadding="0" cellspacing="0" width="600" style="max-width:600px;background:#ffffff;border-radius:5px;overflow:hidden;box-shadow:0 2px 5px rgba(0,0,0,0.1);">
+                <tr>
+                  <td bgcolor="#2a003f" style="padding:25px;text-align:center;">
+                    <img src="https://analisa.facoaconta.com.br/simples/fac_logo.png" alt="Faço a Conta" width="200" style="max-width:200px;height:auto;" />
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:30px;">
+                    <h2 style="color:#333333;margin-top:0;margin-bottom:20px;">Aviso de Vencimento de Assinatura</h2>
+                    <p style="color:#333333;margin-bottom:15px;">
+                      Olá <strong style="color:#2a003f;">${nome || 'cliente'}</strong>,
+                    </p>
+                    <p style="color:#333333;margin-bottom:20px;">
+                      Sua assinatura do plano <strong>${(plano || '').toUpperCase()}</strong> vence em <strong>${diasRestantes} dia${diasRestantes !== 1 ? 's' : ''}</strong>, no dia <strong>${dataVencimento}</strong>.
+                    </p>
+                    <table border="0" cellpadding="12" cellspacing="0" width="100%" bgcolor="#fff3cd" style="border:1px solid #ffecb5;border-radius:4px;margin-bottom:24px;">
+                      <tr>
+                        <td style="color:#856404;font-size:14px;">
+                          <strong>⚠️ Importante:</strong> Renove sua assinatura antes do vencimento para não perder o acesso ao sistema.
+                        </td>
+                      </tr>
+                    </table>
+                    <table border="0" cellpadding="0" cellspacing="0" style="margin:0 0 24px 0;">
+                      <tr>
+                        <td align="center">
+                          <a href="${renewUrl}" style="background-color:#2a003f;color:#ffffff;padding:12px 28px;text-decoration:none;border-radius:5px;font-weight:bold;font-size:15px;display:inline-block;">
+                            Renovar Assinatura Agora
+                          </a>
+                        </td>
+                      </tr>
+                    </table>
+                    <p style="color:#666666;font-size:14px;margin-bottom:0;">
+                      Se já realizou o pagamento, aguarde a confirmação automática do sistema.
+                    </p>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:20px;border-top:1px solid #dddddd;background-color:#f9f9f9;text-align:center;">
+                    <p style="margin:0;color:#666666;font-size:12px;">
+                      <strong style="color:#2a003f;">Equipe Faço a Conta</strong><br/>
+                      Este é um email automático — não responda a esta mensagem.<br/>
+                      © ${new Date().getFullYear()} Faço a Conta
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td></tr>
+          </table>
+        </center>
+      </body>
+      </html>
+    `;
+
+    await this.sendEmail({ to: email, subject, htmlContent });
+  }
+
   // Método para ler arquivo do sistema e converter para anexo
   async createAttachmentFromFile(filePath: string, fileName?: string): Promise<EmailAttachment> {
     const content = fs.readFileSync(filePath, { encoding: 'base64' });

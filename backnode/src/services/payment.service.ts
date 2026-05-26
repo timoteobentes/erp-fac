@@ -3,6 +3,14 @@ import pool from '../config/database';
 import axios from 'axios';
 import { INFINITYPAY_CONFIG } from '../config/infinitypay';
 import type { InfinityPayCreateLinkPayload, InfinityPayWebhookPayload } from '../types/payment.types';
+import { setValidadeAssinatura } from './assinatura.service';
+
+const PLANO_DADOS: Record<string, { nome: string; preco: number }> = {
+  mei:      { nome: 'MEI',      preco: 97 },
+  controle: { nome: 'Controle', preco: 237 },
+  essencial:{ nome: 'Essencial',preco: 337 },
+  anual:    { nome: 'Anual',    preco: 3639.60 },
+};
 
 export interface CreateLinkData {
   usuarioId: string;
@@ -96,6 +104,28 @@ export class PaymentService {
       ...(data.transactionNsu && { transaction_nsu: data.transactionNsu }),
       ...(data.slug && { slug: data.slug }),
     });
+
+    // Se InfinityPay confirma o pagamento, sincroniza o banco (idempotente — cobre a race condition
+    // entre o webhook e o retorno imediato do usuário ao sistema)
+    if (response.data?.paid === true) {
+      const { rows } = await pool.query(
+        `SELECT ip_status, usuario_id, plano_selecionado FROM pagamentos WHERE ip_order_nsu = $1`,
+        [data.orderNsu]
+      );
+      if (rows.length > 0 && rows[0].ip_status !== 'paid') {
+        await pool.query(
+          `UPDATE pagamentos SET ip_status = 'paid', atualizado_em = NOW() WHERE ip_order_nsu = $1`,
+          [data.orderNsu]
+        );
+        await pool.query(
+          `UPDATE usuarios SET status = 'ativo', plano_selecionado = $2, atualizado_em = NOW() WHERE id = $1`,
+          [rows[0].usuario_id, rows[0].plano_selecionado]
+        );
+        await setValidadeAssinatura(rows[0].usuario_id, rows[0].plano_selecionado);
+        console.log(`✅ [check] Usuário [${rows[0].usuario_id}] ativado via payment_check (webhook ainda não chegou).`);
+      }
+    }
+
     return response.data;
   }
 
@@ -130,6 +160,8 @@ export class PaymentService {
       [usuario_id, plano_selecionado]
     );
 
+    await setValidadeAssinatura(usuario_id, plano_selecionado);
+
     await pool.query(
       `INSERT INTO webhook_eventos (usuario_id, origem, evento, payload, status, processado_em)
        VALUES ($1, 'infinitypay', 'payment.approved', $2, 'processado', NOW())`,
@@ -137,5 +169,26 @@ export class PaymentService {
     );
 
     console.log(`✅ Usuário [${usuario_id}] ativado no plano [${plano_selecionado}].`);
+  }
+
+  async renovarAssinatura(usuarioId: string) {
+    const { rows } = await pool.query(
+      `SELECT email, nome_empresa, nome_completo, plano_selecionado FROM usuarios WHERE id = $1`,
+      [usuarioId]
+    );
+    if (rows.length === 0) throw new Error('Usuário não encontrado');
+
+    const { email, nome_empresa, nome_completo, plano_selecionado } = rows[0];
+    const plano = (plano_selecionado ?? 'essencial').toLowerCase();
+    const dados = PLANO_DADOS[plano] ?? PLANO_DADOS['essencial'];
+
+    return this.createCheckoutLink({
+      usuarioId,
+      planId: plano,
+      planName: dados.nome,
+      amount: dados.preco,
+      email,
+      nome: nome_empresa || nome_completo,
+    });
   }
 }

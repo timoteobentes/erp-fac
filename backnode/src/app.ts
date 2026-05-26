@@ -23,6 +23,7 @@ import webhookRoutes from './routes/webhook.routes';
 import { loggerMiddleware } from './middleware/logger';
 import { authMiddleware } from './middleware/auth';
 import { isolamentoMiddleware } from './middleware/isolamento';
+import { verificarVencimentos } from './services/assinatura.service';
 
 const app = express();
 const PORT = process.env.PORT || 3333;
@@ -73,4 +74,8 @@ app.get('/health', (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);
+
+  // Job diário: verificar vencimentos de assinaturas
+  verificarVencimentos();
+  setInterval(() => verificarVencimentos(), 24 * 60 * 60 * 1000);
 });

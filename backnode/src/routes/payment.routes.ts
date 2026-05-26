@@ -13,4 +13,7 @@ paymentRoutes.post('/link', (req, res) => controller.createLink(req, res));
 // Verificar status do pagamento após retorno do InfinityPay
 paymentRoutes.post('/check', (req, res) => controller.checkStatus(req, res));
 
+// Renovar assinatura — gera novo link para o plano atual do usuário
+paymentRoutes.post('/renovar', (req, res) => controller.renovar(req, res));
+
 export default paymentRoutes;

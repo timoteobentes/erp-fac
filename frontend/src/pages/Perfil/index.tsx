@@ -6,10 +6,11 @@ import { useForm, Controller } from 'react-hook-form';
 import Layout from '../../template/Layout';
 import { useNavigate } from 'react-router-dom';
 import { usePerfil } from '../../modules/Perfil/hooks/usePerfil';
-import { 
+import {
   ArrowBack, Check, PersonOutline, BusinessOutlined, InfoOutlined,
-  ReceiptOutlined, CloudUploadOutlined, LockOutlined 
+  ReceiptOutlined, CloudUploadOutlined, LockOutlined, WorkspacePremiumOutlined
 } from '@mui/icons-material';
+import AssinaturaTab from '../../modules/Perfil/components/AssinaturaTab';
 
 const { TabPane } = Tabs;
 
@@ -315,6 +316,11 @@ const Perfil: React.FC = () => {
                    </div>
                  </div>
               </TabPane>
+              {/* ABA 5: ASSINATURA */}
+              <TabPane tab={<span className="flex items-center gap-2"><WorkspacePremiumOutlined fontSize="small"/> Minha Assinatura</span>} key="5">
+                <AssinaturaTab usuario={perfil.usuario} />
+              </TabPane>
+
             </Tabs>
           </ConfigProvider>
 

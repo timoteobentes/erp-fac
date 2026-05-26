@@ -5,6 +5,7 @@ import type { LoginData } from '../services/loginService';
 import { loginService, logoutService } from '../services/loginService';
 import { useNavigate } from 'react-router';
 import { toast } from "react-toastify";
+import { obterPerfilService } from '../../Perfil/services/perfilService';
 
 interface User {
   id: string;
@@ -22,6 +23,7 @@ interface AuthContextData {
   login: (data: LoginData) => Promise<void>;
   logout: () => any;
   clearError: () => void;
+  refreshUser: () => Promise<void>;
 }
 
 interface AuthProviderProps {
@@ -45,6 +47,27 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [success, setSuccess] = useState<boolean>(false);
 
   const clearError = () => setError(null);
+
+  const refreshUser = async () => {
+    try {
+      const data = await obterPerfilService();
+      if (data?.success && data?.data?.usuario) {
+        const fresh = data.data.usuario;
+        const current = JSON.parse(localStorage.getItem('user') || '{}');
+        const merged = {
+          ...current,
+          status: fresh.status,
+          plano_selecionado: fresh.plano_selecionado,
+          validade_assinatura: fresh.validade_assinatura,
+          status_assinatura: fresh.status_assinatura,
+        };
+        localStorage.setItem('user', JSON.stringify(merged));
+        setUser(merged);
+      }
+    } catch {
+      // silencioso — não bloqueia o fluxo do usuário
+    }
+  };
 
   const login = async (data: LoginData) => {
     setIsLoading(true);
@@ -116,7 +139,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     adm,
     login,
     logout,
-    clearError
+    clearError,
+    refreshUser,
   };
 
   return (

@@ -12,6 +12,7 @@ import dayjs from 'dayjs';
 import relativeTime from "dayjs/plugin/relativeTime";
 import ptBR from 'antd/locale/pt_BR';
 import 'dayjs/locale/pt-br';
+import SubscriptionBanner from '../components/SubscriptionBanner';
 
 dayjs.extend(relativeTime);
 dayjs.locale('pt-br');
@@ -303,6 +304,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             )}
           </Header>
           
+          <SubscriptionBanner />
+
           <Content
             style={{
               margin: '24px',

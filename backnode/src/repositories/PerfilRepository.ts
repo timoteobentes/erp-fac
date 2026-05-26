@@ -5,7 +5,8 @@ import { ConfiguracaoFiscal } from '../models/ConfiguracaoFiscal';
 export class PerfilRepository {
   async getPerfilCompleto(usuario_id: number): Promise<{ usuario: Partial<Usuario>, fiscal: ConfiguracaoFiscal | null, fiscal_nfse: any }> {
     const queryUser = `
-      SELECT id, email, nome_usuario, nome_completo, cpf, cnpj, nome_empresa, telefone, cidade, estado, status, grupo_acesso_id
+      SELECT id, email, nome_usuario, nome_completo, cpf, cnpj, nome_empresa, telefone, cidade, estado,
+             status, grupo_acesso_id, plano_selecionado, validade_assinatura, status_assinatura
       FROM usuarios
       WHERE id = $1
     `;

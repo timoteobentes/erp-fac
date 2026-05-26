@@ -50,6 +50,22 @@ export class PaymentController {
     }
   }
 
+  async renovar(req: Request, res: Response) {
+    try {
+      const { usuarioId } = req.body;
+      if (!usuarioId) {
+        return res.status(400).json({ error: 'usuarioId é obrigatório' });
+      }
+      const result = await service.renovarAssinatura(String(usuarioId));
+      return res.status(201).json(result);
+    } catch (error: any) {
+      const msg: string = error?.message ?? '';
+      console.error('❌ Erro ao criar link de renovação:', msg);
+      const status = msg.startsWith('InfinityPay:') ? 422 : 500;
+      return res.status(status).json({ error: msg || 'Erro ao criar link de renovação' });
+    }
+  }
+
   // REGRA DE OURO: Responder 200 imediatamente — InfinityPay retenta se receber 400
   async webhook(req: Request, res: Response) {
     res.status(200).send('OK');
