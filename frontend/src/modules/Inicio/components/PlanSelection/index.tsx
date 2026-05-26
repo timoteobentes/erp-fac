@@ -10,7 +10,7 @@ const PLANS = [
   {
     id: 'mei',
     name: 'MEI',
-    price: 97,
+    price: 107,
     subtitle: 'Micro Empreendedor Individual',
     color: '#5B21B6',
     features: ['Atendimento online (WhatsApp)', 'Segunda a Sexta 8h às 18h', 'Fechamento Fiscal'],

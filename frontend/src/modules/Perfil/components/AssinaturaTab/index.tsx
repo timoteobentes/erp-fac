@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState } from 'react';
 import {
   Box, Typography, Chip, Button, CircularProgress,
@@ -27,8 +28,8 @@ const PLANO_INFO: Record<string, PlanoInfo> = {
   mei: {
     nome: 'MEI',
     subtitulo: 'Micro Empreendedor Individual',
-    preco: 97,
-    precoLabel: 'R$ 97/mês',
+    preco: 107,
+    precoLabel: 'R$ 107/mês',
     ciclo: 'Mensal',
     duracaoDias: 30,
     color: '#5B21B6',

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect } from 'react';
 import { Box, Button, TextField, Divider, IconButton, Typography, CircularProgress, Alert } from '@mui/material';
 import { styled } from '@mui/material/styles';

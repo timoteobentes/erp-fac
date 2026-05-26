@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect } from "react";
 import { Box, Collapse, Typography } from "@mui/material";
 import { ConfigProvider } from "antd";

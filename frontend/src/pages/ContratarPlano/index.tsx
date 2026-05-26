@@ -20,7 +20,7 @@ const PLANS = [
     id: 'mei',
     name: 'Plano MEI',
     subtitle: 'Micro Empreendedor Individual',
-    price: 'R$ 97/mês',
+    price: 'R$ 107/mês',
     priceColor: '#22C55E',
     items: [true, true, false, true, true, true, true, true, false, 'Até 01', 'SIMEI'],
   },

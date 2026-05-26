@@ -6,7 +6,7 @@ import type { InfinityPayCreateLinkPayload, InfinityPayWebhookPayload } from '..
 import { setValidadeAssinatura } from './assinatura.service';
 
 const PLANO_DADOS: Record<string, { nome: string; preco: number }> = {
-  mei:      { nome: 'MEI',      preco: 97 },
+  mei:      { nome: 'MEI',      preco: 107 },
   controle: { nome: 'Controle', preco: 237 },
   essencial:{ nome: 'Essencial',preco: 337 },
   anual:    { nome: 'Anual',    preco: 3639.60 },

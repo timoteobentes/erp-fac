@@ -18,7 +18,7 @@ const PLANS: (Omit<PlanData, 'billingCycle'> & {
   {
     id: 'mei',
     name: 'MEI',
-    price: 1,
+    price: 107,
     billingCycle: 'monthly',
     subtitle: 'Micro Empreendedor Individual',
     color: '#5B21B6',
