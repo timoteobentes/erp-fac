@@ -557,13 +557,23 @@ CREATE TABLE public.notificacoes (
 CREATE TABLE public.pagamentos (
   id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
   usuario_id bigint NOT NULL,
-  mp_payment_id character varying,
-  mp_status character varying,
-  mp_status_detail character varying,
+  -- Colunas InfinityPay (integração atual)
+  ip_order_nsu character varying UNIQUE,
+  ip_transaction_nsu character varying,
+  ip_invoice_slug character varying,
+  ip_status character varying DEFAULT 'pending',
+  ip_capture_method character varying,
+  ip_receipt_url text,
+  ip_checkout_url text,
+  -- Colunas gerais
   metodo_pagamento character varying NOT NULL,
   valor numeric NOT NULL,
   parcelas integer DEFAULT 1,
   plano_selecionado character varying,
+  -- Colunas legadas Mercado Pago (mantidas para histórico)
+  mp_payment_id character varying,
+  mp_status character varying,
+  mp_status_detail character varying,
   url_comprovante text,
   qr_code_base64 text,
   qr_code_copia_cola text,

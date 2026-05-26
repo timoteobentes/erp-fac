@@ -15,6 +15,7 @@ const RedefinirSenha = lazy(() => import('../pages/RedefinirSenha'));
 // Core
 const Inicio = lazy(() => import('../pages/Inicio'));
 const ContratarPlano = lazy(() => import('../pages/ContratarPlano'));
+const PagamentoRetorno = lazy(() => import('../pages/PagamentoRetorno'));
 
 // Módulo: Clientes
 const Clientes = lazy(() => import('../pages/Cadastros/Clientes'));
@@ -135,6 +136,7 @@ const AppRoutes = () => {
           <Route path="/" element={<Inicio />} />
           <Route path="/inicio" element={<Inicio />} />
           <Route path="/contratar-plano" element={<ContratarPlano />} />
+          <Route path="/pagamento/retorno" element={<PagamentoRetorno />} />
           <Route path="/notificacoes" element={<Notificacoes />} />
           <Route path="/simples/notificacoes" element={<Notificacoes />} />
 

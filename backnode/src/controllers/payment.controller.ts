@@ -1,55 +1,74 @@
 import { Request, Response } from 'express';
 import { PaymentService } from '../services/payment.service';
+import type { InfinityPayWebhookPayload } from '../types/payment.types';
 
 const service = new PaymentService();
 
 export class PaymentController {
-  
-  async create(req: Request, res: Response) {
-    const { method } = req.params;
 
+  async createLink(req: Request, res: Response) {
     try {
-      let result;
-      switch (method) {
-        case 'credit': result = await service.createCreditCard(req.body); break;
-        case 'debit':  result = await service.createDebitCard(req.body); break;
-        case 'pix':    result = await service.createPix(req.body); break;
-        case 'boleto': result = await service.createBoleto(req.body); break;
-        default: return res.status(400).json({ error: 'Método de pagamento inválido' });
+      const { usuarioId, planId, planName, amount, email, nome, telefone } = req.body;
+
+      if (!usuarioId || !planId || !planName || !amount) {
+        return res.status(400).json({ error: 'usuarioId, planId, planName e amount são obrigatórios' });
       }
+
+      const result = await service.createCheckoutLink({
+        usuarioId,
+        planId,
+        planName,
+        amount: Number(amount),
+        email,
+        nome,
+        telefone,
+      });
+
       return res.status(201).json(result);
     } catch (error: any) {
-      console.error("❌ Erro no pagamento:", error);
-      return res.status(500).json({ error: 'Erro ao criar pagamento', details: error?.message || error });
+      const msg: string = error?.message ?? '';
+      console.error('❌ Erro ao criar link de checkout:', msg);
+      // Erros de validação da InfinityPay retornam 422 para o frontend distinguir
+      const status = msg.startsWith('InfinityPay:') ? 422 : 500;
+      return res.status(status).json({ error: msg || 'Erro ao criar link de pagamento' });
     }
   }
 
-  // =======================================================
-  // WEBHOOK OTIMIZADO (Padrão Mercado Pago)
-  // =======================================================
+  async checkStatus(req: Request, res: Response) {
+    try {
+      const { orderNsu, transactionNsu, slug } = req.body;
+
+      if (!orderNsu) {
+        return res.status(400).json({ error: 'orderNsu é obrigatório' });
+      }
+
+      const result = await service.checkPaymentStatus({ orderNsu, transactionNsu, slug });
+      return res.status(200).json(result);
+    } catch (error: any) {
+      console.error('❌ Erro ao verificar status do pagamento:', error?.message);
+      return res.status(500).json({ error: 'Erro ao verificar pagamento', details: error?.message });
+    }
+  }
+
+  // REGRA DE OURO: Responder 200 imediatamente — InfinityPay retenta se receber 400
   async webhook(req: Request, res: Response) {
-    // 1. REGRA DE OURO: Responder 200 OK imediatamente para evitar Timeout 503!
     res.status(200).send('OK');
 
     try {
-      const { query, body } = req;
-      
-      // 2. Extrair o ID seja por query params ou pelo body (Webhook / IPN)
-      const paymentId = query['data.id'] || query.id || body?.data?.id;
+      const payload = req.body as InfinityPayWebhookPayload;
 
-      // 3. Verificar se é realmente uma notificação de pagamento
-      const isPaymentEvent = query.topic === 'payment' || body?.action?.includes('payment') || body?.type === 'payment';
-
-      if (paymentId && isPaymentEvent) {
-        console.log(`\n🔔 Webhook Recebido! Disparando verificação para o Pagamento ID: ${paymentId}`);
-        
-        // 4. Executa a atualização do banco em Background (Repare que não há "await" aqui)
-        service.processWebhookNotification(paymentId as string).catch(err => {
-            console.error('❌ Erro no processamento em background do Webhook:', err);
-        });
+      if (!payload?.order_nsu) {
+        console.log('⚠️ Webhook InfinityPay recebido sem order_nsu, ignorando.');
+        return;
       }
+
+      console.log(`🔔 Webhook InfinityPay: order_nsu=${payload.order_nsu} método=${payload.capture_method}`);
+
+      service.processWebhookNotification(payload).catch(err => {
+        console.error('❌ Erro no processamento do webhook InfinityPay:', err);
+      });
     } catch (error) {
-      console.error('❌ Erro ao ler a notificação do Mercado Pago:', error);
+      console.error('❌ Erro ao ler payload do webhook InfinityPay:', error);
     }
   }
 }

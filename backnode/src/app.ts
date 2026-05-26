@@ -8,7 +8,6 @@ import clienteRoutes from './routes/cliente.routes';
 import fornecedorRoutes from './routes/fornecedor.routes';
 import emailRoutes from './controllers/email.controller';
 import paymentRoutes from './routes/payment.routes';
-import subscriptionsRoutes from './routes/subscription.routes';
 import produtoRoutes from './routes/produto.routes';
 import categoriaRoutes from './routes/categoria.routes';
 import marcaRoutes from './routes/marca.routes';
@@ -53,7 +52,6 @@ app.use('/api/webhooks', webhookRoutes);
 // Proteção da borda e isolamento (Rate Limit + Autenticação + Multi-Tenant Core)
 app.use('/api', apiLimiter, authMiddleware, isolamentoMiddleware);
 
-app.use('/api', subscriptionsRoutes);
 app.use('/api', clienteRoutes);
 app.use('/api', fornecedorRoutes);
 app.use('/api', produtoRoutes);
