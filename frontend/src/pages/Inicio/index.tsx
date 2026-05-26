@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useMemo, useState } from "react";
 import { Button, Typography, Chip, CircularProgress } from "@mui/material";
 import {
@@ -340,7 +341,7 @@ const Inicio: React.FC = () => {
         open={modalOpen}
         onClose={handleCloseModal}
         title="Ativação da Assinatura"
-        content={<PaymentFormSteps onClose={handleCloseModal} />}
+        content={<PaymentFormSteps />}
       />
     </Layout>
   );
